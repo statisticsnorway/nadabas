@@ -1,0 +1,17 @@
+{
+  "template": "https://github.com/statisticsnorway/ssb-project-template-stat",
+  "commit": "f4e65906f8ee96999928837c117bc62a604c753c",
+  "checkout": "1.8.0",
+  "context": {
+    "cookiecutter": {
+      "full_name": "ssb-jkv",
+      "email": "jkv@ssb.no",
+      "project_name": "nadabas",
+      "description": "Source code, tools and documentation for NADABAS, an Excel/VBA and SQL Server system for national accounts compilation.",
+      "license_year": "2026",
+      "_template": "https://github.com/statisticsnorway/ssb-project-template-stat",
+      "_commit": "f4e65906f8ee96999928837c117bc62a604c753c"
+    }
+  },
+  "directory": null
+}
