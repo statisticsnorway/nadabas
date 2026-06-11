@@ -1,10 +1,18 @@
-# nadabas
+# NADABAS
 
-Source code, tools and documentation for NADABAS, an Excel/VBA and SQL Server system for national accounts compilation.
+National Accounts Database System (NADABAS)
 
-Opprettet av:
-ssb-jkv <jkv@ssb.no>
+NADABAS is a system for compiling national accounts statistics
+using Microsoft Excel, VBA, and SQL Server.
 
----
+## Repository structure
 
-Legg inn beskrivelse av prosjektet her.
+- `vba/` VBA source code exported from Excel
+- `sql/` SQL Server schema and migration scripts
+- `tools/` Python tools for import/export and build automation
+- `docs/` Documentation and installation guides
+- `tests/` Automated tests and validation routines
+
+## Status
+
+Initial repository setup.
