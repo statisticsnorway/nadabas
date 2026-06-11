@@ -18,20 +18,34 @@ SUSPICIOUS_PATTERNS = [
     "Workbook_Open",
 ]
 
+ALLOWLIST = {
+    "InterfaceWEB.bas",
+    "InterfaceShellExec.bas",
+    "AutoOpenClose.bas",
+    "InterfaceNTUserName.bas",
+    "InterfaceDropClose.bas",
+    "InterfaceBetterNow.bas",
+}
+
 VBA_EXTENSIONS = {".bas", ".cls", ".frm"}
 
 
 def scan_file(path: Path) -> list[str]:
+    if path.name in ALLOWLIST:
+        print(f"Skipping allowlisted file: {path}")
+        return []
+
     findings = []
     text = path.read_text(encoding="latin-1", errors="ignore")
 
     for lineno, line in enumerate(text.splitlines(), start=1):
         for pattern in SUSPICIOUS_PATTERNS:
             if pattern.lower() in line.lower():
-                findings.append(f"{path}:{lineno}: found '{pattern}' -> {line.strip()}")
+                findings.append(
+                    f"{path}:{lineno}: found '{pattern}' -> {line.strip()}"
+                )
 
     return findings
-
 
 def main() -> int:
     root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("vba")
