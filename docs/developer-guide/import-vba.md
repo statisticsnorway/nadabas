@@ -1,16 +1,3 @@
----
-jupyter:
-  jupytext:
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.3'
-  kernelspec:
-    display_name: Python 3 (ipykernel)
-    language: python
-    name: python3
----
-
 # Import VBA into an XLAM
 
 `tools/import_vba.py` builds a new NADABAS add-in from an existing `.xlam`
@@ -48,7 +35,7 @@ python tools/import_vba.py C:\path\to\NADABAS.xlam `
 
 Use `--force` only when an existing output file may be replaced. The importer
 works on a temporary copy and moves it to the output path only after Excel has
-saved successfully..
+saved successfully.
 
 ## Modules, classes, and UserForms
 
