@@ -10,6 +10,7 @@ dependencies = [
     "dynaconf >=3.2",
     "ipykernel >=6.29",
     "pyarrow >=23.0",
+    "pywin32; sys_platform == 'win32'",
 ]
 
 [dependency-groups]
