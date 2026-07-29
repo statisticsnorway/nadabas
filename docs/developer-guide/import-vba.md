@@ -41,8 +41,8 @@ saved successfully.
 
 For a component already present in the template, the importer replaces only
 its code module. This is intentional: it preserves the controls and binary
-designer state of existing UserForms. It also lets the code-only `.frm` files
-currently stored in this repository be applied safely.
+designer state of existing UserForms unless complete designer replacement is
+requested.
 
 A new standard module can be created from a `.bas` file. A new class or
 UserForm must be a complete export when it relies on VBA attributes or form
@@ -58,6 +58,10 @@ python tools/import_vba.py C:\path\to\NADABAS.xlam `
   --output build\NADABAS-review.xlam `
   --replace-form-designers
 ```
+
+Keep `.bas`, `.cls`, and `.frm` files on CRLF line endings. Excel can interpret
+an LF-only `.frm` as an ordinary standard module. The repository's
+`.gitattributes` and pre-commit configuration enforce the required endings.
 
 ## Suggested GitHub workflow
 

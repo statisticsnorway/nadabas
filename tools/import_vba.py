@@ -20,8 +20,9 @@ import sys
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence
-
+from typing import Any
+from typing import Iterable
+from typing import Sequence
 
 VBEXT_CT_STANDARD_MODULE = 1
 VBEXT_CT_CLASS_MODULE = 2
@@ -36,6 +37,10 @@ ATTRIBUTE_NAME_RE = re.compile(
     r'^\s*Attribute\s+VB_Name\s*=\s*"([^"]+)"\s*$', re.IGNORECASE | re.MULTILINE
 )
 FRX_REFERENCE_RE = re.compile(r'"([^"]+\.frx)"\s*:', re.IGNORECASE)
+USERFORM_BEGIN_RE = re.compile(
+    r"^\s*Begin\s+(?:VB\.UserForm\b|\{C62A69F0-16DC-11CE-9E98-00AA00574A4F\})(?=\s|$)",
+    re.IGNORECASE | re.MULTILINE,
+)
 
 
 class VbaImportError(RuntimeError):
@@ -111,7 +116,7 @@ def _is_complete_export(kind: str, text: str) -> bool:
     first = next((line.strip() for line in text.splitlines() if line.strip()), "")
     if kind == "form":
         return first.upper().startswith("VERSION ") and bool(
-            re.search(r"^\s*Begin\s+VB\.UserForm\b", text, re.IGNORECASE | re.MULTILINE)
+            USERFORM_BEGIN_RE.search(text)
         )
     if kind == "class":
         return first.upper().startswith("VERSION ")
@@ -129,7 +134,9 @@ def _extract_code(path: Path, kind: str, text: str) -> str:
 
     lines = text.splitlines()
     attribute_indexes = [
-        index for index, line in enumerate(lines) if line.lstrip().lower().startswith("attribute ")
+        index
+        for index, line in enumerate(lines)
+        if line.lstrip().lower().startswith("attribute ")
     ]
     if attribute_indexes:
         code_lines = lines[max(attribute_indexes) + 1 :]
@@ -138,7 +145,9 @@ def _extract_code(path: Path, kind: str, text: str) -> str:
             f"Complete UserForm export has no Attribute block; cannot isolate code safely: {path}"
         )
     else:
-        code_lines = [line for line in lines if not line.strip().upper().startswith("VERSION ")]
+        code_lines = [
+            line for line in lines if not line.strip().upper().startswith("VERSION ")
+        ]
 
     while code_lines and not code_lines[0].strip():
         code_lines.pop(0)
@@ -170,7 +179,9 @@ def parse_source(path: Path) -> SourceComponent:
     missing = [sidecar for sidecar in frx_paths if not sidecar.is_file()]
     if missing:
         names = ", ".join(str(sidecar) for sidecar in missing)
-        raise VbaImportError(f"Missing UserForm binary sidecar(s) referenced by {path}: {names}")
+        raise VbaImportError(
+            f"Missing UserForm binary sidecar(s) referenced by {path}: {names}"
+        )
 
     return SourceComponent(
         path=path,
@@ -206,7 +217,9 @@ def discover_sources(source_root: str | Path) -> tuple[SourceComponent, ...]:
             )
         seen[key] = source.path
 
-    return tuple(sorted(sources, key=lambda item: (KIND_ORDER[item.kind], item.name.casefold())))
+    return tuple(
+        sorted(sources, key=lambda item: (KIND_ORDER[item.kind], item.name.casefold()))
+    )
 
 
 def _expected_type(source: SourceComponent) -> int:
@@ -253,16 +266,24 @@ def plan_import(
                     f"UserForm {source.name} is not present in the template and {source.path} "
                     "is code-only. Export the complete .frm and its .frx file from Excel first."
                 )
-            if source.kind == "class" and not source.complete_export and re.search(
-                r"^\s*Attribute\s+VB_PredeclaredId\s*=\s*True\s*$",
-                _read_vba_text(source.path),
-                re.IGNORECASE | re.MULTILINE,
+            if (
+                source.kind == "class"
+                and not source.complete_export
+                and re.search(
+                    r"^\s*Attribute\s+VB_PredeclaredId\s*=\s*True\s*$",
+                    _read_vba_text(source.path),
+                    re.IGNORECASE | re.MULTILINE,
+                )
             ):
                 raise VbaImportError(
                     f"New class {source.name} requires VB_PredeclaredId=True, but {source.path} "
                     "is not a complete class export. Export the complete .cls from Excel first."
                 )
-            operation = "import-component" if source.complete_export else "create-code-component"
+            operation = (
+                "import-component"
+                if source.complete_export
+                else "create-code-component"
+            )
         actions.append(ImportAction(operation=operation, source=source))
 
     return tuple(actions)
@@ -270,7 +291,9 @@ def plan_import(
 
 def _load_com_modules() -> tuple[Any, Any]:
     if sys.platform != "win32":
-        raise VbaImportError("VBA import requires Windows with Microsoft Excel installed.")
+        raise VbaImportError(
+            "VBA import requires Windows with Microsoft Excel installed."
+        )
     try:
         import pythoncom  # type: ignore[import-not-found]
         import win32com.client  # type: ignore[import-not-found]
@@ -307,12 +330,37 @@ def _replace_component_code(component: Any, code: str) -> None:
     if code:
         code_module.AddFromString(code)
 
+    expected = _normalise_newlines(code).rstrip()
+
+    def current_text() -> str:
+        count = int(code_module.CountOfLines)
+        if not count:
+            return ""
+        return _normalise_newlines(str(code_module.Lines(1, count))).rstrip()
+
+    actual = current_text()
+    # Excel can append a standalone "()" after inserting conditional Win32 API
+    # declarations through AddFromString.  Remove only that exact extra line.
+    if actual.endswith("\n()") and actual.removesuffix("\n()").rstrip() == expected:
+        for line_number in range(int(code_module.CountOfLines), 0, -1):
+            if str(code_module.Lines(line_number, 1)).strip():
+                code_module.DeleteLines(line_number, 1)
+                break
+        actual = current_text()
+
+    if actual != expected:
+        raise VbaImportError(
+            f"Excel changed code while updating component {component.Name!r}."
+        )
+
 
 def _apply_actions(project: Any, actions: Sequence[ImportAction]) -> None:
     for action in actions:
         source = action.source
         if action.operation == "replace-code":
-            _replace_component_code(_component_by_name(project, source.name), source.code)
+            _replace_component_code(
+                _component_by_name(project, source.name), source.code
+            )
         elif action.operation == "replace-component":
             project.VBComponents.Remove(_component_by_name(project, source.name))
             imported = project.VBComponents.Import(str(source.path))
@@ -354,7 +402,9 @@ def _get_unprotected_project(workbook: Any) -> Any:
             "project object model' in Excel Trust Center, then try again."
         ) from exc
     if protection != VBEXT_PP_NONE:
-        raise VbaImportError("The VBA project is locked. Unlock it before importing source files.")
+        raise VbaImportError(
+            "The VBA project is locked. Unlock it before importing source files."
+        )
     return project
 
 
@@ -383,7 +433,9 @@ def _validate_paths(
     if output == template:
         raise VbaImportError("Output must be different from the template XLAM.")
     if output.exists() and not force and not dry_run:
-        raise VbaImportError(f"Output already exists (use --force to replace it): {output}")
+        raise VbaImportError(
+            f"Output already exists (use --force to replace it): {output}"
+        )
     return template, output
 
 
@@ -479,7 +531,9 @@ def _print_report(report: ImportReport) -> None:
         print(f"Output: {report.output}")
     print(f"Components: {len(report.actions)}")
     for action in report.actions:
-        print(f"  {action.operation:22} {action.source.name} ({action.source.path.name})")
+        print(
+            f"  {action.operation:22} {action.source.name} ({action.source.path.name})"
+        )
     if not report.dry_run:
         print("Warning: changing VBA invalidates any existing digital signature.")
 
@@ -488,14 +542,25 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Import version-controlled NADABAS VBA sources into a copy of an XLAM."
     )
-    parser.add_argument("template", type=Path, help="Existing NADABAS .xlam used as template")
     parser.add_argument(
-        "--source-root", type=Path, default=Path("vba"), help="VBA source root (default: vba)"
+        "template", type=Path, help="Existing NADABAS .xlam used as template"
+    )
+    parser.add_argument(
+        "--source-root",
+        type=Path,
+        default=Path("vba"),
+        help="VBA source root (default: vba)",
     )
     parser.add_argument("--output", type=Path, help="Output .xlam path")
-    parser.add_argument("--dry-run", action="store_true", help="Validate and show changes only")
-    parser.add_argument("--force", action="store_true", help="Replace an existing output file")
-    parser.add_argument("--visible", action="store_true", help="Show Excel while importing")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Validate and show changes only"
+    )
+    parser.add_argument(
+        "--force", action="store_true", help="Replace an existing output file"
+    )
+    parser.add_argument(
+        "--visible", action="store_true", help="Show Excel while importing"
+    )
     parser.add_argument(
         "--replace-form-designers",
         action="store_true",

@@ -1,14 +1,14 @@
-from pathlib import Path
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 
-from tools.import_vba import (
-    ExistingComponent,
-    VbaImportError,
-    discover_sources,
-    parse_source,
-    plan_import,
-)
-
+from tools.import_vba import ExistingComponent
+from tools.import_vba import VbaImportError
+from tools.import_vba import _is_complete_export
+from tools.import_vba import _replace_component_code
+from tools.import_vba import discover_sources
+from tools.import_vba import parse_source
+from tools.import_vba import plan_import
 
 FIXTURES = Path(__file__).with_name("fixtures")
 
@@ -21,7 +21,8 @@ class ImportVbaTests(unittest.TestCase):
         self.assertEqual(source.kind, "module")
         self.assertTrue(source.complete_export)
         self.assertEqual(
-            source.code, 'Option Explicit\nPublic Sub Run()\n    MsgBox "Hei"\nEnd Sub\n'
+            source.code,
+            'Option Explicit\nPublic Sub Run()\n    MsgBox "Hei"\nEnd Sub\n',
         )
 
     def test_code_only_existing_form_preserves_designer(self) -> None:
@@ -53,6 +54,16 @@ class ImportVbaTests(unittest.TestCase):
         self.assertEqual(actions[0].operation, "replace-component")
         self.assertEqual(source.frx_paths, (path.with_suffix(".frx").resolve(),))
 
+    def test_excel_guid_userform_export_is_complete(self) -> None:
+        text = """VERSION 5.00
+Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} Dialog
+   OleObjectBlob   =   \"Dialog.frx\":0000
+End
+Attribute VB_Name = \"Dialog\"
+"""
+
+        self.assertTrue(_is_complete_export("form", text))
+
     def test_duplicate_component_names_are_rejected(self) -> None:
         with self.assertRaisesRegex(VbaImportError, "Duplicate VBA component"):
             discover_sources(FIXTURES / "duplicates")
@@ -63,6 +74,33 @@ class ImportVbaTests(unittest.TestCase):
         actions = plan_import([source], [ExistingComponent("ThisWorkbook", 100)])
 
         self.assertEqual(actions[0].operation, "replace-code")
+
+    def test_code_replacement_removes_excel_parentheses_artifact(self) -> None:
+        class FakeCodeModule:
+            def __init__(self) -> None:
+                self.lines = ["old"]
+
+            @property
+            def CountOfLines(self) -> int:
+                return len(self.lines)
+
+            def DeleteLines(self, start: int, count: int) -> None:
+                del self.lines[start - 1 : start - 1 + count]
+
+            def AddFromString(self, code: str) -> None:
+                self.lines = code.rstrip().splitlines() + ["", "()"]
+
+            def Lines(self, start: int, count: int) -> str:
+                return "\r\n".join(self.lines[start - 1 : start - 1 + count])
+
+        code_module = FakeCodeModule()
+        component = SimpleNamespace(Name="InterfaceNTUserName", CodeModule=code_module)
+
+        _replace_component_code(component, "Option Explicit\nSub Run()\nEnd Sub\n")
+
+        self.assertEqual(
+            code_module.lines, ["Option Explicit", "Sub Run()", "End Sub", ""]
+        )
 
     def test_component_type_mismatch_is_rejected(self) -> None:
         source = parse_source(FIXTURES / "module" / "Example.bas")

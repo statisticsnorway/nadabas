@@ -47,6 +47,9 @@ skip_gitignore = true
 # See https://github.com/PyCQA/isort/issues/1338 for details
 treat_comments_as_code = ["# %%"]
 
+[tool.black]
+target-version = ["py312"]
+
 [tool.jupytext]
 formats = "ipynb,auto:percent"
 notebook_metadata_filter = "jupytext.text_representation,-jupytext.text_representation.jupytext_version,-widgets,-varInspector"
