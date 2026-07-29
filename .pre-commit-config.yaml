@@ -31,6 +31,13 @@ repos:
         entry: mixed-line-ending
         language: system
         types: [text]
+        exclude: ^vba/.*\.(bas|cls|frm)$
+      - id: mixed-line-ending-vba
+        name: Mixed Line Ending (VBA CRLF)
+        entry: mixed-line-ending
+        language: system
+        files: ^vba/.*\.(bas|cls|frm)$
+        args: ["--fix=crlf"]
 
       # Serialization format checkers
       - id: check-yaml

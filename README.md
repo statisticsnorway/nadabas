@@ -15,6 +15,11 @@ using Microsoft Excel, VBA, and SQL Server.
 
 ## VBA review and XLAM build
 
+Export a complete VBA project from an existing NADABAS add-in with
+`tools/export_vba.py`. See
+[`docs/developer-guide/export-vba.md`](docs/developer-guide/export-vba.md) for
+prerequisites and the release-to-Git workflow.
+
 VBA source can be reviewed through normal GitHub pull requests and imported
 into a copy of the NADABAS add-in with `tools/import_vba.py`. See
 [`docs/developer-guide/import-vba.md`](docs/developer-guide/import-vba.md) for
