@@ -1,85 +1,135 @@
-Attribute VB_Name = "InstallMeAsAddin"
-Option Explicit
-Option Private Module
-
-
-Sub DoInstallAsAddIn()
-Dim AI As AddIn
-Dim isActivated As Boolean
-Dim sFullName As String
-Dim bIsInstalled As Boolean
-Dim sSourceXlam As String
-
-' **********************************************************''''
-' *                                                            *
-'   This is called when hitting the button Install as add-in.  *
-' *                                                            *
-' **************************************************************
-
-' First make sure, if there is an old NADABS.xlam to remove it
-'
-   If ThisWorkbook.Saved = False Then
-        ThisWorkbook.Save             ' start by saving in normal way, to make sure we save any changes during development
-   End If
-   bIsInstalled = False
-   For Each AI In Application.AddIns
-       If UCase(AI.name) = "NADABAS.XLAM" Then
-          bIsInstalled = True
-          AI.Installed = False
-          Kill AI.fullname
-       ElseIf UCase(Left(AI.name, 8)) = "NADABAS." Then
-          Kill AI.fullname
-          MsgBox GetMsg1("M026", AI.fullname), vbOKOnly    ' %1 has been deleted"
-       End If
-   Next AI
-'
-'
-'  now save this one as xlam
-'
-
-  sSourceXlam = ThisWorkbook.path & "\NADABAS.xlam"
-  sFullName = Application.UserLibraryPath & "NADABAS.xlam"
-'  ThisWorkbook.IsAddin = True
-'  ThisWorkbook.SaveAs sFullName, xlOpenXMLAddIn
-'  ThisWorkbook.IsAddin = False
-
-  If Dir(sSourceXlam) = "" Then
-    MsgBox "Error: NADABAS.xlam not found in installation folder.", vbCritical
-    Exit Sub
-  End If
-  
-  FileCopy sSourceXlam, sFullName
-
-'
-  If bIsInstalled = False Then
-    Application.AddIns.Add sFullName, False
-  End If
-'
-'
-' make sure it is activated
-'
-
-
-
-   isActivated = False
-   For Each AI In Application.AddIns
-       If UCase(AI.name) = "NADABAS.XLAM" Then
-                AI.Installed = False
-                DoEvents
-                AI.Installed = True
-                DoEvents
-                isActivated = True
-       End If
-   Next AI
-   
-   
-   
-   If isActivated Then
-      MsgBox GetMsg("M027A") & vbCrLf & GetMsg("M027B"), vbOKCancel     'NADABAS is successfully installed / Restart Excell to complete installation
-   Else
-      MsgBox GetMsg("M028"), vbOKOnly 'To complete installation, restart Excell and activate addin for File/Options/addIns
-   End If
-    ThisWorkbook.Saved = True
-    ThisWorkbook.Close False
-End Sub
-
+Attribute VB_Name = "InstallMeAsAddin"
+Option Explicit
+Option Private Module
+
+Private Const NADABAS_ADDIN_NAME As String = "NADABAS.XLAM"
+
+Private Function WithTrailingBackslash(ByVal folderPath As String) As String
+    If Right$(folderPath, 1) = "\" Then
+        WithTrailingBackslash = folderPath
+    Else
+        WithTrailingBackslash = folderPath & "\"
+    End If
+End Function
+
+Private Function IsSafeNadabasAddInPath( _
+    ByVal candidatePath As String, _
+    ByVal addInFolder As String _
+) As Boolean
+    Dim normalisedCandidate As String
+    Dim normalisedFolder As String
+    Dim filename As String
+    Dim upperName As String
+
+    normalisedCandidate = Replace(candidatePath, "/", "\")
+    normalisedFolder = WithTrailingBackslash(Replace(addInFolder, "/", "\"))
+
+    If Len(normalisedCandidate) <= Len(normalisedFolder) Then Exit Function
+    If StrComp( _
+        Left$(normalisedCandidate, Len(normalisedFolder)), _
+        normalisedFolder, _
+        vbTextCompare _
+    ) <> 0 Then Exit Function
+
+    filename = Mid$(normalisedCandidate, Len(normalisedFolder) + 1)
+    If InStr(filename, "\") > 0 Then Exit Function
+
+    upperName = UCase$(filename)
+    IsSafeNadabasAddInPath = upperName = NADABAS_ADDIN_NAME Or _
+        (Left$(upperName, 8) = "NADABAS." And Right$(upperName, 5) = ".XLAM")
+End Function
+
+Private Sub DeleteInstalledNadabasAddIn( _
+    ByVal candidatePath As String, _
+    ByVal addInFolder As String _
+)
+    If Not IsSafeNadabasAddInPath(candidatePath, addInFolder) Then
+        err.Raise vbObjectError + 6101, "InstallMeAsAddin", _
+            "Refusing to delete an add-in outside the trusted Excel add-in folder: " & _
+            candidatePath
+    End If
+
+    If Len(Dir$(candidatePath, vbNormal Or vbReadOnly Or vbHidden Or vbSystem)) > 0 Then
+        SetAttr candidatePath, vbNormal
+        Kill candidatePath
+    End If
+End Sub
+
+Sub DoInstallAsAddIn()
+    Dim AI As AddIn
+    Dim isActivated As Boolean
+    Dim sFullName As String
+    Dim bIsInstalled As Boolean
+    Dim sSourceXlam As String
+    Dim installedPath As String
+    Dim sourceIsTarget As Boolean
+    Dim upperName As String
+
+    On Error GoTo InstallFailed
+
+    ' This is called when the user selects Install as add-in.
+    If ThisWorkbook.Saved = False Then
+        ThisWorkbook.Save
+    End If
+
+    sSourceXlam = ThisWorkbook.path & "\NADABAS.xlam"
+    sFullName = WithTrailingBackslash(Application.UserLibraryPath) & NADABAS_ADDIN_NAME
+
+    If Dir$(sSourceXlam) = "" Then
+        MsgBox "Error: NADABAS.xlam not found in installation folder.", vbCritical
+        Exit Sub
+    End If
+
+    sourceIsTarget = StrComp(sSourceXlam, sFullName, vbTextCompare) = 0
+    bIsInstalled = False
+
+    For Each AI In Application.AddIns
+        upperName = UCase$(AI.name)
+        If upperName = NADABAS_ADDIN_NAME Then
+            bIsInstalled = True
+            If Not sourceIsTarget Then
+                installedPath = AI.fullname
+                AI.Installed = False
+                DeleteInstalledNadabasAddIn installedPath, Application.UserLibraryPath
+            End If
+        ElseIf Left$(upperName, 8) = "NADABAS." Then
+            installedPath = AI.fullname
+            AI.Installed = False
+            DeleteInstalledNadabasAddIn installedPath, Application.UserLibraryPath
+            MsgBox GetMsg1("M026", installedPath), vbOKOnly    ' The old add-in was deleted.
+        End If
+    Next AI
+
+    If Not sourceIsTarget Then
+        FileCopy sSourceXlam, sFullName
+    End If
+
+    If bIsInstalled = False Then
+        Application.AddIns.Add sFullName, False
+    End If
+
+    isActivated = False
+    For Each AI In Application.AddIns
+        If UCase$(AI.name) = NADABAS_ADDIN_NAME And _
+            StrComp(AI.fullname, sFullName, vbTextCompare) = 0 Then
+            AI.Installed = False
+            DoEvents
+            AI.Installed = True
+            DoEvents
+            isActivated = True
+        End If
+    Next AI
+
+    If isActivated Then
+        MsgBox GetMsg("M027A") & vbCrLf & GetMsg("M027B"), vbOKCancel
+    Else
+        MsgBox GetMsg("M028"), vbOKOnly
+    End If
+
+    ThisWorkbook.Saved = True
+    ThisWorkbook.Close False
+    Exit Sub
+
+InstallFailed:
+    MsgBox "NADABAS add-in installation failed: " & err.Description, vbCritical
+End Sub

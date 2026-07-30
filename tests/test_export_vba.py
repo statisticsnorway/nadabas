@@ -11,6 +11,13 @@ from tools.export_vba import component_relative_path
 
 
 class ExportVbaTests(unittest.TestCase):
+    def test_component_names_remain_ascii_only(self):
+        with self.assertRaisesRegex(VbaExportError, "Unsafe VBA component name"):
+            component_relative_path(
+                "M\N{LATIN SMALL LETTER O WITH STROKE}dul",
+                VBEXT_CT_STANDARD_MODULE,
+            )
+
     def test_component_layout_matches_repository(self) -> None:
         self.assertEqual(
             component_relative_path("Module1", VBEXT_CT_STANDARD_MODULE),

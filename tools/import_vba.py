@@ -33,6 +33,8 @@ MSO_AUTOMATION_SECURITY_FORCE_DISABLE = 3
 
 VBA_SUFFIXES = {".bas", ".cls", ".frm"}
 KIND_ORDER = {"module": 0, "class": 1, "form": 2}
+VERSION_PREFIX = "VERSION "
+COMPONENT_NAME_RE = re.compile(r"[A-Za-z_]\w*\Z", re.ASCII)
 ATTRIBUTE_NAME_RE = re.compile(
     r'^\s*Attribute\s+VB_Name\s*=\s*"([^"]+)"\s*$', re.IGNORECASE | re.MULTILINE
 )
@@ -107,7 +109,7 @@ def _component_kind(path: Path) -> str:
 def _component_name(path: Path, text: str) -> str:
     match = ATTRIBUTE_NAME_RE.search(text)
     name = match.group(1) if match else path.stem
-    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", name):
+    if not COMPONENT_NAME_RE.fullmatch(name):
         raise VbaImportError(f"Invalid VBA component name {name!r} in {path}")
     return name
 
@@ -115,11 +117,11 @@ def _component_name(path: Path, text: str) -> str:
 def _is_complete_export(kind: str, text: str) -> bool:
     first = next((line.strip() for line in text.splitlines() if line.strip()), "")
     if kind == "form":
-        return first.upper().startswith("VERSION ") and bool(
+        return first.upper().startswith(VERSION_PREFIX) and bool(
             USERFORM_BEGIN_RE.search(text)
         )
     if kind == "class":
-        return first.upper().startswith("VERSION ")
+        return first.upper().startswith(VERSION_PREFIX)
     # Exported standard modules legitimately start with Attribute VB_Name.
     return bool(ATTRIBUTE_NAME_RE.search(text))
 
@@ -146,7 +148,9 @@ def _extract_code(path: Path, kind: str, text: str) -> str:
         )
     else:
         code_lines = [
-            line for line in lines if not line.strip().upper().startswith("VERSION ")
+            line
+            for line in lines
+            if not line.strip().upper().startswith(VERSION_PREFIX)
         ]
 
     while code_lines and not code_lines[0].strip():
@@ -230,6 +234,53 @@ def _expected_type(source: SourceComponent) -> int:
     }[source.kind]
 
 
+def _validate_existing_component(
+    source: SourceComponent, current: ExistingComponent
+) -> None:
+    allowed_types = {_expected_type(source)}
+    if source.kind == "class":
+        allowed_types.add(VBEXT_CT_DOCUMENT)
+    if current.component_type not in allowed_types:
+        raise VbaImportError(
+            f"Component type mismatch for {source.name}: source is {source.kind}, "
+            f"but the XLAM component type is {current.component_type}"
+        )
+
+
+def _existing_component_operation(
+    source: SourceComponent,
+    current: ExistingComponent,
+    *,
+    replace_form_designers: bool,
+) -> str:
+    _validate_existing_component(source, current)
+    if source.kind == "form" and replace_form_designers and source.complete_export:
+        return "replace-component"
+    return "replace-code"
+
+
+def _new_component_operation(source: SourceComponent) -> str:
+    if source.kind == "form" and not source.complete_export:
+        raise VbaImportError(
+            f"UserForm {source.name} is not present in the template and {source.path} "
+            "is code-only. Export the complete .frm and its .frx file from Excel first."
+        )
+    if (
+        source.kind == "class"
+        and not source.complete_export
+        and re.search(
+            r"^\s*Attribute\s+VB_PredeclaredId\s*=\s*True\s*$",
+            _read_vba_text(source.path),
+            re.IGNORECASE | re.MULTILINE,
+        )
+    ):
+        raise VbaImportError(
+            f"New class {source.name} requires VB_PredeclaredId=True, but {source.path} "
+            "is not a complete class export. Export the complete .cls from Excel first."
+        )
+    return "import-component" if source.complete_export else "create-code-component"
+
+
 def plan_import(
     sources: Sequence[SourceComponent],
     existing: Iterable[ExistingComponent],
@@ -244,46 +295,13 @@ def plan_import(
     for source in sources:
         current = existing_by_name.get(source.name.casefold())
         if current:
-            allowed_types = {_expected_type(source)}
-            if source.kind == "class":
-                allowed_types.add(VBEXT_CT_DOCUMENT)
-            if current.component_type not in allowed_types:
-                raise VbaImportError(
-                    f"Component type mismatch for {source.name}: source is {source.kind}, "
-                    f"but the XLAM component type is {current.component_type}"
-                )
-            if (
-                source.kind == "form"
-                and replace_form_designers
-                and source.complete_export
-            ):
-                operation = "replace-component"
-            else:
-                operation = "replace-code"
-        else:
-            if source.kind == "form" and not source.complete_export:
-                raise VbaImportError(
-                    f"UserForm {source.name} is not present in the template and {source.path} "
-                    "is code-only. Export the complete .frm and its .frx file from Excel first."
-                )
-            if (
-                source.kind == "class"
-                and not source.complete_export
-                and re.search(
-                    r"^\s*Attribute\s+VB_PredeclaredId\s*=\s*True\s*$",
-                    _read_vba_text(source.path),
-                    re.IGNORECASE | re.MULTILINE,
-                )
-            ):
-                raise VbaImportError(
-                    f"New class {source.name} requires VB_PredeclaredId=True, but {source.path} "
-                    "is not a complete class export. Export the complete .cls from Excel first."
-                )
-            operation = (
-                "import-component"
-                if source.complete_export
-                else "create-code-component"
+            operation = _existing_component_operation(
+                source,
+                current,
+                replace_form_designers=replace_form_designers,
             )
+        else:
+            operation = _new_component_operation(source)
         actions.append(ImportAction(operation=operation, source=source))
 
     return tuple(actions)

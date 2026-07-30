@@ -33,7 +33,7 @@ COMPONENT_LAYOUT = {
     VBEXT_CT_MS_FORM: ("forms", ".frm"),
     VBEXT_CT_DOCUMENT: ("classes", ".cls"),
 }
-COMPONENT_NAME_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z")
+COMPONENT_NAME_RE = re.compile(r"[A-Za-z_]\w*\Z", re.ASCII)
 
 
 class VbaExportError(RuntimeError):
