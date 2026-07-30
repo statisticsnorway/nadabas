@@ -13,10 +13,11 @@ import fnmatch
 import json
 import re
 import sys
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Sequence
-
+from typing import Iterable
+from typing import Sequence
 
 VBA_EXTENSIONS = {".bas", ".cls", ".frm"}
 SEVERITY_RANK = {"info": 1, "warning": 2, "error": 3}
@@ -443,7 +444,9 @@ def _fails(findings: Iterable[Finding], fail_on: str) -> bool:
     )
 
 
-def _print_text(findings: Sequence[Finding], scanned_files: int, show_approved: bool) -> None:
+def _print_text(
+    findings: Sequence[Finding], scanned_files: int, show_approved: bool
+) -> None:
     visible = [finding for finding in findings if show_approved or not finding.approved]
     for finding in visible:
         status = "APPROVED" if finding.approved else finding.severity.upper()
@@ -488,7 +491,9 @@ def _parser() -> argparse.ArgumentParser:
         default="error",
         help="Lowest unapproved severity that returns exit code 1 (default: error)",
     )
-    parser.add_argument("--approvals", type=Path, help="JSON file with narrow approvals")
+    parser.add_argument(
+        "--approvals", type=Path, help="JSON file with narrow approvals"
+    )
     parser.add_argument("--show-approved", action="store_true")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     return parser
@@ -497,7 +502,9 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     if not args.root.is_dir():
-        print(f"ERROR: VBA source directory does not exist: {args.root}", file=sys.stderr)
+        print(
+            f"ERROR: VBA source directory does not exist: {args.root}", file=sys.stderr
+        )
         return 2
     try:
         approvals = load_approvals(args.approvals)
