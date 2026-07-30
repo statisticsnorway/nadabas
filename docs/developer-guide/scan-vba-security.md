@@ -77,6 +77,11 @@ Keep the approval file under version control. The line expression should be as
 narrow as practical so a future change of target or operation becomes a new,
 unapproved finding.
 
+The repository approval file is `tools/vba-security-approvals.json`. GitHub
+Actions loads it explicitly and prints approved operations alongside warnings
+and informational findings. An approval documents reviewed, necessary
+behaviour; it does not disable the rule for other lines or files.
+
 ## Run the tests
 
 ```bash

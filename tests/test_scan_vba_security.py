@@ -1,19 +1,19 @@
 import json
 import re
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr
+from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-from tools.scan_vba_security import (
-    Approval,
-    _fails,
-    load_approvals,
-    main,
-    mask_vba_strings,
-    scan_text,
-    strip_vba_comment,
-)
+from tools.scan_vba_security import Approval
+from tools.scan_vba_security import _fails
+from tools.scan_vba_security import load_approvals
+from tools.scan_vba_security import main
+from tools.scan_vba_security import mask_vba_strings
+from tools.scan_vba_security import scan_text
+from tools.scan_vba_security import scan_tree
+from tools.scan_vba_security import strip_vba_comment
 
 
 class ScanVbaSecurityTests(unittest.TestCase):
@@ -28,7 +28,7 @@ x = 1: Rem Kill target
         self.assertEqual(scan_text("vba/modules/BatchRun.bas", source), [])
 
     def test_apostrophe_inside_string_is_preserved(self):
-        line = 'message = "Bob\'s file" \' ordinary comment'
+        line = "message = \"Bob's file\" ' ordinary comment"
 
         self.assertEqual(strip_vba_comment(line), 'message = "Bob\'s file"')
 
@@ -93,7 +93,7 @@ objServices.Create("dropbox.exe"), Null, Null, processId
     def test_shell_execute_call_is_a_warning(self):
         findings = scan_text(
             "vba/forms/frmOpenDocuments.frm",
-            "result = ShellExecute(0, \"open\", file, vbNullString, path, 1)",
+            'result = ShellExecute(0, "open", file, vbNullString, path, 1)',
         )
 
         self.assertEqual([finding.rule_id for finding in findings], ["shell-execute"])
@@ -126,8 +126,10 @@ objServices.Create("dropbox.exe"), Null, Null, processId
         self.assertFalse(other_path.approved)
 
     def test_fail_threshold_ignores_approved_findings(self):
-        info = scan_text("vba/classes/Example.cls", "Declare Function Beep Lib \"x\" ()")[0]
-        warning = scan_text("vba/modules/Example.bas", "SendKeys \"x\"")[0]
+        info = scan_text("vba/classes/Example.cls", 'Declare Function Beep Lib "x" ()')[
+            0
+        ]
+        warning = scan_text("vba/modules/Example.bas", 'SendKeys "x"')[0]
         error = scan_text("vba/modules/Example.bas", "Kill target")[0]
 
         self.assertFalse(_fails([info, warning], "error"))
@@ -152,6 +154,30 @@ objServices.Create("dropbox.exe"), Null, Null, processId
 
 
 class ApprovalFileTests(unittest.TestCase):
+    def test_repository_approvals_cover_all_reviewed_errors(self):
+        approvals = load_approvals(Path("tools/vba-security-approvals.json"))
+
+        findings, scanned_files = scan_tree(Path("vba"), approvals=approvals)
+        unapproved_errors = [
+            finding
+            for finding in findings
+            if finding.severity == "error" and not finding.approved
+        ]
+        approved = [finding for finding in findings if finding.approved]
+
+        self.assertGreater(scanned_files, 0)
+        self.assertEqual(unapproved_errors, [])
+        self.assertEqual(
+            {(finding.path, finding.rule_id) for finding in approved},
+            {
+                (
+                    "vba/modules/DropBoxINterface.bas",
+                    "process-terminate",
+                ),
+                ("vba/modules/InstallMeAsAddin.bas", "file-delete"),
+            },
+        )
+
     def test_approval_file_requires_a_reason(self):
         path = Path("approval-without-reason.json")
         payload = {

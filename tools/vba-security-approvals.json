@@ -1,0 +1,16 @@
+{
+  "approvals": [
+    {
+      "path": "vba/modules/DropBoxINterface.bas",
+      "rule_id": "process-terminate",
+      "line_regex": "^\\s*terminateResult\\s*=\\s*Process\\.Terminate\\s*$",
+      "reason": "The user-selected batch option stops only processes named Dropbox.exe after validating a restart command; the WMI result and final process state are checked before restart state is recorded."
+    },
+    {
+      "path": "vba/modules/InstallMeAsAddin.bas",
+      "rule_id": "file-delete",
+      "line_regex": "^\\s*Kill\\s+candidatePath\\s*$",
+      "reason": "The private installer helper rejects paths outside Application.UserLibraryPath and accepts only direct-child NADABAS XLAM filenames before deleting an obsolete add-in."
+    }
+  ]
+}
