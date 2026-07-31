@@ -1,1 +1,0 @@
-Sitemap: https://statisticsnorway.github.io/nadabas/sitemap.xml
