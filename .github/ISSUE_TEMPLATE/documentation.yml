@@ -1,0 +1,36 @@
+name: Documentation improvement
+description: Report missing, unclear, incorrect, or outdated documentation.
+title: "[Docs]: "
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same documentation gap.
+          required: true
+        - label: I have not included sensitive or production data.
+          required: true
+  - type: input
+    id: location
+    attributes:
+      label: Page or section
+      description: Link to the page or name the file and heading.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is unclear or incorrect?
+    validations:
+      required: true
+  - type: textarea
+    id: improvement
+    attributes:
+      label: Suggested improvement
+      description: Explain what the reader should learn or be able to do.
+  - type: input
+    id: version
+    attributes:
+      label: NADABAS version
+      description: Include the affected version when the documentation is version-specific.

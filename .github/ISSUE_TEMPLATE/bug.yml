@@ -1,0 +1,72 @@
+name: Bug report
+description: Report reproducible incorrect behaviour in NADABAS.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. Do not include credentials,
+        production data, personal data, or vulnerability details. Use private
+        vulnerability reporting for security issues.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for the same problem.
+          required: true
+        - label: This report does not disclose a security vulnerability.
+          required: true
+        - label: I removed sensitive and production data from the report.
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: NADABAS version
+      description: Include the version shown by NADABAS and, if known, the commit.
+      placeholder: "For example: 6.01.001"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Excel or VBA user interface
+        - Import or export tooling
+        - Database or SQL
+        - Batch processing
+        - Security scanning
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the observed and expected behaviour.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Use a non-production example and include the smallest reliable sequence.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Run ...
+        4. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include relevant Windows, Excel, database, and Python versions.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs or other evidence
+      description: Paste sanitized text where possible; remove paths, credentials, and data.
