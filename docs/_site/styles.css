@@ -1,0 +1,24 @@
+:root {
+  --nadabas-blue: #005b82;
+  --nadabas-light-blue: #e8f3f7;
+}
+
+.sidebar-title {
+  color: var(--nadabas-blue);
+  font-weight: 700;
+}
+
+.quarto-title h1,
+h1,
+h2 {
+  color: var(--nadabas-blue);
+}
+
+.callout-note {
+  border-left-color: var(--nadabas-blue);
+}
+
+.callout-note .callout-header {
+  background-color: var(--nadabas-light-blue);
+}
+

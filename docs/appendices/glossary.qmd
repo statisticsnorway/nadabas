@@ -1,0 +1,15 @@
+---
+title: Glossary
+---
+
+This glossary will grow as the technical draft is verified and migrated.
+
+| Term | Meaning |
+|---|---|
+| NADABAS | National Accounts Database System. |
+| Add-in | The Excel artifact that hosts the NADABAS VBA project. |
+| Exported VBA | Text-based `.bas`, `.cls`, `.frm`, and related `.frx` files stored under `vba/`. |
+| Source of truth | The version-controlled representation from which a review or build is performed. For VBA, this is the exported source below `vba/`. |
+| Review build | A non-production add-in created from reviewed source for functional verification. |
+| Security approval | A narrow, version-controlled exception for one expected scanner finding; it is not a general suppression. |
+| ADR | Architecture Decision Record. |

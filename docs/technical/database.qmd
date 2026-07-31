@@ -1,0 +1,37 @@
+---
+title: Database design
+---
+
+::: {.callout-warning title="Outline"}
+The database material from the technical draft has not yet been verified
+against supported schemas and migrations.
+:::
+
+## Purpose
+
+Document the database structures and invariants that NADABAS relies on without
+including production data or credentials.
+
+## Planned content
+
+- supported database platforms and versions;
+- logical schema and naming conventions;
+- system tables, data tables, keys, and relationships;
+- connection lifecycle and configuration sources;
+- validation performed by the database versus validation performed in VBA;
+- transaction, concurrency, backup, restore, and migration expectations;
+- compatibility rules between database and NADABAS versions.
+
+## Review questions
+
+- Which schema definition is authoritative and version controlled?
+- Which constraints are enforced by the database?
+- Which invariants currently depend on application code?
+- How are credentials supplied without being stored in source or documentation?
+- What recovery steps are required after an interrupted write or migration?
+
+## Definition of done
+
+Every table and field described here must be traceable to a supported schema or
+a documented observation from a non-production environment. Unverified legacy
+behaviour must be labelled as such and tracked in an issue.

@@ -1,0 +1,30 @@
+---
+title: Excel and VBA integration
+---
+
+::: {.callout-warning title="Outline"}
+This page is a map for future documentation, not a complete interface contract.
+:::
+
+## Purpose
+
+Explain how the NADABAS add-in interacts with Excel, registered workbooks,
+documents, UserForms, events, and the VBA project object model.
+
+## Planned content
+
+- add-in startup and shutdown events;
+- workbook and document registration;
+- ribbon commands and UserForm entry points;
+- load and save sequences;
+- event handling and global state;
+- import/export tooling and CRLF requirements;
+- macro security, signing, and Trust Center prerequisites;
+- functional verification that cannot run in GitHub Actions.
+
+## Source-of-truth rule
+
+The files below `vba/` are the version-controlled source. Excel add-ins and
+workbooks are build or release artifacts. A behavioural description is complete
+only when it references the relevant exported component and a repeatable test or
+manual verification step.

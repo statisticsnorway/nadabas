@@ -1,0 +1,38 @@
+---
+title: System architecture
+---
+
+::: {.callout-warning title="Outline"}
+This page defines the documentation scope. It is not yet a complete or verified
+architecture description.
+:::
+
+## Purpose
+
+Describe how Excel, the NADABAS VBA add-in, workbooks, the database, the Windows
+registry, file storage, and external interfaces cooperate at runtime.
+
+## Planned content
+
+- system context and supported deployment variants;
+- component responsibilities and trust boundaries;
+- startup, authentication, and connection lifecycle;
+- principal data flows for load, save, classification, correspondence, and
+  batch processing;
+- failure boundaries and recovery behaviour;
+- current VBA architecture and the seams intended for gradual .NET migration.
+
+## Evidence required
+
+The final page must be checked against the exported modules, classes, and forms
+below `vba/`. Security-sensitive flows must also be checked against the security
+scanner and operational configuration. Architecture diagrams should be stored
+as Mermaid source where practical.
+
+## Definition of done
+
+- Every component in the diagram has an owner and a linked reference page.
+- Data stores and trust boundaries are explicit.
+- No credentials, production paths, or environment-specific secrets appear in
+  examples.
+- The description names the NADABAS versions it has been verified against.

@@ -1,0 +1,25 @@
+---
+title: Development guide
+---
+
+This section collects workflows for changing NADABAS safely.
+
+## Current guides
+
+- [Getting started](../developer-guide/getting-started.md)
+- [Export VBA](../developer-guide/export-vba.md)
+- [Import VBA](../developer-guide/import-vba.md)
+- [Scan VBA security](../developer-guide/scan-vba-security.md)
+- [Contribution guidelines](https://github.com/statisticsnorway/nadabas/blob/creation/CONTRIBUTING.md)
+
+## Planned guides
+
+- functional Excel test checklist;
+- documentation style and verification;
+- release build, signing, and publication;
+- database migration testing;
+- compatibility and deprecation policy;
+- safe boundaries for gradual .NET components.
+
+Development documentation must use commands that are exercised in CI or have a
+clearly documented Windows/Excel-only verification procedure.

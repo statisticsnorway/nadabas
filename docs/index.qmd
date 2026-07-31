@@ -1,0 +1,53 @@
+---
+title: NADABAS technical documentation
+---
+
+NADABAS is the National Accounts Database System used to compile national
+accounts statistics with Microsoft Excel, VBA, and SQL Server.
+
+This documentation is maintained with the source code. Changes are reviewed in
+GitHub pull requests and are expected to describe the versioned behaviour of
+the repository.
+
+::: {.callout-note title="Documentation foundation"}
+The current site is an initial structure. Existing developer workflows are
+usable; architecture, database, reference, and operations sections are outlines
+that will be filled only after their content has been checked against the
+version-controlled source and supported NADABAS environments.
+:::
+
+## Start here
+
+- [Getting started](developer-guide/getting-started.md) introduces the source
+  layout and local validation workflow.
+- [Export VBA](developer-guide/export-vba.md) explains how to create a complete
+  text-based export from an Excel add-in.
+- [Import VBA](developer-guide/import-vba.md) explains how to build a review
+  add-in from the version-controlled source.
+- [VBA security scanning](developer-guide/scan-vba-security.md) explains the
+  scanner, severity model, and narrow approval process.
+- [Contributing](https://github.com/statisticsnorway/nadabas/blob/creation/CONTRIBUTING.md)
+  defines the complete contribution and pull request workflow.
+
+## Explore the system
+
+- [Architecture](technical/architecture.qmd) describes the intended component
+  and data-flow documentation.
+- [Database](technical/database.qmd) defines the database documentation scope.
+- [Excel integration](technical/excel-integration.qmd) defines the boundary
+  between Excel, VBA, and external services.
+- [Reference](reference/index.qmd) will provide exact, source-verified component
+  and interface details.
+- [Operations](operations/index.qmd) will cover administration, diagnostics,
+  backup, restore, and release activities.
+
+## Documentation roadmap
+
+The first documentation increment establishes a searchable, reviewable book
+around the existing developer guides. Later increments will add the system
+architecture, database design, Excel integration, component reference,
+operations, and release documentation after each section has been verified
+against the exported VBA source and supported database versions.
+
+Incomplete material should be tracked as a GitHub issue rather than left as an
+unowned placeholder in published documentation.

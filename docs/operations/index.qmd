@@ -1,0 +1,22 @@
+---
+title: Operations and administration
+---
+
+::: {.callout-warning title="Outline"}
+Operational procedures require review by a maintainer with access to a safe,
+non-production NADABAS environment before they are treated as instructions.
+:::
+
+## Planned content
+
+- installation and supported configuration;
+- administrator roles and permissions;
+- connection diagnostics and logging;
+- backup and restore;
+- batch monitoring and recovery;
+- release deployment and signature verification;
+- incident handling and rollback;
+- known limitations and escalation routes.
+
+Examples must use synthetic values. Credentials, internal endpoints, production
+paths, and personal or statistical production data do not belong in this site.
