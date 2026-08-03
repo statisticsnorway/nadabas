@@ -1,0 +1,142 @@
+---
+title: Lifecycle and user interface
+description: Startup, application events, ribbon state, forms, and global session objects.
+---
+
+::: {.callout-note title="Evidence"}
+Unless marked otherwise, statements on this page are **source-verified** at
+`3b4c05386e5a44d05633136ecbcf5dd067f70435`. Excel behaviour still requires a
+runtime test.
+:::
+
+## Startup and shutdown
+
+[`auto_open`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/AutoOpenClose.bas#L26)
+is the add-in startup entry point.
+
+```{mermaid}
+sequenceDiagram
+  participant Excel
+  participant Startup as "AutoOpenClose.auto_open"
+  participant Language as "MultiLang"
+  participant Events as "AppEvents"
+  participant State as "Globals and RibbonUI"
+  participant Registry as "InterfaceRegistry"
+
+  Excel->>Startup: Open NADABAS workbook or add-in
+  Startup->>Language: LoadLanguage
+  Startup->>Startup: Detect add-in or developer-file mode
+  Startup->>Events: Create and bind AppEvents to Application
+  Startup->>State: Initialize sleeping state, collections, DB objects, settings
+  Startup->>Registry: GetDBSettings and GetSatelliteSettings
+  Startup->>State: Reset menu, batch, year, and conversion flags
+```
+
+The source performs these steps:
+
+1. Load localized text collections.
+2. Set add-in/development-mode flags and, for a NADABAS workbook opened as a
+   normal file, disable an installed NADABAS add-in to reduce conflicts.
+3. Show the language dialog when running as a normal development file.
+4. Create `AppEvents` and bind its `App` member to Excel's `Application`.
+5. Mark NADABAS as sleeping; create `WBDataColl`, `BaseDb`, `ExchDB`, and user
+   settings; clear administrator and false-user state.
+6. Load base and satellite database definitions from the Windows registry.
+7. Reset menu selection, batch, year, and file-conversion flags.
+
+[`auto_close`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/AutoOpenClose.bas#L101)
+is an empty placeholder. Explicit shutdown cleanup, persistence, and connection
+release beyond normal Excel/VBA object teardown are therefore **unknown**.
+
+## Application events
+
+[`AppEvents.cls`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/classes/AppEvents.cls)
+subscribes to Excel application events.
+
+| Event | Source behaviour | Runtime checks still required |
+|---|---|---|
+| `App_NewWorkbook` | Adds a `clsWBData` entry keyed by full workbook name. | Duplicate and unsaved-workbook names. |
+| `App_WorkbookOpen` | Adds or reuses workbook state; scans `DBLinks` and optional `ExchLinks`; when a database is active, matches registered workbook name and path and applies read-only/protection state. | Permissions, reservations, path casing, and externally opened files. |
+| `App_WorkbookActivate` | Selects current workbook state, invalidates the ribbon, finds `DBLinks`, and hides template sheets for non-administrators. | Multi-window and protected-workbook behaviour. |
+| `App_SheetChange` | If active and change tracking is enabled, finds workbook state and marks it dirty only when `wbExchHasPut` is true. | Whether base-database `PUTDB` changes should also mark dirty. |
+| `App_WorkbookBeforeClose` | Removes session state, optionally tests dirty data, may offer to free the current user's reservation, and turns tracing off for a trace workbook. | Cancelled close, error paths, and settings combinations. |
+| `App_WorkbookBeforeSave` | Removes the workbook password for Save As, optionally saves descriptions, blocks protected workbook saves, and clears session dirty state. | Failed save and password-policy behaviour. |
+| `App_WorkbookAfterSave` | When the full name changed, rekeys `clsWBData` and marks the saved-as workbook unregistered. | Save As failure and concurrent event order. |
+
+::: {.callout-warning title="Dirty-state verification point"}
+The retained draft described change tracking as applying to a workbook that
+saves data. The exported handler specifically tests `wbExchHasPut`, not
+`wbHasPut`. This may be intentional exchange-only behaviour or a defect. Do not
+generalize it in requirements until an Excel test and maintainer decision are
+recorded.
+:::
+
+## Ribbon state and callbacks
+
+[`RibbonUI.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/RibbonUI.bas)
+must keep its module name because ribbon XML refers to it. It maintains the
+`IRibbonUI` reference, current workbook state, the `WBDataColl` collection, and
+callbacks used by Excel.
+
+Callback responsibilities fall into three groups:
+
+| Group | Examples | Responsibility |
+|---|---|---|
+| State callbacks | `Enabled...`, `Visible...`, `...State` | Decide whether a control is enabled, visible, or pressed from database, administrator, workbook, and named-range state. |
+| Text callbacks | `CommonGetLabel` | Resolve translated labels from the ribbon language collection. |
+| Action callbacks | `...Click`, `LoadData`, `SaveData`, `OpenCloseDB` | Capture the active workbook where needed and dispatch to command modules or forms. |
+
+`SetNadabasIsSleeping`, `SetCurrentWBData`, and collection update routines call
+`DoInvalidateIf`, which asks Excel to redraw ribbon state. `TestGetAndPut` and
+`TestExchGetAndPut` scan the last column of the relevant named range. Recognized
+load modes include `GETDB`, `GETTEMP`, `GETINFO`, and `LOADDB`; `PUTDB` enables
+save capability; `MIXED` enables both.
+
+## Session state
+
+The most widely shared state is declared in
+[`Globals.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/Globals.bas).
+
+| Variable | Type or role | Meaning |
+|---|---|---|
+| `NadabasIsSleeping` | Boolean | No database is active; change through `SetNadabasIsSleeping` so the ribbon is invalidated. |
+| `WBDataColl` | `Collection` of `clsWBData` | Per-open-workbook UI and workflow state, keyed by full name. |
+| `Databases` | `Collection` of `clsDB` | Base database definitions loaded from the registry. |
+| `SatelliteDBs` | `Collection` of `clsDB` | Optional satellite definitions loaded from the registry. |
+| `CurrentDB` | `clsDB` | Database currently used by shared routines. |
+| `BaseDb`, `ExchDB`, `SatelliteDB` | `clsDB` | Database-role objects. |
+| `Usersettings` | `clsUserSettings` | Settings loaded from or saved to the current database. |
+| `isAdministrator` | Boolean | Result of the administrator-table check for the current user. |
+| `DescriptionRange`, `DBGlobalsRange` | Excel `Range` | Named-range pointers used by description and global-value workflows. |
+| `NADABASISNOTADDIN`, `NADABASINADDINMODE` | Boolean | Development-file and add-in-mode flags. |
+
+`clsWBData` records the full workbook name, named-range capabilities,
+registration, reservation, transfer/export, read-only/protected state, and the
+NADABAS dirty flag. It is session state, not an authoritative replacement for
+the `Workbooks` table or Excel's own saved state.
+
+## Forms and module conventions
+
+The export shows useful conventions, but they are not absolute API rules:
+
+| Prefix | Observed role |
+|---|---|
+| `dlg` | Modal dialogs for selection, confirmation, input, or status. |
+| `frm` | Functional forms, commonly paired with a `cmd...` module. |
+| `Splash` | Modeless progress or status forms used during long operations. |
+| `uf` | UserForms used by legacy workbook-conversion flows. |
+| `cmd` | Ribbon-facing command and orchestration modules. |
+| `Interface` | Windows, file, registry, shell, web, or dialog integration. |
+| `cls` | Domain, state, data-access, settings, or UI helper classes. |
+
+Form behaviour may live in both the `.frm` file and its invoking module. Binary
+`.frx` resources must remain paired with their `.frm` source during export,
+review, and import.
+
+## Active workbook references
+
+Many command procedures copy `Application.ActiveWorkbook` or a helper result
+into a local `awb` variable and pass it onward. This reduces reliance on a
+global active-workbook value changing while forms, add-in windows, or newly
+opened workbooks receive focus. It is a convention, not a guarantee: reviewers
+should still trace every workflow that opens or activates another workbook.

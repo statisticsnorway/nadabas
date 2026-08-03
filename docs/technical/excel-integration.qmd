@@ -2,8 +2,10 @@
 title: Excel and VBA integration
 ---
 
-::: {.callout-warning title="Outline"}
-This page is a map for future documentation, not a complete interface contract.
+::: {.callout-note title="Detailed documentation available"}
+The source-verified implementation detail is now maintained in the
+[VBA internals](../vba/index.qmd) section. This page defines the boundary and
+remaining verification work.
 :::
 
 ## Purpose
@@ -11,16 +13,18 @@ This page is a map for future documentation, not a complete interface contract.
 Explain how the NADABAS add-in interacts with Excel, registered workbooks,
 documents, UserForms, events, and the VBA project object model.
 
-## Planned content
+## Detailed pages
 
-- add-in startup and shutdown events;
-- workbook and document registration;
-- ribbon commands and UserForm entry points;
-- load and save sequences;
-- event handling and global state;
-- import/export tooling and CRLF requirements;
-- macro security, signing, and Trust Center prerequisites;
-- functional verification that cannot run in GitHub Actions.
+- [Lifecycle and user interface](../vba/lifecycle-and-ui.qmd)
+- [Workbooks and data movement](../vba/workbooks-and-data.qmd)
+- [Database access and schema](../vba/database-access.qmd)
+- [Domain workflows and administration](../vba/domain-and-administration.qmd)
+- [Localization and component reference](../vba/localization-and-components.qmd)
+- [Legacy draft coverage](../vba/legacy-draft-coverage.qmd)
+
+Runtime verification remains necessary for macro security, signing, Trust
+Center prerequisites, supported Office versions, and behaviour that cannot run
+in GitHub Actions.
 
 ## Source-of-truth rule
 

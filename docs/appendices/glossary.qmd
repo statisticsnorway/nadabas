@@ -23,3 +23,9 @@ This glossary will grow as the technical draft is verified and migrated.
 | Satellite database | An optional database role linked through configuration to a base database. |
 | Source-verified | Directly supported by exported source at the stated commit; runtime behaviour may still require testing. |
 | Trust boundary | A point where data or control crosses between components with different security or operational assumptions. |
+| DBLinks | A workbook named range whose rows define database load and save operations. |
+| ExchLinks | A workbook named range used by exchange-database import and export operations. |
+| Key family | A user-defined set of dimensions represented by a database table with value and provenance columns. |
+| Dirty state | NADABAS session state indicating data may need a database save; separate from Excel's file-saved state. |
+| Base path | The configured root used to resolve portable paths beginning with `!`. |
+| Legacy draft | A statement inherited from the retained Word draft that is not established by the current source baseline. |

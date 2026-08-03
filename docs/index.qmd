@@ -10,10 +10,10 @@ GitHub pull requests and are expected to describe the versioned behaviour of
 the repository.
 
 ::: {.callout-note title="Documentation foundation"}
-The architecture section now provides a source-verified baseline and evidence
-register. Database, reference, and operations sections remain outlines that
-will be filled only after their content has been checked against the
-version-controlled source and supported NADABAS environments.
+The architecture section provides a source-verified baseline and evidence
+register. The VBA internals section migrates the retained technical draft into
+reviewable, source-linked pages. Environment-specific behaviour still requires
+testing in supported NADABAS installations.
 :::
 
 ## Start here
@@ -26,13 +26,15 @@ version-controlled source and supported NADABAS environments.
   add-in from the version-controlled source.
 - [VBA security scanning](developer-guide/scan-vba-security.md) explains the
   scanner, severity model, and narrow approval process.
-- [Contributing](https://github.com/statisticsnorway/nadabas/blob/creation/CONTRIBUTING.md)
+- [Contributing](https://github.com/statisticsnorway/nadabas/blob/main/CONTRIBUTING.md)
   defines the complete contribution and pull request workflow.
 
 ## Explore the system
 
 - [Architecture](technical/architecture.qmd) describes the current system
   boundary, components, data flows, and trust boundaries.
+- [VBA internals](vba/index.qmd) explains startup, Excel events, workbooks,
+  database access, domain workflows, administration, and localization.
 - [International review and localization](development/international-review.qmd)
   defines a traceable review protocol for multi-country and multilingual use.
 - [Database](technical/database.qmd) defines the database documentation scope.
@@ -45,10 +47,9 @@ version-controlled source and supported NADABAS environments.
 
 ## Documentation roadmap
 
-The current increment adds the system architecture and international review
-method. Later increments will add database design, Excel integration, component
-reference, operations, and release documentation after each section has been
-verified against the exported VBA source and supported database versions.
+The current increment adds source-linked VBA internals and a coverage register
+for the retained technical draft. Later increments will add runtime evidence,
+supported-platform details, operations, and release documentation.
 
 Incomplete material should be tracked as a GitHub issue rather than left as an
 unowned placeholder in published documentation.

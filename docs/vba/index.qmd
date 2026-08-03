@@ -1,0 +1,119 @@
+---
+title: VBA internals
+description: Source-linked guide to the NADABAS VBA implementation.
+---
+
+::: {.callout-important title="Review baseline"}
+This section was checked against exported VBA at commit
+`3b4c05386e5a44d05633136ecbcf5dd067f70435`. The retained technical draft was
+used as a coverage checklist, not as proof of behaviour. Static source review
+does not replace testing in Excel with a supported database and representative,
+non-production workbooks.
+:::
+
+## Purpose and audience
+
+NADABAS is an Excel add-in implemented in Visual Basic for Applications (VBA).
+It coordinates data movement between Excel workbooks and configured databases,
+and provides workbook, classification, correspondence, batch, document, and
+administrative workflows.
+
+These pages are intended for maintainers, reviewers, database administrators,
+security reviewers, and developers preparing a gradual migration. Familiarity
+with Excel and basic VBA is assumed. Installation and ordinary end-user
+instructions belong in separate guides.
+
+## Evidence labels
+
+| Label | Meaning |
+|---|---|
+| **Source-verified** | Directly supported by exported source at the baseline commit. Runtime behaviour may still require testing. |
+| **Environment-dependent** | Implemented in source, but the outcome depends on Office, Windows, drivers, database configuration, permissions, or files. |
+| **Legacy-draft** | Present in the retained draft but not established by the current source. |
+| **Unknown** | Evidence is insufficient; do not treat the statement as established behaviour. |
+
+## System map
+
+```{mermaid}
+flowchart LR
+  user["User or administrator"]
+  subgraph excel["Microsoft Excel process"]
+    ribbon["Ribbon and UserForms"]
+    events["Application events"]
+    commands["Command and workflow modules"]
+    model["Globals and class modules"]
+    workbook["Workbook named ranges and cells"]
+    access["ADO and ADOX data access"]
+  end
+  registry[("Windows user registry")]
+  database[("Base, exchange, or satellite database")]
+  files[("Local or shared files")]
+
+  user --> ribbon
+  ribbon --> commands
+  events --> commands
+  commands <--> workbook
+  commands <--> model
+  commands --> access
+  access <--> database
+  model <--> registry
+  commands <--> files
+```
+
+**Diagram description.** Ribbon callbacks and Excel events invoke command
+modules. Commands inspect workbook named ranges, coordinate session and domain
+objects, and use ADO/ADOX-based routines to access configured databases. The
+Windows registry and file system are external trust boundaries.
+
+## Source layout
+
+At the baseline commit the export contains 78 standard modules, 41 class
+modules, and 66 UserForms with 66 matching binary `.frx` resources.
+
+| Path | Role |
+|---|---|
+| `vba/modules/` | Startup, ribbon callbacks, commands, validation, data access, and operating-system interfaces. |
+| `vba/classes/` | Database, workbook, domain, settings, permission, scan-result, and tree-view objects. |
+| `vba/forms/` | UserForms (`.frm`) and their binary resources (`.frx`). |
+
+The files below `vba/` are the version-controlled source of truth. An `.xlam` or
+`.xlsm` file is a build or release artifact and must not be used to silently
+overwrite reviewed source.
+
+## Reading path
+
+1. [Lifecycle and user interface](lifecycle-and-ui.qmd) explains startup,
+   events, ribbon state, forms, and global session state.
+2. [Workbooks and data movement](workbooks-and-data.qmd) explains registration,
+   portable paths, named ranges, validation, load/save, and documents.
+3. [Database access and schema](database-access.qmd) explains database roles,
+   registry settings, ADO/ADOX, SQL helpers, and source-defined tables.
+4. [Domain workflows and administration](domain-and-administration.qmd) covers
+   classifications, correspondences, key families, batches, design, backup,
+   settings, conversion, and debugging.
+5. [Localization and component reference](localization-and-components.qmd)
+   covers translated UI resources, component conventions, and review risks.
+6. [Legacy draft coverage](legacy-draft-coverage.qmd) accounts for every major
+   section of the retained draft and records deferred claims.
+
+## Maintenance rules
+
+- Update implementation text and source links in the same pull request as a
+  relevant VBA change.
+- Keep exact identifiers, table names, range names, and procedure names in
+  their source casing, including existing spelling inconsistencies.
+- Record environment evidence separately from static source evidence.
+- Never copy registry values, credentials, production paths, or statistical
+  data into documentation or review artifacts.
+- Prefer a small issue or ADR to an unowned `TODO`, `+++`, or diagram
+  placeholder in published documentation.
+
+## Gradual migration seam
+
+These pages describe the current VBA boundary so functionality can be replaced
+incrementally. A safe .NET migration can introduce one tested seam at a time
+while Excel/VBA remains the operational fallback. Candidate seams include
+schema inspection, configuration validation, SQL construction, logging, and
+batch orchestration. Behaviour should first be characterized against this
+baseline and representative workbooks; a rewrite must not infer requirements
+from undocumented VBA side effects.

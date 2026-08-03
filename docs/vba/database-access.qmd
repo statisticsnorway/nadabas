@@ -1,0 +1,171 @@
+---
+title: Database access and schema
+description: Database roles, registry configuration, ADO/ADOX routines, and source-defined tables.
+---
+
+::: {.callout-warning title="Static schema evidence"}
+This page describes exported VBA at
+`3b4c05386e5a44d05633136ecbcf5dd067f70435`. It does not certify the schema of
+an existing deployment, supported database versions, migrations, transaction
+behaviour, backup integrity, or production configuration.
+:::
+
+## Database roles and types
+
+`clsDB` represents a database connection and cached domain collections. Global
+state distinguishes a base database, a temporary exchange database, and an
+optional satellite database.
+
+The `DBTypes` enum defines:
+
+| Value | Identifier | Source status |
+|---:|---|---|
+| 0 | `nodb` | No active database. |
+| 1 | `Sqlexpress` | SQL Server-style connection using `SQLOLEDB`. The identifier does not prove an Express-only requirement. |
+| 2 | `mdb` | Retained for old registry values and explicitly unsupported by the open workflow. |
+| 3 | `accdb` | Microsoft Access file through the configured ACE OLE DB provider. |
+
+SQL connections use integrated Windows security when `DBUser` is empty;
+otherwise the source builds a connection string with supplied user name and
+password. Access uses `Microsoft.ACE.OLEDB.<configured version>` and the database
+file path. Driver availability, Office bitness, TLS, SQL Server support, and
+least-privilege configuration are **environment-dependent**.
+
+## Registry configuration
+
+`InterfaceRegistry` uses VBA `GetSetting`, `SaveSetting`, and `DeleteSetting`.
+On Windows these settings are below:
+
+`HKEY_CURRENT_USER\Software\VB and VBA Program Settings\NADABAS`
+
+| Section | Values observed in source |
+|---|---|
+| `Language` | `Code` |
+| `ACEOLEDB` | `Version` |
+| `Database` and numbered `Database1` ... | `Number`, `DBType`, `Source`, `Catalog`, `User`, `PW`, `DBName` |
+| `Satellite` and numbered satellite sections | `Number`, `DBName`, `LinkedTo` |
+| `ExchDB` | `DBName`, `DBType` |
+| `Document` | Last path used by the document picker. |
+
+::: {.callout-important title="Credentials are a security finding"}
+The source can persist a database password in registry value `PW`. Recording
+this fact does not approve the design. Do not publish actual values. Determine
+whether affected deployments use password authentication, assess registry
+protection and logging exposure, and track migration to an approved credential
+mechanism.
+:::
+
+## Opening and initializing
+
+`cmdOpen_Close_Database` selects a configured database, builds a connection
+string, creates `ADODB.Connection` and `ADOX.Catalog` objects, and tests whether
+the database has required NADABAS tables.
+
+For a base database, `TestDbOK` requires `KeyNames`, `Administrators`, and
+`Workbooks`. An exchange database requires `KeyNames`; a satellite requires
+`Workbooks`. If required structures are absent, the user may be offered
+initialization. `InitializeDB` creates `KeyNames`, `Administrators`, and
+`Workbooks`, then establishes Access base-path and user settings where
+applicable. This confirms the retained draft's three initial base tables, but
+only as source behaviour; it does not prove every deployed database began that
+way.
+
+## Shared ADO routines
+
+[`DBInterface.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/DBInterface.bas)
+owns module-level recordsets and exposes cursor-style routines.
+
+| Routine group | Source behaviour |
+|---|---|
+| `DbExecute` | Execute SQL through `CurrentDB.DBCnn`, log it when SQL logging is active, and return affected-row count. |
+| `CreateCursor` | Open an update-capable recordset using engine-specific cursor and lock modes. |
+| `CreateSnapshot` | Open a static, read-only recordset. |
+| `CreateGetCursor`, `CreateSumCursor` | Open additional recordsets used for copy and aggregation paths. |
+| `Cursor...`, `GetColumn...`, `PutColumn...` | Navigate, read, insert, update, delete, and count cursor operations. |
+| `Close...Cursor` | Close recordsets; `CloseCursor` calls `UpdateBatch` before closing when open. |
+
+`DbFunc.OpenDb` and `CloseDB` maintain a nesting counter and Excel wait cursor;
+they do not open and close the `ADODB.Connection` on every call. When the count
+reaches zero, `doclose` closes module recordsets only for Access and restores the
+Excel cursor. The retained draft's simpler “open/close database” description is
+therefore not an accurate connection-lifecycle contract.
+
+String-building helpers include `InQ`, `InB`, `InBTF`, and `NowFunction`.
+`InQ` surrounds text with engine-specific quote characters but does not escape
+embedded quote characters. Much of the application builds SQL by concatenating
+strings. Treat parameterization and injection resistance as unresolved security
+work, especially for workbook-, form-, file-, and registry-derived values.
+
+## Source-defined system tables
+
+[`DbCreateTables.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/DbCreateTables.bas)
+defines the following structures. “Unique index” means the creation routine
+builds one; it is not proof that an existing deployment has it.
+
+| Table | Columns created by source | Source-defined uniqueness or role |
+|---|---|---|
+| `Administrators` | `UserName` | Unique index on `UserName`; administrator identity list. |
+| `BasePath` | `BasePath` | Single-path convention enforced by application logic. |
+| `BackupPath` | `BackupPath` | Backup folder/template path. |
+| `BatchList` | `Listname`, `ItemNo`, `Workbookname` | Unique index on list and item order. |
+| `BatchDescription` | `Listname`, `Description` | Unique index on list name. |
+| `Batch2List` | `Listname`, `ItemNo`, `Batchname` | Ordered list of batch names; unique index on list and item. |
+| `Batch2Description` | `Listname`, `Description` | Unique index on list name. |
+| `Classifications` | `ClassName`, `Code`, `Title` | Unique index on class and code. |
+| `ClassificationDescriptions` | `ClassName`, `Description` | Unique index on class name. This table was omitted from the retained table inventory. |
+| `Correspondences` | `Fromclass`, `FromCode`, `Toclass`, `ToCode` | Maps source classification codes to target codes; unique index is created on the first three columns. |
+| `DataLinks` | `KeyFamily`, `TargetWB`, `TargetDataArea`, `SourceWB`, `SourceDataArea` | Unique index on all five provenance columns. |
+| `Descriptions` | `WorkbookName`, `DataAreaName`, `TableName`, `GetPut`, `Description` | Unique index on workbook and data-area name. |
+| `DescriptionDimensions` | `WorkbookName`, `DataAreaName`, `DimensionNumber`, `DimensionName`, `Classification`, `ConstantValue` | Unique index on workbook, data area, and dimension order. |
+| `DimensionClass` | `DimensionName`, `ClassName` | Default dimension-to-classification association; no index is created here. |
+| `DBGlobals` | `IDNum`, `Name`, `Value` | Unique index on ordering identifier. |
+| `Documents` | `Name`, `Path`, `Level`, `DGroup`, `Workbook` | Global, group, or workbook document metadata. |
+| `KeyNames` | `KeyName` | Unique index; identifies user-defined key-family tables. |
+| `NADABASVersion` | `VersionNumber` | Version compatibility marker. |
+| `Permissions` | `WorkBookName`, `User` | Workbook/user permission rows; no index is created here. |
+| `UserSettings` | Colour, font, password, workbook/document policy, load/save, Dropbox, satellite, and import/export fields | One settings row is assumed by application code; no index is created here. |
+| `Workbooks` | `WorkBookName`, `Title`, `GroupName`, `Path`, `ReservedBy`, `Status`, `ReservedDate`, `isdirty`, `LastGet`, `LastPut`, `Updateorder` | Unique index on workbook name. |
+| `Year` | `Name`, `StartYear`, `EndYear`, `DefaultFormat` | Period-selection settings; no index is created here. |
+
+The source does not create explicit foreign-key relationships in these routines.
+It does create unique indexes, so the retained draft statement “there are no
+constraints” is too broad. Whether a deployed database has primary keys,
+foreign keys, checks, defaults, triggers, or manually added constraints is
+**unknown** until its schema is inspected. The draft's performance and
+manageability rationale for omitting constraints is not carried forward as an
+approved design decision.
+
+## Key-family data tables
+
+`CreateNewKeyFam` creates one table named after each key family. For every
+dimension it adds a non-null text column, then adds:
+
+| Column | Source-defined type or role |
+|---|---|
+| `Value` | Single, double, or text, selected when the key family is created. |
+| `Comment` | Long text. |
+| `Formula` | Text column retained in the schema; current usage needs runtime and call-site review. |
+| `Username` | User recorded for a write. |
+| `ExcelFile` | Workbook provenance, normally without path/extension in application logic. |
+| `Timestamp` | Write time. |
+| `DataArea` | Workbook named-range provenance. |
+
+A unique index is created across all dimension columns. The workbook/data-area
+provenance fields are used by conflict, ownership, cleanup, and source-tracking
+flows. They are not a substitute for a documented audit, retention, or
+transaction model.
+
+## Schema and SQL review priorities
+
+1. Export schemas from representative non-production Access and SQL Server
+   databases and compare them with `DbCreateTables`.
+2. Record supported database, provider, Office-bitness, and authentication
+   combinations.
+3. Identify all string-concatenated SQL inputs and migrate high-risk paths to
+   parameterized commands.
+4. Define transaction boundaries for multi-table rename/delete, load/save,
+   conversion, and administrative operations.
+5. Specify concurrency, ownership conflict, retry, rollback, and reconciliation
+   behaviour.
+6. Verify backup and restore with recovery tests; do not infer recoverability
+   from successful file-copy messages.

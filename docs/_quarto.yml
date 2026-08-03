@@ -4,7 +4,7 @@ project:
 
 book:
   title: "NADABAS Technical Documentation"
-  repo-branch: creation
+  repo-branch: main
   author: "Statistics Norway"
   description: "Technical and contributor documentation for NADABAS."
   site-url: https://statisticsnorway.github.io/nadabas/
@@ -38,6 +38,15 @@ book:
         - technical/architecture-evidence.qmd
         - technical/database.qmd
         - technical/excel-integration.qmd
+    - part: "VBA internals"
+      chapters:
+        - vba/index.qmd
+        - vba/lifecycle-and-ui.qmd
+        - vba/workbooks-and-data.qmd
+        - vba/database-access.qmd
+        - vba/domain-and-administration.qmd
+        - vba/localization-and-components.qmd
+        - vba/legacy-draft-coverage.qmd
     - part: "Reference"
       chapters:
         - reference/index.qmd

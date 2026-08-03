@@ -1,0 +1,166 @@
+---
+title: Localization and component reference
+description: Multilingual resources, module conventions, source inventory, and external integration boundaries.
+---
+
+::: {.callout-note title="Evidence boundary"}
+The VBA procedures are source-verified at
+`3b4c05386e5a44d05633136ecbcf5dd067f70435`. Worksheet values, ribbon XML, and
+some UserForm properties remain inside the Excel artifact and are not fully
+represented by the text export.
+:::
+
+## Multilingual interface
+
+`MultiLang.LoadLanguage` reads four worksheets from `ThisWorkbook` into VBA
+collections:
+
+| Worksheet | Key constructed by source | Consumer |
+|---|---|---|
+| `Forms` | `<form name>_<control name>`; form captions use `CAPTION` | `Translateform` updates form and control captions. |
+| `Errmsg` | Message identifier | `GetErrMsg` variants return the identifier plus translated text and replace `%1` ... `%4`. |
+| `Messages` | Message identifier | `GetMsg` variants return translated prompts and replace `%1` ... `%3`. |
+| `Ribbon` | Ribbon control identifier | `GetRibbon` and `CommonGetLabel` return ribbon labels. |
+
+The selected language is a worksheet column number stored in the registry.
+Column 3 is the default and fallback. `dlgSelectLanguage` can currently store
+column 3, 4, or 5. `SelectLanguage` reloads all collections and invalidates the
+ribbon.
+
+The retained draft identifies column 3 as English and column 4 as French and
+describes future Spanish and Portuguese support. The text export does not
+contain the language worksheet values or enough form-resource content to verify
+which languages columns 4 and 5 contain. Those language names are therefore
+**legacy-draft** claims until the workbook resources are exported or inspected
+without publishing confidential content.
+
+### Adding or updating a language safely
+
+The legacy instructions—add columns to four sheets, populate strings, and
+update selection logic—describe the mechanism but are not a complete release
+process. A reviewed language change should:
+
+1. assign a stable BCP 47 language tag and map it explicitly to the worksheet
+   column rather than relying only on a number;
+2. update all four resource sets and preserve identifiers;
+3. verify placeholders such as `%1`, punctuation, and accelerator/shortcut
+   expectations;
+4. test missing-string fallback, long text, Unicode, right-to-left text where
+   applicable, and form/ribbon clipping;
+5. obtain technical and linguistic review and record the reviewed source
+   version;
+6. keep English as the normative technical documentation unless the project
+   approves another review language.
+
+## Component conventions
+
+The source contains 78 standard modules, 41 class modules, and 66 UserForms.
+The following groups are intended as a navigation aid, not a stable public API.
+
+### Entry, UI, and session modules
+
+| Components | Responsibility |
+|---|---|
+| `AutoOpenClose`, `AppEvents`, `RibbonUI`, `Globals` | Startup, Excel events, ribbon callbacks, and shared session state. |
+| `MultiLang`, `SetFontAndColors` | Translated strings and visual settings. |
+| `cmdAbout`, `cmdCellInfo`, `cmdShowHide`, `cmdProtectUnprotect` | User-facing utility commands and template visibility/protection. |
+
+### Data definition and movement modules
+
+| Components | Responsibility |
+|---|---|
+| `ScanTableDefTest`, `ScanTableDefs`, `ScanDefCommon` | Validate definitions and build scan/SQL state. |
+| `cmdLoadData_ImportData`, `cmdSaveData_ExportData`, `cmdLoadAndSave` | Load/import, save/export, and combined flow orchestration. |
+| `DBBookMarkedCursors`, `DBInterface`, `DbFunc` | Key lookup, recordset operations, SQL execution, quoting, and operation counters. |
+| `DbCreateTables` | Create tables, indexes, and key-family schema. |
+
+### Content and administration modules
+
+| Components | Responsibility |
+|---|---|
+| `cmdOpenWorkbooks`, `cmdManageWorkBooks`, `cmdRegisterBook`, `cmdReserve_Free_Workbook` | Workbook lifecycle and metadata. |
+| `cmdClassifications`, `SaveClassifications`, `ExportClassificatiion` | Classification view, edit, save, and export. |
+| `cmdCorrespondence`, `SaveCorrespondences`, `ExportCorrespondence` | Correspondence view, edit, save, and export. |
+| `cmdKeyFamily`, `cmdDimensions`, `cmdGlobals` | Key families, dimension associations, and database globals. |
+| `cmdBatchRun`, `BatchRun`, `BatchLog` | Batch selection, execution, repetition, and diagnostics. |
+| `cmdManageDocuments`, `cmdOpenDocuments`, `cmdDocumentation` | Linked documents and metadata reports. |
+| `cmdAdministrators`, `cmdPermissions`, `cmdUserSettings`, `cmdSetYears` | Application roles, settings, and period selection. |
+| `cmdBackUp`, `cmdBackupPath`, `cmdConvertDB`, `cmdVersion` | Backup/export, restore, database conversion, and version checks. |
+| `cmdTrace`, `cmdSQLLog` | Diagnostic workbooks. |
+
+### Principal classes
+
+| Class | Responsibility observed in source |
+|---|---|
+| `clsDB` | Connection/configuration state, table-existence and load flags, and cached domain collections. |
+| `clsWBData` | Per-open-workbook UI/session state. |
+| `clsWorkBookInfo` | Persistent registered-workbook metadata and database operations. |
+| `clsScanTableDefResults` | Parsed definition, ranges, SQL fragments, operation type, and keyed row/column information. |
+| `clsKeyName`, `clsFieldNames` | Key-family and dimension schema metadata. |
+| `clsClassification`, `clsClassItem`, `clsClassDescription` | Classification aggregate, values, and description. |
+| `clsCorrespondence`, `clsCorrItem` | Correspondence aggregate and mappings. |
+| `clsBatchList`, `clsBatchListEntry`, `clsBatchElement`, related description classes | Ordered batch structures and metadata. |
+| `clsUserSettings`, `clsAdministrator`, `clsPermission` | Settings and application authorization state. |
+| `clsDocInfo`, `clsGlobalVar`, `clsBasePath`, `clsBackUpPath` | Document, global, and path metadata. |
+
+Worksheet class exports `Ark1` through `Ark7` and `ThisWorkbook` are present,
+but the text export does not establish each worksheet's visible name or retained
+cell resources. Do not infer a mapping from `Ark` number to language sheet.
+
+## Interface modules and trust boundaries
+
+| Module | External capability |
+|---|---|
+| `InterfaceBetterNow` | Windows timing APIs for elapsed-time measurement. |
+| `InterfaceBrowseFolder` | Folder-selection dialog. |
+| `InterfaceDropClose` | Windows API manipulation of a UserForm close control. |
+| `InterfaceFileScripting` | `Scripting.FileSystemObject` file/folder existence, enumeration, copy, creation, and deletion. |
+| `InterfaceNTUserName` | Windows user-name lookup. |
+| `InterfaceOpenFileDialog` | Excel file-selection dialogs. |
+| `InterfaceRegistry` | Per-user VBA settings registry reads and writes. |
+| `InterfaceShellExec` | Windows `ShellExecute` for documents and files. |
+| `InterfaceWEB` | Open project, error-reporting, and video URLs. |
+| `DropBoxINterface` | WMI process discovery and termination. |
+
+These modules are Windows-specific. Paths, URLs, file types, process names,
+registry values, and user identity cross trust boundaries. A future .NET seam
+should wrap them behind explicit interfaces and policies rather than reproduce
+unrestricted VBA calls.
+
+## Third-party tree-view classes
+
+`clsTreeView` and `clsNode` identify JKP Application Development Services and
+Peter Thornton as authors and include a header that allows use and adaptation
+inside an overall project but restricts publishing the modules themselves
+without consent. Because this repository is public, maintainers should complete
+a license/provenance review, retain required notices, and confirm that public
+distribution is authorized. This is not resolved by the repository's top-level
+license alone.
+
+## Forms inventory strategy
+
+The 66 forms cover selection dialogs, workbook/document/database management,
+classification/correspondence/key-family editing, batches, backup/restore,
+conversion, permissions/settings, and progress displays. A manually maintained
+control-by-control list will drift. Generate a reference from `.frm` metadata
+where possible, and supplement it with:
+
+- invoking ribbon callback and command procedure;
+- modal/modeless behaviour and returned state;
+- destructive or privileged actions;
+- external files, processes, registry, or database tables touched;
+- localization keys and accessibility review;
+- a repeatable Excel test.
+
+Binary `.frx` resources cannot be meaningfully reviewed as ordinary text.
+Preserve their pairing and verify rendered forms in the supported Office
+environment.
+
+## Supporting utilities
+
+Modules such as `FileNameFunctions`, `StandardFunctions`, `SourceInfo`,
+`FindMarkedItems`, `SetFalseUSername`, `TestForDropYear`, `ConvertXLS`, and
+`InstallMeAsAddin` support paths, values, provenance, development/test identity,
+period rules, legacy file conversion, and installation. Their generic names do
+not imply general-purpose safety; callers and side effects should be traced
+before reuse or migration.

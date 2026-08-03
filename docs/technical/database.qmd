@@ -3,8 +3,9 @@ title: Database design
 ---
 
 ::: {.callout-warning title="Outline"}
-The database material from the technical draft has not yet been verified
-against supported schemas and migrations.
+The exported table-creation code is documented in
+[Database access and schema](../vba/database-access.qmd). A supported deployment
+schema and migration history have not yet been verified.
 :::
 
 ## Purpose
