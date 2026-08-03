@@ -1,3 +1,7 @@
 * text=auto eol=lf
+*.bas text eol=crlf
+*.cls text eol=crlf
+*.frm text eol=crlf
+*.frx binary
 *.ipynb filter=nbstripout
 *.ipynb diff=ipynb

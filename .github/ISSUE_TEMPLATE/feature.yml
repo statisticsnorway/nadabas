@@ -1,0 +1,51 @@
+name: Feature request
+description: Propose a new or improved NADABAS capability.
+title: "[Feature]: "
+body:
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for a similar proposal.
+          required: true
+        - label: I have not included sensitive or production data.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or need
+      description: Describe the user or operational problem before proposing a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should a user be able to do when this is complete?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Primary area
+      options:
+        - Excel or VBA user interface
+        - Import or export tooling
+        - Database or SQL
+        - Batch processing
+        - Documentation
+        - Future .NET migration
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints and compatibility
+      description: Note version, database, signing, security, or migration constraints.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe workarounds or other designs considered.

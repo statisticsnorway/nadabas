@@ -1,0 +1,45 @@
+---
+title: Architecture evidence register
+description: Claim-level traceability for the NADABAS architecture baseline.
+---
+
+::: {.callout-note title="Baseline and scope"}
+Evidence links are pinned to commit
+`8cfa4a786f1969a86c461908c66ceb37d821d96c`. Line links support review but do
+not replace runtime testing. No production configuration, credentials, or data
+were inspected.
+:::
+
+## Claim register
+
+| ID | Architecture claim | Status | Evidence | Remaining review |
+|---|---|---|---|---|
+| ARCH-001 | NADABAS runs in Excel and exposes ribbon, form, and application-event entry points. | Source-verified | [Ribbon callback](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/RibbonUI.bas#L636), [application events](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/classes/AppEvents.cls#L12) | Functional Excel test and UI inventory. |
+| ARCH-002 | Startup loads database configuration from the Windows user registry; fields can include a user name and password. | Source-verified | [Startup call](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/AutoOpenClose.bas#L87), [registry reads](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/InterfaceRegistry.bas#L20), [registry writes](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/InterfaceRegistry.bas#L127) | Deployment inventory and security decision on credential storage. |
+| ARCH-003 | Global state distinguishes base, exchange, current, and optional satellite database roles. | Source-verified | [Global database state](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/Globals.bas#L10), [startup initialization](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/AutoOpenClose.bas#L69) | Confirm supported roles for each deployment. |
+| ARCH-004 | Source supports SQL Server/SQL Express and Access `.accdb`; `.mdb` is rejected when opening. | Source-verified | [Database type enum](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/classes/clsDB.cls#L54), [open selection](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/cmdOpen_Close_Database.bas#L8) | Record supported product, driver, and Office bitness versions. |
+| ARCH-005 | Startup registers application events, initializes session objects, starts sleeping, and reads database settings. | Source-verified | [`auto_open`](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/AutoOpenClose.bas#L26) | Verify add-in and developer-mode startup in Excel. |
+| ARCH-006 | Database opening connects by type, tests or initializes structures, loads settings and workbook metadata, and sleeps after failure. | Source-verified | [`OpenDatabase`](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/cmdOpen_Close_Database.bas#L8), [schema initialization](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/cmdOpen_Close_Database.bas#L395) | Test new/existing Access and SQL Server databases. |
+| ARCH-007 | `auto_close` contains no explicit cleanup behaviour. | Source-verified | [`auto_close`](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/AutoOpenClose.bas#L101) | Observe Excel shutdown and open resource handling. |
+| ARCH-008 | Load/import validates workbook definitions, reads through the current database, updates workbook areas, records metadata, and closes the database. | Source-verified | [`GetDataToRange`](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/cmdLoadData_ImportData.bas#L87), [load implementation](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/cmdLoadData_ImportData.bas#L143) | Test base, exchange, batch, missing-data, and failure paths. |
+| ARCH-009 | Save/export validates definitions, writes through shared database routines, updates workbook state, and closes the database. | Source-verified | [`Save_data`](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/cmdSaveData_ExportData.bas#L57), [`DoSaveData`](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/cmdSaveData_ExportData.bas#L726), [shared ADO interface](https://github.com/statisticsnorway/nadabas/blob/8cfa4a786f1969a86c461908c66ceb37d821d96c/vba/modules/DBInterface.bas#L19) | Verify transactions, conflict detection, permissions, rollback, and interrupted writes. |
+
+## Evidence maintenance
+
+1. Add or update a claim ID in the architecture page.
+2. Link the smallest relevant source or test evidence at the reviewed commit.
+3. Mark configuration-sensitive behaviour as **environment-dependent**.
+4. Add the reviewer role and unresolved question to the pull request.
+5. Update links when source lines move; do not change the historical baseline of
+   an already released documentation version.
+
+## Evidence not yet available
+
+The following evidence is intentionally not claimed:
+
+- an authoritative supported-platform matrix;
+- runtime traces for Access and SQL Server deployments;
+- a complete database constraint, transaction, and concurrency model;
+- threat-model approval or credential-storage remediation;
+- accessibility testing with assistive technologies;
+- acceptance by any regional body, member state, or national authority.

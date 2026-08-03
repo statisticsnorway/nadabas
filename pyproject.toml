@@ -10,6 +10,7 @@ dependencies = [
     "dynaconf >=3.2",
     "ipykernel >=6.29",
     "pyarrow >=23.0",
+    "pywin32; sys_platform == 'win32'",
 ]
 
 [dependency-groups]
@@ -45,6 +46,9 @@ skip_gitignore = true
 # The line below is needed for jupyter notebooks stored as .py in percent format.
 # See https://github.com/PyCQA/isort/issues/1338 for details
 treat_comments_as_code = ["# %%"]
+
+[tool.black]
+target-version = ["py312"]
 
 [tool.jupytext]
 formats = "ipynb,auto:percent"

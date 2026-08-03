@@ -1,0 +1,17 @@
+---
+title: Architecture decisions
+---
+
+Architecture Decision Records (ADRs) explain choices that affect the long-term
+structure, security, compatibility, or maintenance of NADABAS.
+
+## Records
+
+- [ADR 0001: Maintain technical documentation with Quarto](0001-documentation-platform.qmd)
+
+## Adding a decision
+
+Create a numbered record when a decision has meaningful alternatives or lasting
+consequences. Include context, the decision, consequences, alternatives, status,
+and date. Later decisions should supersede older records rather than rewriting
+their history.

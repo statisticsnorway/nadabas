@@ -1,0 +1,74 @@
+project:
+  type: book
+  output-dir: _site
+
+book:
+  title: "NADABAS Technical Documentation"
+  repo-branch: creation
+  author: "Statistics Norway"
+  description: "Technical and contributor documentation for NADABAS."
+  site-url: https://statisticsnorway.github.io/nadabas/
+  repo-url: https://github.com/statisticsnorway/nadabas
+  repo-subdir: docs
+  repo-actions: [edit, issue, source]
+  page-navigation: true
+  search: true
+  reader-mode: true
+  downloads: [docx]
+  sidebar:
+    style: docked
+    collapse-level: 1
+  page-footer:
+    left: "NADABAS · Statistics Norway"
+    right:
+      - text: "Source code"
+        href: https://github.com/statisticsnorway/nadabas
+  chapters:
+    - index.qmd
+    - part: "Getting started"
+      chapters:
+        - developer-guide/getting-started.md
+    - part: "VBA source workflow"
+      chapters:
+        - developer-guide/export-vba.md
+        - developer-guide/import-vba.md
+        - developer-guide/scan-vba-security.md
+    - part: "Technical architecture"
+      chapters:
+        - technical/architecture.qmd
+        - technical/architecture-evidence.qmd
+        - technical/database.qmd
+        - technical/excel-integration.qmd
+    - part: "Reference"
+      chapters:
+        - reference/index.qmd
+    - part: "Development"
+      chapters:
+        - development/index.qmd
+        - development/international-review.qmd
+    - part: "Operations"
+      chapters:
+        - operations/index.qmd
+    - part: "Architecture decisions"
+      chapters:
+        - decisions/index.qmd
+        - decisions/0001-documentation-platform.qmd
+    - part: "Appendices"
+      chapters:
+        - appendices/glossary.qmd
+
+execute:
+  enabled: false
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    number-sections: false
+    toc: true
+    code-copy: true
+  docx:
+    toc: true
+    number-sections: true
+
+lang: en

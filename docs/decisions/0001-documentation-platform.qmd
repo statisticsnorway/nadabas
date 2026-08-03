@@ -1,0 +1,55 @@
+---
+title: "ADR 0001: Maintain technical documentation with Quarto"
+status: accepted
+date: 2026-07-31
+---
+
+## Context
+
+NADABAS has short Markdown developer guides and a larger technical draft in
+Microsoft Word. The project needs documentation that is easy to review with
+source changes, searchable for readers, and still available as a consolidated
+document for organisational use.
+
+## Decision
+
+Maintain the technical documentation as a Quarto book below `docs/`.
+
+- Markdown and Quarto source files are reviewed in normal pull requests.
+- HTML is the primary reading format.
+- DOCX is a generated output, not the source of truth.
+- GitHub Pages is the intended static hosting platform after the build has been
+  validated in CI.
+- GitHub-recognised community files such as `CONTRIBUTING.md`, `SECURITY.md`,
+  issue forms, and pull request templates remain in their conventional
+  repository locations.
+- The existing Word draft is migrated incrementally. Each section must be
+  verified against the version-controlled VBA source and supported database
+  design before publication.
+
+## Consequences
+
+- Contributors need Quarto to preview or render the complete documentation.
+- Pull requests can review documentation and implementation together.
+- The project can publish searchable HTML and produce a consolidated Word
+  document from the same chapter structure.
+- Rendered output directories must not be committed.
+- Documentation rendering and link validation should become required CI checks
+  after the initial structure has been reviewed.
+
+## Alternatives considered
+
+### Markdown files viewed only in GitHub
+
+This has the lowest setup cost but becomes difficult to navigate and search as
+the technical documentation grows.
+
+### MkDocs
+
+MkDocs is a strong option for an HTML-only developer site. It was not selected
+because consolidated Word output remains useful for NADABAS.
+
+### GitHub Wiki
+
+A wiki separates documentation history and review from the ordinary source
+workflow. It is not used as the authoritative technical source.
