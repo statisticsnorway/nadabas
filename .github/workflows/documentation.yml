@@ -41,8 +41,8 @@ jobs:
         with:
           version: "1.9.38"
 
-      - name: Render HTML and Word documentation
-        run: quarto render docs
+      - name: Render HTML documentation
+        run: quarto render docs --to html
 
       - name: Upload GitHub Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
