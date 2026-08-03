@@ -1,0 +1,193 @@
+---
+title: Domain workflows and administration
+description: Classifications, correspondences, key families, batches, design, settings, backup, conversion, and debugging.
+---
+
+::: {.callout-note title="Evidence"}
+This page summarizes exported entry points and orchestration at
+`3b4c05386e5a44d05633136ecbcf5dd067f70435`. Form behaviour, destructive
+operations, Office automation, files, and database effects require runtime
+verification with non-production data.
+:::
+
+## Classifications
+
+`cmdClassifications` exposes view and manage entry points for the base and
+exchange database roles. It loads key families, classifications,
+dimension-to-classification mappings, descriptions, and table definitions into
+`clsDB` collections, then initializes `frmClassification` in view or manage
+mode.
+
+| Form outcome | Source workflow |
+|---|---|
+| New | Create a classification workbook with a save command. |
+| Edit | Create and fill a workbook from the selected classification. |
+| Export | Delegate to `ExportClassifications`. |
+| Remove | Implemented by form and save modules; descriptions and dimension references require explicit review. |
+
+`TestClassLen` compares classification code lengths with dimensions that use
+the classification and warns about values that do not fit. It is an application
+check, not a database relationship.
+
+## Correspondences
+
+`cmdCorrespondence.ViewCorrespondences` and `ManageCorrespondences` both load
+correspondences and classifications, then initialize `frmCorrespondence` with a
+view/manage flag. Manage mode can collect source/target classification names,
+open `frmCorrespondanceEdit`, generate an editing workbook, fill it from the
+database, or export correspondences.
+
+This source fills the placeholders left in the retained draft, but does not yet
+provide a complete rule contract. Required tests include duplicate mappings,
+missing source/target codes, many-to-one and one-to-many mappings, deletion,
+round-trip export, and use during aggregated load operations.
+
+## Key families and dimensions
+
+`cmdKeyFamily` provides base and exchange workflows for viewing, creating, and
+managing key families. The forms load key-family names and dimensions, check
+that each named table exists, and expose operations such as delete, remove data,
+conditional remove, dimension-length modification, and workbook export.
+
+Creation is completed by form code calling `DbCreateTables.CreateNewKeyFam` and
+adding the name to `KeyNames`. Deletion removes both the name and its table.
+These are destructive schema operations and require backup, authorization,
+transaction, and recovery tests.
+
+`cmdDimensions` loads key families, dimensions, dimension classifications, and
+classifications before opening `frmDimensions`. The retained draft lists remove
+classification, code inspection, and validation actions; those actions live in
+the form and related classes and should be tested before being treated as a
+stable administrative API.
+
+## Batch processing
+
+`cmdBatchRun.BatchUpdate` loads workbook and batch metadata and opens
+`frmBatchRun`. `BatchRun.DoBatchUpdate` then executes the selected ordered
+workbook list.
+
+```{mermaid}
+flowchart TD
+  select["Select batch and run options"]
+  preflight["Load metadata and reject reserved, transferred, or exported workbooks"]
+  open["Open next registered workbook"]
+  validate["Load globals/year and validate definitions"]
+  load["Load data"]
+  save["Save data"]
+  close["Optionally close workbook and log timing"]
+  repeat{"Changes saved and repetitions remain?"}
+  finish["Restore Excel visibility and stop log"]
+
+  select --> preflight --> open --> validate
+  validate --> load --> save --> close --> repeat
+  repeat -->|"Yes"| open
+  repeat -->|"No"| finish
+```
+
+The workflow can run silently, hide Excel, display a modeless progress form,
+repeat until no values are saved or a configured limit is reached, and close
+workbooks. It also contains an option to terminate Dropbox before processing.
+Process termination, hidden Excel state, partially completed batches, formula
+handling, cancellation, logging, and restart behaviour are security and
+recoverability concerns; test them explicitly.
+
+## Design tools
+
+`cmdDesign` and `cmdShowHide` implement the design ribbon group:
+
+| Command | Source behaviour |
+|---|---|
+| Test design | Call `TestDefinitions` for the active base or exchange definitions. |
+| Mark definition areas | Validate, remove existing colours, and apply configured colours to referenced areas. |
+| Get column names | Resolve a key family and insert dimension/classification information into the workbook. |
+| Add row | Extend `DBLinks` or `ExchLinks` by one row. |
+| Create links | Create a definition sheet, headings, and initial named range. |
+| Fill global names | Load `DBGlobals` and create/fill missing workbook structures where supported. |
+| Clear database for workbook | Delete key-family rows attributed to the current workbook after validation and confirmation. |
+| Clean up names | Collect names referenced by NADABAS structures and offer to remove unused workbook names. |
+| Hide/show templates | Change definition-sheet visibility, including administrator-sensitive hiding. |
+
+“Clear” and “clean up” are destructive operations. Their selection boundaries,
+confirmation text, and recovery path need manual tests.
+
+## Administration and settings
+
+| Area | Main source | Behaviour and caveat |
+|---|---|---|
+| Administrators | `cmdAdministrators`, `frmAdministrators` | Load and edit the `Administrators` table; `TestAdministrator` sets session state from Windows user identity. |
+| Permissions | `cmdPermissions`, `frmPermissions`, `clsPermission` | Load and edit per-workbook user rows; `TestPermissionForUser` influences `clsWBData.ReadOnly`. This is application authorization, not a database access-control guarantee. |
+| User settings | `cmdUserSettings`, `frmUserSettings`, `clsUserSettings` | Load/save database-held colours, workbook policies, passwords, load/save options, and feature flags. Scope and one-row assumptions need deployment verification. |
+| Years | `cmdSetYears` | Store period name, bounds, and format; set scan-time period state and validate values. Locale and non-calendar formats require tests. |
+| Globals | `cmdGlobals` | Edit database global variables and fill workbook `DBGlobals` before data operations. |
+| Base folder | `cmdBaseFolder` | Set and resolve the portable file root; Access initialization can use the database folder. |
+| Workbook status | `cmdWorkBookStatus` | Display registered workbook metadata and file-existence checks; list reserved workbooks. |
+| Version | `cmdVersion` | Recreate/update `NADABASVersion`, compare the running add-in version, and execute legacy repair checks. |
+| Workbook passwords | `cmdSetRemovePassword`, protection modules | Apply or remove a shared workbook password across registered files. Storage and use of workbook passwords require a security decision. |
+
+The retained draft says database-held settings ensure consistency across all
+users. The source does centralize them, but consistency still depends on the
+database selected, write permissions, caching, concurrency, and when each
+session reloads values.
+
+## Backup and restore
+
+`cmdBackupPath.SetBackUpFolder` stores a backup folder/template and prevents
+choosing a location below the base path. `cmdBackUp.DoBackUp` creates a
+timestamped folder and either copies the entire base folder or copies selected
+registered workbooks. For Access it can copy the `.accdb` file. For SQL Server,
+the source creates an Access file and delegates table copying through
+`cmdConvertDB.DOBackupSQL`; this is a logical export, not a native SQL Server
+backup.
+
+`DoRestore` copies a selected database file and registered workbooks back into
+their target locations. Its implementation is file-oriented and should not be
+assumed to restore a SQL Server database.
+
+::: {.callout-warning title="Backup is not verified recovery"}
+A success message or completed file copy does not establish a recoverable,
+consistent backup. Define supported Access and SQL Server procedures, test
+restore into an isolated environment, reconcile row counts and key families,
+and document retention, encryption, access control, and disaster-recovery
+ownership.
+:::
+
+## Access and SQL Server conversion
+
+`cmdConvertDB` contains Access-to-SQL and SQL-to-Access workflows. It creates a
+target `clsDB`, switches `CurrentDB` between source and target, creates required
+tables, copies optional system tables, reconstructs key-family tables, and moves
+data through recordsets.
+
+Conversion changes schema and data and must be treated as a migration:
+
+- take and verify a recoverable source backup;
+- prevent concurrent writers;
+- record source/target engine and provider versions;
+- compare table, row, key, null, text, date, and numeric values;
+- verify indexes and application behaviour;
+- retain logs without credentials or confidential data;
+- define rollback before starting.
+
+## Debugging and diagnostics
+
+`cmdTrace` creates a trace workbook and records workbook, table, timing, and
+cell-level changes during load operations. `cmdSQLLog` creates a workbook and
+appends SQL text while logging is active. `BatchLog` records batch timing and
+operation information.
+
+These tools can expose statistical values, paths, SQL, user names, and database
+structure. Use only non-production data unless an approved handling procedure
+defines access, storage, redaction, and deletion. Do not attach unreviewed trace
+or SQL-log workbooks to public issues.
+
+## Operational verification backlog
+
+- define role and permission matrices for ordinary users and administrators;
+- characterize every destructive form action and its confirmation/recovery;
+- test batch cancellation and Excel/process recovery at every stage;
+- approve supported backup/restore procedures separately for Access and SQL
+  Server;
+- validate migrations with repeatable reconciliation reports;
+- define safe diagnostic collection and redaction;
+- replace implicit shared state with explicit interfaces before extracting a
+  workflow into .NET.

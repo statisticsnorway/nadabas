@@ -2,9 +2,10 @@
 title: Technical reference
 ---
 
-::: {.callout-warning title="Outline"}
-Reference pages will be added incrementally and generated from source metadata
-where that can be done reliably.
+::: {.callout-note title="Incremental reference"}
+The first source-linked component inventory is available in
+[Localization and component reference](../vba/localization-and-components.qmd).
+Further inventories should be generated from source metadata where reliable.
 :::
 
 The reference section is for precise lookup information rather than tutorials
@@ -12,9 +13,8 @@ or architectural explanation.
 
 ## Planned inventories
 
-- standard VBA modules and their public entry points;
-- classes, responsibilities, and lifecycle;
-- forms, controls, and invoking commands;
+- complete public-procedure inventory for standard modules and classes;
+- form controls and invoking commands;
 - global variables and constants;
 - registry keys and configuration values;
 - database tables, fields, and supported types;

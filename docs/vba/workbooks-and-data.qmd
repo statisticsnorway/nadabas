@@ -1,0 +1,212 @@
+---
+title: Workbooks and data movement
+description: Registered workbooks, named ranges, load/save flows, and linked documents.
+---
+
+::: {.callout-note title="Evidence"}
+Unless marked otherwise, statements on this page are **source-verified** at
+`3b4c05386e5a44d05633136ecbcf5dd067f70435`. File, workbook, permission, and
+database behaviour is **environment-dependent** and requires Excel testing.
+:::
+
+## Workbook identity and portable paths
+
+NADABAS registers a workbook by its file name without extension and stores its
+folder separately. The source searches supported legacy and current Excel
+extensions when opening a registered workbook. A path beginning with `!` is
+resolved relative to the configured base path.
+
+[`FileNameFunctions.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/FileNameFunctions.bas)
+provides the conversion helpers:
+
+| Function | Behaviour |
+|---|---|
+| `GetPath`, `GetPath2` | Return a folder with or without a trailing backslash. |
+| `GetFilename` | Return the file name and extension. |
+| `GetFileExtension` | Return the extension. |
+| `DropFileType` | Remove the extension. |
+| `DropBasePath` | Replace the configured base-path prefix with `!` where applicable. |
+| `AppendBasePath` | Resolve a leading `!` back to the current base path. |
+
+`TestBasePath` and `getBasepath` are implemented in `cmdBaseFolder`, not in
+`FileNameFunctions` as stated in the retained draft. Portable paths reduce the
+number of stored absolute paths, but moving a deployment still requires a
+verified base-path update and file-access test.
+
+## Opening and tracking workbooks
+
+[`cmdOpenWorkbooks.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/cmdOpenWorkbooks.bas)
+opens `frmOpenWorkbooks`, remembers the last selected tab and item, and delegates
+to `DoOpenWorkbook`.
+
+The opening flow:
+
+1. Resolve the registered folder and locate a supported Excel file extension.
+2. If multiple matching files exist, ask the user to choose; if the workbook is
+   already open, activate it.
+3. Evaluate file read-only state, user permissions, reservation, transfer, and
+   export status.
+4. Open unavailable or restricted workbooks read-only where the source allows,
+   and populate `clsWBData` from `clsWorkBookInfo`.
+5. For ordinary opens, optionally test whether recorded source workbooks have
+   newer saved data than the workbook's last-get timestamp.
+
+Exact extension selection, file locking, external links, and concurrent-user
+behaviour require runtime tests on supported storage.
+
+## Registering, managing, and reserving
+
+[`cmdRegisterBook.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/cmdRegisterBook.bas)
+uses `frmRegisterBook` to collect title and group information, validates the
+base-path policy, and persists workbook metadata.
+
+`frmManageWorkBooks` contains most management implementation:
+
+| Action | Source behaviour |
+|---|---|
+| Rename | Rename the file and update references in `Permissions`, `BatchList`, `Documents`, `DataLinks`, the `Workbooks` object, and key-family provenance columns. |
+| Replace | Select and validate a replacement workbook, update name/path references, and remove data attributed to the old workbook where the form requests that operation. |
+| Delete | Remove the workbook and related permission, batch, document, data-link, and key-family provenance records. |
+| Edit metadata | Reuse `frmRegisterBook` to update title and group. |
+
+These are multi-object operations implemented as VBA-issued SQL statements.
+Atomicity and rollback are not established by static review; interrupted rename,
+replace, and delete operations need recovery tests.
+
+`ReserveWorkbook` writes current user, timestamp, and `Status = "Reserved"` to
+the workbook record. `FreeWorkbook` clears the reservation. Other users may be
+limited to read-only access. Reservation is application coordination, not proof
+of a database lock or file-system lock.
+
+## Workbook definition ranges
+
+| Named range | Role in source |
+|---|---|
+| `DBLinks` | Rows describing base-database data areas and load/save modes. |
+| `ExchLinks` | Equivalent definitions used with an exchange database. |
+| `DBGlobals` | Workbook area populated with database global values before applicable operations. |
+| `Descriptions` | Optional description metadata associated with `DBLinks` rows. |
+| `DBSourceFiles` | Hidden workbook provenance used to detect newer source data. |
+
+Definitions refer to named data areas and supporting `DBDef` and `TabDef`
+ranges. The exact column contract depends on definition type and is validated by
+`ScanTableDefTest` and `ScanTableDefs`; it should be documented as a separate,
+test-backed interface specification before external tools generate definitions.
+
+## Validation and scan results
+
+[`TestDefinitions`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/ScanTableDefTest.bas#L39)
+checks workbook definitions before design, load, save, and batch operations. The
+module validates range presence and shape, modes, formulas, key combinations,
+data types, classifications, correspondence use, `WHERE` values, and period
+rules. The exact checks vary by definition type.
+
+[`ScanTableDef`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/ScanTableDefs.bas#L8)
+fills a `clsScanTableDefResults` object. That object carries SQL fragments,
+operation type, row and column identifiers, ranges, field information, and
+scan status used by load/save routines.
+
+Validation is substantial but does not prove that all malformed workbooks,
+SQL fragments, locale-specific values, or database failures are handled safely.
+
+## Load or import
+
+```{mermaid}
+sequenceDiagram
+  actor User
+  participant Entry as "Load_data or Importdata"
+  participant Validate as "TestDefinitions and ScanTableDef"
+  participant DB as "CurrentDB through ADO"
+  participant WB as "Workbook ranges"
+
+  User->>Entry: Start load/import
+  Entry->>WB: Select DBLinks or ExchLinks
+  Entry->>Validate: Validate definitions and period rules
+  Validate-->>Entry: Scan result and SQL
+  Entry->>DB: Open and query matching rows
+  DB-->>Entry: Values and provenance
+  Entry->>WB: Compare and update target cells
+  Entry->>DB: Update last-get/data-link metadata where applicable
+  Entry->>DB: Close operation-level database use
+  Entry-->>User: Statistics, marks, log, or error message
+```
+
+The implementation is in
+[`cmdLoadData_ImportData.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/cmdLoadData_ImportData.bas).
+It scans each applicable definition, builds database queries, uses bookmark
+helpers for row lookup, compares returned values with target cells, records
+changed or missing cells, and maintains last-get/source information where the
+workflow applies.
+
+The SQL example in the retained draft is illustrative only. Generated SQL must
+be reviewed from the current scan routines; it is not a stable public query
+contract.
+
+## Save or export
+
+```{mermaid}
+sequenceDiagram
+  actor User
+  participant Entry as "Save_data or ExportData"
+  participant Validate as "TestDefinitions and ScanTableDef"
+  participant WB as "Workbook ranges"
+  participant DB as "CurrentDB through ADO"
+
+  User->>Entry: Start save/export
+  Entry->>Validate: Validate definitions and conflicts
+  Entry->>WB: Read PUTDB or MIXED cells
+  Entry->>DB: Find existing dimension-key rows
+  Entry->>DB: Insert or update value and provenance
+  Entry->>DB: Update last-put/workbook metadata
+  Entry->>DB: Close operation-level database use
+  Entry->>WB: Update dirty state and optional workbook save
+  Entry-->>User: Statistics, log, or error message
+```
+
+The implementation is in
+[`cmdSaveData_ExportData.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/cmdSaveData_ExportData.bas).
+It validates definitions, tests existing ownership/provenance, compares cells
+with keyed database rows, inserts or updates data, and records workbook and
+operation metadata. Some conflicts can be presented differently for an
+administrator.
+
+`cmdLoadAndSave.LoadAndSaveData` composes the two operations and applies user
+settings controlling workbook saves. Transaction scope, concurrent writes,
+rollback, and administrator override semantics remain **unknown** until tested
+against each supported database engine.
+
+## Linked documents and generated reports
+
+Documents are metadata records, not binary content stored by the VBA-defined
+schema. `cmdManageDocuments.RegisterDocument` and `frmRegisterDoc` store a file
+name, portable path, and association level:
+
+1. global;
+2. workbook group; or
+3. individual workbook.
+
+Non-administrators are constrained by the form to the active workbook level.
+The `DocsInBase` setting controls whether a path outside the base folder is
+rejected or may be accepted after confirmation.
+
+`frmOpenDocuments` presents available global, group, and workbook documents.
+Excel file extensions are opened through `Workbooks.Open`; other types are
+passed to the Windows shell integration. Paths and file types therefore cross a
+security boundary and must be treated as untrusted configuration.
+
+`cmdDocumentation.SelectReport` opens `frmDocumentation`, where report-specific
+queries and workbook output are implemented. The retained draft lists reports
+for classifications, correspondences, batches, key families, workbooks, data
+areas, and dimensions. Treat the actual form code as the source until each
+report has a repeatable output test.
+
+## Required runtime scenarios
+
+- open a registered workbook from NADABAS and from File Explorer;
+- open reserved, permission-limited, already-open, missing, and read-only files;
+- rename, replace, delete, and recover after an injected failure;
+- load and save `GETDB`, `PUTDB`, `MIXED`, exchange, batch, missing-value, and
+  conflict cases;
+- verify last-get, last-put, source, dirty, and reservation state;
+- open allowed and disallowed linked document types and paths;
+- repeat with supported Access and SQL Server configurations.

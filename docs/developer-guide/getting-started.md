@@ -53,5 +53,5 @@ poetry run python tools/scan_vba_security.py vba `
 ```
 
 Read the repository's
-[contribution guidelines](https://github.com/statisticsnorway/nadabas/blob/creation/CONTRIBUTING.md)
+[contribution guidelines](https://github.com/statisticsnorway/nadabas/blob/main/CONTRIBUTING.md)
 before opening a pull request.

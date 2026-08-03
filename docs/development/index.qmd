@@ -11,7 +11,7 @@ This section collects workflows for changing NADABAS safely.
 - [Import VBA](../developer-guide/import-vba.md)
 - [Scan VBA security](../developer-guide/scan-vba-security.md)
 - [International review and localization](international-review.qmd)
-- [Contribution guidelines](https://github.com/statisticsnorway/nadabas/blob/creation/CONTRIBUTING.md)
+- [Contribution guidelines](https://github.com/statisticsnorway/nadabas/blob/main/CONTRIBUTING.md)
 
 ## Planned guides
 

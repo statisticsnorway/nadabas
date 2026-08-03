@@ -1,0 +1,86 @@
+---
+title: Legacy draft coverage
+description: Disposition of the retained NADABAS technical documentation draft.
+---
+
+::: {.callout-important title="Purpose of this register"}
+This register shows where the material in *NADABAS Technical Documentation
+First Draft* was migrated. It prevents unfinished or unverified draft text from
+being mistaken for current behaviour. The exported VBA at
+`3b4c05386e5a44d05633136ecbcf5dd067f70435` remains the static source baseline.
+:::
+
+## Coverage status
+
+| Draft section | Disposition | Destination or reason |
+|---|---|---|
+| Introduction: about, audience, scope | Migrated and tightened | [VBA internals](index.qmd) states purpose, audience, scope, source of truth, and runtime limits. Installation/user-manual references remain out of scope until authoritative guides are identified. |
+| System overview and high-level architecture | Migrated and source-linked | [VBA internals](index.qmd) and [System architecture](../technical/architecture.qmd). The `[System Diagram]` placeholder was replaced by maintained Mermaid diagrams. |
+| Database design | Migrated with corrections | [Database access and schema](database-access.qmd). Static creation code is separated from deployed-schema and runtime claims. |
+| System tables | Migrated and reconciled | The current table inventory includes source-defined fields, indexes, `ClassificationDescriptions`, and the distinction between initial and optional tables. |
+| Registry | Migrated with security warning | Registry sections and values are documented without values or credentials. Password persistence is an explicit finding. |
+| Communicating with the database | Migrated with lifecycle correction | ADO/ADOX, `DBInterface`, `DbFunc`, cursor modes, SQL logging, and the nesting counter are documented. The draft's `+++` placeholders were removed. |
+| Global variables | Migrated | [Lifecycle and user interface](lifecycle-and-ui.qmd) documents session variables and `clsWBData`; obsolete range names from the draft were checked against current `Globals.bas`. |
+| Application components: ribbon | Migrated | Callback groups, invalidation, workbook state, and recognized modes are documented. Ribbon XML itself remains an artifact-verification item. |
+| Application components: forms | Migrated as conventions and strategy | Prefixes, binary `.frx` pairing, modal/modeless use, and inventory strategy are documented. A generated control reference is deferred. |
+| Application components: modules | Migrated | Command, interface, workflow, and utility groups are documented with source names. |
+| Application components: classes | Migrated with provenance finding | Principal classes are described. `clsTreeView`/`clsNode` licensing and public-distribution authorization require review. |
+| Interfacing with Excel: startup | Migrated | `auto_open` sequence and the empty `auto_close` are documented. |
+| Interfacing with Excel: application events | Migrated with discrepancy | Every implemented event is summarized. The `wbExchHasPut` dirty-state gate is recorded as a runtime/maintainer decision. |
+| Interfacing with Excel: active workbook (`awb`) | Migrated as a convention | Local workbook capture is described without claiming it eliminates all focus/event races. |
+| Workbooks: opening | Migrated | Selection, extension resolution, already-open activation, reservation, permissions, read-only state, and newer-source checks are covered. |
+| Workbooks: management | Migrated with transaction caveat | Rename, replace, delete, and metadata edits are described with affected tables and unresolved atomicity/recovery. |
+| Workbooks: reservation | Migrated | Application reservation metadata and read-only intent are distinguished from database/file locks. |
+| Workbooks: naming and base path | Migrated with module correction | Portable `!` paths and filename helpers are documented; `TestBasePath` is correctly attributed to `cmdBaseFolder`. |
+| Load/save data | Migrated | Definition ranges, validation, scan results, load/import, save/export, combined flow, provenance, and runtime scenarios are documented. Illustrative legacy SQL is not presented as a stable contract. |
+| Documents | Migrated with trust-boundary warning | Registration levels, path policy, opening through Excel or Windows shell, management, and report generation are covered. |
+| Database open/close and management | Migrated | Roles, type selection, connection construction, required-table checks, initialization, settings, and registry-backed database lists are covered. |
+| Classifications | Migrated | View/manage base and exchange flows, workbooks, export, code-length checks, and test needs are documented. |
+| Correspondences | Draft placeholder replaced | View/manage/edit/export orchestration is source-derived; mapping semantics remain a test-backed contract backlog. |
+| Key families | Migrated | View/create/manage/delete, dynamic table creation, dimensions, and destructive-operation risks are documented. |
+| Batch update | Draft placeholder replaced | Selection, preflight, workbook loop, load/save, repeat, cancellation, logging, hidden Excel, and process-control risks are documented. |
+| Design | Migrated | Test, mark, names, link creation, globals, cleanup, clear, and template visibility operations are documented. |
+| Administration: register/manage content | Migrated or cross-referenced | Workbook, document, key-family, classification, correspondence, and dimension actions are documented on their workflow pages. Broken numeric cross-references from the draft were removed. |
+| Administration: backup/restore | Draft placeholders replaced | File-copy and logical SQL-to-Access export behaviour are documented without claiming verified recovery. |
+| Administration: settings | Migrated with scope caveats | User settings, administrators, permissions, years, globals, and base folder are covered. |
+| Administration: other and debug | Migrated | Workbook status, version, conversion, workbook passwords, tracing, and SQL logging are covered with security/recovery warnings. |
+| Supporting/interface modules | Migrated and completed | External capabilities and trust boundaries are listed, including previously blank descriptions. |
+| Building SQL statements | Draft placeholder replaced | SQL helpers and concatenation risk are documented in [Database access and schema](database-access.qmd). A full query/parameter inventory remains deferred. |
+| Multilingual interface | Migrated with evidence boundary | Four resource sheets, collection keys, fallback, form/ribbon updates, and a safe language-change process are documented. Claimed language names require workbook-resource evidence. |
+
+## Legacy statements not accepted as current facts
+
+| Legacy statement | Disposition |
+|---|---|
+| “There are no constraints in the NADABAS database.” | Too broad. Creation code defines unique indexes but no explicit foreign keys in the reviewed routines. Existing deployments require schema inspection. |
+| Omitting constraints is beneficial and avoids resource use. | Design rationale not supported by evidence or an ADR; omitted rather than endorsed. |
+| `OpenDb` opens the database and `CloseDB` closes all resources at zero. | Corrected. They maintain a nesting counter and Excel cursor; Access recordsets are closed at zero, while the connection has a broader lifecycle. |
+| `CreateSnapshot` returns a recordset. | Corrected. It stores a module-level recordset used through wrapper functions. |
+| Workbook changes with save definitions always set NADABAS dirty. | Not established. Current event code gates on `wbExchHasPut`; decision and test required. |
+| English and French are the implemented language columns, with named future languages. | The procedures establish columns 3–5 and English fallback comments, but exported source does not contain enough resource data to verify all language identities. |
+| User settings are consistent for all users because they are in the database. | Qualified. Central storage helps, but selected database, caching, concurrency, and permissions affect consistency. |
+| Backup completion means the system can be restored. | Rejected. Recovery requires an isolated restore and reconciliation test for each supported engine. |
+
+## Deferred evidence backlog
+
+The migration is content-complete relative to the draft, but the following
+evidence is intentionally not claimed:
+
+- supported Windows, Excel, bitness, provider, Access, and SQL Server matrix;
+- exported ribbon XML and language worksheets under version control;
+- complete `DBLinks`, `DBDef`, `TabDef`, and `ExchLinks` interface schemas;
+- deployed database schema diffs and migration history;
+- transaction, concurrency, retry, rollback, and reconciliation contracts;
+- runtime traces for all base, exchange, satellite, batch, and failure paths;
+- verified Access and SQL Server backup/restore procedures;
+- threat-model approval, credential remediation, and diagnostic-data policy;
+- UserForm accessibility and multilingual UI test evidence;
+- third-party tree-view publication authorization;
+- acceptance by any regional organization, member state, or national authority.
+
+## Review rule
+
+Close a deferred item only with a source change, repeatable test, supported
+environment observation, decision record, or authoritative external reference.
+Record the reviewed commit and environment. Do not convert a legacy statement
+into a fact by removing its evidence label.
