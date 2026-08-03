@@ -1,38 +1,276 @@
 ---
 title: System architecture
+description: Source-verified architecture baseline for NADABAS.
 ---
 
-::: {.callout-warning title="Outline"}
-This page defines the documentation scope. It is not yet a complete or verified
-architecture description.
+::: {.callout-important title="Review baseline"}
+This architecture description was checked against exported VBA at commit
+`8cfa4a786f1969a86c461908c66ceb37d821d96c`. It describes static source
+observations, not a completed runtime, security, accessibility, or regulatory
+assessment. Deployment-specific settings and production data were not inspected.
 :::
 
-## Purpose
+## Purpose and method
 
-Describe how Excel, the NADABAS VBA add-in, workbooks, the database, the Windows
-registry, file storage, and external interfaces cooperate at runtime.
+This page explains the current NADABAS system boundary, major components,
+runtime state, data flows, and trust boundaries. It is informed by
+[ISO/IEC/IEEE 42010:2022](https://www.iso.org/standard/74393.html) and uses the
+context, container, and dynamic-view ideas of the [C4
+model](https://c4model.com/diagrams). It does not claim conformance to either.
 
-## Planned content
+Architecture statements use stable claim identifiers. The corresponding source
+links and review status are recorded in the [architecture evidence
+register](architecture-evidence.qmd).
 
-- system context and supported deployment variants;
-- component responsibilities and trust boundaries;
-- startup, authentication, and connection lifecycle;
-- principal data flows for load, save, classification, correspondence, and
-  batch processing;
-- failure boundaries and recovery behaviour;
-- current VBA architecture and the seams intended for gradual .NET migration.
+### Evidence status
 
-## Evidence required
+| Status | Meaning |
+|---|---|
+| **Source-verified** | Directly supported by the exported source at the baseline commit. Runtime behaviour may still require testing. |
+| **Environment-dependent** | The source supports the behaviour, but configuration or infrastructure determines the result. |
+| **Legacy-draft** | Present in the earlier technical draft but not yet verified in source or a supported environment. |
+| **Unknown** | Evidence is incomplete; the statement must not be treated as established behaviour. |
 
-The final page must be checked against the exported modules, classes, and forms
-below `vba/`. Security-sensitive flows must also be checked against the security
-scanner and operational configuration. Architecture diagrams should be stored
-as Mermaid source where practical.
+## Stakeholders and concerns
 
-## Definition of done
+| Stakeholder or reviewer | Primary concerns |
+|---|---|
+| National accounts user | Correct workbook data, understandable messages, recoverable operations, and predictable load/save behaviour. |
+| NADABAS maintainer | Traceability from documentation to exported VBA, maintainability, testability, and controlled migration seams. |
+| Database administrator | Supported database engine, connection lifecycle, permissions, concurrency, backup, restore, and schema compatibility. |
+| Security and privacy reviewer | Credential handling, trust boundaries, logging, least privilege, data classification, and external integrations. |
+| Operations reviewer | Installation prerequisites, registry configuration, diagnostics, recovery, and version compatibility. |
+| Accessibility and localization reviewer | Plain English, language metadata, translatable terminology, text alternatives, and right-to-left readiness. |
+| Release maintainer | Reproducible source export/import, signing, versioning, CI evidence, and release provenance. |
 
-- Every component in the diagram has an owner and a linked reference page.
-- Data stores and trust boundaries are explicit.
-- No credentials, production paths, or environment-specific secrets appear in
-  examples.
-- The description names the NADABAS versions it has been verified against.
+## System context
+
+```{mermaid}
+flowchart LR
+  user["National accounts user"]
+  maintainer["NADABAS administrator or maintainer"]
+  excel["NADABAS in Microsoft Excel"]
+  database[("Configured database")]
+  registry[("Windows user registry")]
+  files[("Local or shared file storage")]
+
+  user -->|"Uses ribbon, forms, and workbooks"| excel
+  maintainer -->|"Configures databases and administers content"| excel
+  excel -->|"Reads and writes statistical and system data"| database
+  excel -->|"Reads and writes local settings"| registry
+  excel -->|"Opens, saves, imports, and exports files"| files
+```
+
+**Diagram description.** Users operate NADABAS inside Microsoft Excel. The
+add-in connects Excel workbooks to a configured database, reads local settings
+from the Windows registry, and interacts with local or shared files. These
+external stores are separate trust and operational boundaries.
+
+**ARCH-001 — Source-verified.** NADABAS is an Excel/VBA add-in whose user-facing
+entry points include the ribbon, forms, and Excel application events.
+
+**ARCH-002 — Source-verified.** Database configuration is loaded from the
+Windows user registry when the add-in starts. Configuration can include a
+database type, server or file location, catalog, user name, and password.
+
+**ARCH-003 — Source-verified.** The source models a base database, an exchange
+database, and optional satellite databases. A deployment does not necessarily
+use every role.
+
+## Internal component view
+
+```{mermaid}
+flowchart TB
+  subgraph host["Microsoft Excel process"]
+    workbook["Registered workbook\nNamed ranges and cell data"]
+    subgraph addin["NADABAS VBA add-in"]
+      ui["Ribbon and UserForms\nCommands and feedback"]
+      events["Application events\nWorkbook lifecycle"]
+      orchestration["Workflow modules\nLoad, save, batch, administration"]
+      state["Session state\nGlobals and domain classes"]
+      data["Data access\nclsDB, DBInterface, schema modules"]
+    end
+  end
+  registry[("Windows registry")]
+  base[("Base database")]
+  exchange[("Exchange database")]
+  satellite[("Optional satellite database")]
+  files[("File system")]
+
+  ui --> orchestration
+  events --> orchestration
+  workbook <--> orchestration
+  orchestration <--> state
+  orchestration --> data
+  state --> data
+  data <--> base
+  data <--> exchange
+  data <--> satellite
+  orchestration <--> files
+  state <--> registry
+```
+
+**Diagram description.** The ribbon, forms, and application events start VBA
+workflows. Workflow modules inspect workbook named ranges, coordinate global and
+object state, and use a shared ADO-based data access layer. Database roles,
+registry settings, and files sit outside the add-in boundary.
+
+| Component | Responsibility | Primary evidence |
+|---|---|---|
+| Startup and shutdown | Initializes language, Excel application events, session objects, and database settings. Shutdown cleanup is currently a placeholder. | `AutoOpenClose.bas` |
+| Ribbon and forms | Expose commands, show status, and invalidate controls when session or workbook state changes. | `RibbonUI.bas`, files below `vba/forms/` |
+| Application events | Observe workbook open, activation, changes, save, and close events; coordinate registered workbook behaviour. | `AppEvents.cls` |
+| Session and domain state | Hold active database roles, user settings, workbook state, classifications, correspondences, permissions, and other collections. | `Globals.bas`, `clsDB.cls`, related classes |
+| Workflow modules | Validate definitions and coordinate load, save, batch, document, classification, and administration operations. | Command modules below `vba/modules/` |
+| Data access | Build connection strings, open ADO connections and recordsets, execute SQL, and create database objects. | `cmdOpen_Close_Database.bas`, `DBInterface.bas`, `DbCreateTables.bas` |
+
+## Database roles and deployment variants
+
+**ARCH-004 — Source-verified.** `clsDB` defines SQL Server/SQL Express and
+Microsoft Access `.accdb` database types. Legacy `.mdb` is retained as an enum
+value but is explicitly rejected when opening a database.
+
+| Role | Source responsibility | Review note |
+|---|---|---|
+| Base database | Default database for workbook data and system metadata. | Confirm supported database products and versions for each deployment. |
+| Exchange database | Temporary current database for import and export workflows. | Confirm governance, transport, retention, and access controls locally. |
+| Satellite database | Optional database linked to a base database through registry configuration. | Confirm whether it is supported and used in the reviewed environment. |
+
+SQL Server connections may use integrated Windows security or supplied
+credentials, depending on configuration. Access connections use the configured
+Microsoft ACE OLE DB provider and a database file path. These are
+environment-dependent behaviours and must be verified without copying secrets
+into documentation or review evidence.
+
+## Runtime state and connection lifecycle
+
+```{mermaid}
+stateDiagram-v2
+  [*] --> Starting
+  Starting --> Sleeping: "Initialize events and settings"
+  Sleeping --> DatabaseSelected: "User selects a configured database"
+  DatabaseSelected --> Active: "Connection and initialization succeed"
+  DatabaseSelected --> Sleeping: "Selection or connection fails"
+  Active --> Operation: "Load, save, import, export, or administration"
+  Operation --> Active: "Close operation-level connection"
+  Active --> Sleeping: "Close database"
+```
+
+**Diagram description.** Startup creates the session in a sleeping state. A
+successful database selection and initialization activates NADABAS. Individual
+workflows open and close database resources around their work. Failure returns
+the session to a sleeping state.
+
+**ARCH-005 — Source-verified.** Startup registers an `AppEvents` instance with
+the Excel `Application`, initializes base and exchange database objects, marks
+NADABAS as sleeping, and loads registry-backed database settings.
+
+**ARCH-006 — Source-verified.** Opening a database constructs a connection for
+the selected database type, tests or initializes required structures, loads
+user settings and workbook metadata, and returns the application to sleeping
+state when connection or initialization fails.
+
+**ARCH-007 — Source-verified.** `auto_close` contains no cleanup implementation.
+Any assumption that application shutdown releases or persists additional state
+beyond object teardown by Excel is therefore **unknown** until runtime-tested.
+
+## Principal data flows
+
+### Load or import
+
+```{mermaid}
+sequenceDiagram
+  actor User
+  participant UI as "Ribbon or batch workflow"
+  participant Loader as "Load workflow"
+  participant WB as "Excel workbook"
+  participant DB as "Current database"
+
+  User->>UI: Start load or import
+  UI->>Loader: Select base or exchange database
+  Loader->>WB: Read definitions and named ranges
+  Loader->>Loader: Validate definitions and year selection
+  Loader->>DB: Open connection and query data
+  DB-->>Loader: Values and metadata
+  Loader->>WB: Update target cells and source information
+  Loader->>DB: Record last-get metadata when applicable
+  Loader->>DB: Close connection
+  Loader-->>User: Show statistics, missing values, or errors
+```
+
+**ARCH-008 — Source-verified.** Load/import validates workbook definitions,
+opens the selected database, scans `DBLinks` or `ExchLinks`, updates workbook
+areas, records metadata where applicable, and closes the connection.
+
+### Save or export
+
+```{mermaid}
+sequenceDiagram
+  actor User
+  participant UI as "Ribbon or batch workflow"
+  participant Saver as "Save workflow"
+  participant WB as "Excel workbook"
+  participant DB as "Current database"
+
+  User->>UI: Start save or export
+  UI->>Saver: Select base or exchange database
+  Saver->>WB: Read definitions, year, and data areas
+  Saver->>Saver: Validate definitions and conflicts
+  Saver->>DB: Open connection and write values
+  Saver->>DB: Update workbook metadata
+  Saver->>DB: Close connection
+  Saver->>WB: Optionally save workbook and clear dirty state
+  Saver-->>User: Show statistics or errors
+```
+
+**ARCH-009 — Source-verified.** Save/export validates definitions, writes
+workbook data through the shared data-access routines, updates workbook state,
+and closes the connection. The exact transaction and concurrency guarantees are
+not yet documented and require database-specific verification.
+
+## Trust boundaries and security-sensitive interfaces
+
+| Boundary or interface | Data or capability crossing it | Required review |
+|---|---|---|
+| Excel workbook to add-in | Named ranges, formulas, cell values, workbook paths, and events. | Validate untrusted or malformed workbook behaviour and macro-signing expectations. |
+| Add-in to database | Statistical data, system metadata, SQL commands, identities, and permissions. | Review least privilege, parameterization, transaction boundaries, logging, and recovery. |
+| Add-in to Windows registry | Language, provider, database location, user name, and potentially a password. | Treat registry credential storage as a security finding to assess and migrate; never publish values. |
+| Add-in to file system and shell | Workbook and document paths, file operations, and opening files or URLs. | Validate paths, file types, external destinations, and user confirmation. |
+| Add-in to Windows/Office APIs | Excel events, ADO/ADOX, WMI, and shell integration. | Document supported Windows, Office, drivers, trust settings, and failure behaviour. |
+
+::: {.callout-warning title="Credential handling requires a decision"}
+The current source can save database credentials in the Windows user registry.
+This page records that observation; it does not approve the design. Each
+deployment must determine whether credentials are used, how the registry is
+protected, and what replacement mechanism is required. Track the target design
+in an ADR and a security issue.
+:::
+
+## Quality concerns and known unknowns
+
+| Concern | Current evidence | Next verification |
+|---|---|---|
+| Functional correctness | Main entry points and static flows are traceable in source. | Exercise supported Excel, Access, and SQL Server scenarios with representative non-production workbooks. |
+| Availability and recovery | Connection failures generally return NADABAS to sleeping state and show messages. | Test interrupted reads/writes, database outages, Excel termination, and recovery steps. |
+| Data integrity | VBA performs definition checks and records workbook metadata. | Document transaction scope, constraints, conflict handling, and authoritative reconciliation procedures. |
+| Security and privacy | Trust boundaries and sensitive configuration paths are identifiable. | Complete threat modelling, credential migration, log review, least-privilege testing, and data classification. |
+| Accessibility and localization | Quarto output declares English; the interface loads language resources. | Test keyboard use, screen readers, translated UI strings, text expansion, Unicode, and right-to-left presentation. |
+| Portability | The solution depends on desktop Excel, VBA, Windows APIs, ADO/ADOX, and database drivers. | Record supported versions and define seams for optional .NET components without changing verified behaviour. |
+
+## International review
+
+Use the [international review and localization guide](../development/international-review.qmd)
+to prepare a review package. Reviewers should comment against claim IDs and
+state the deployment, jurisdiction, language, and reviewer role they assessed.
+
+This architecture is a common technical baseline. It does not by itself
+demonstrate acceptance by the African Union, European Union, ASEAN, their member
+states, or any national authority.
+
+## Maintenance rule
+
+Update this page and the evidence register in the same pull request when a
+change affects a documented component, trust boundary, database role, or data
+flow. Record consequential decisions as a small [architecture decision
+record](../decisions/index.qmd). Do not silently convert an environment-dependent
+or unknown statement into a verified claim.

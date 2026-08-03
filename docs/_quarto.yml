@@ -36,6 +36,7 @@ book:
     - part: "Technical architecture"
       chapters:
         - technical/architecture.qmd
+        - technical/architecture-evidence.qmd
         - technical/database.qmd
         - technical/excel-integration.qmd
     - part: "Reference"
@@ -44,6 +45,7 @@ book:
     - part: "Development"
       chapters:
         - development/index.qmd
+        - development/international-review.qmd
     - part: "Operations"
       chapters:
         - operations/index.qmd

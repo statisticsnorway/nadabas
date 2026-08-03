@@ -13,3 +13,13 @@ This glossary will grow as the technical draft is verified and migrated.
 | Review build | A non-production add-in created from reviewed source for functional verification. |
 | Security approval | A narrow, version-controlled exception for one expected scanner finding; it is not a general suppression. |
 | ADR | Architecture Decision Record. |
+| Architecture claim | A reviewable statement with a stable identifier, evidence status, and source or test reference. |
+| Base database | The default database role used for workbook data and NADABAS system metadata. |
+| BCP 47 | The standard syntax used to identify a human language, and optionally script or region, in digital content. |
+| Exchange database | A database role selected temporarily by NADABAS import and export workflows. |
+| Informative translation | A translation supplied for understanding that is not the authoritative basis for technical change decisions. |
+| Normative working version | The version against which technical changes and review dispositions are recorded. It does not imply legal normativity. |
+| Review baseline | The exact source commit, documentation version, deployment scope, and evidence set assessed by reviewers. |
+| Satellite database | An optional database role linked through configuration to a base database. |
+| Source-verified | Directly supported by exported source at the stated commit; runtime behaviour may still require testing. |
+| Trust boundary | A point where data or control crosses between components with different security or operational assumptions. |

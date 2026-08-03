@@ -10,9 +10,9 @@ GitHub pull requests and are expected to describe the versioned behaviour of
 the repository.
 
 ::: {.callout-note title="Documentation foundation"}
-The current site is an initial structure. Existing developer workflows are
-usable; architecture, database, reference, and operations sections are outlines
-that will be filled only after their content has been checked against the
+The architecture section now provides a source-verified baseline and evidence
+register. Database, reference, and operations sections remain outlines that
+will be filled only after their content has been checked against the
 version-controlled source and supported NADABAS environments.
 :::
 
@@ -31,8 +31,10 @@ version-controlled source and supported NADABAS environments.
 
 ## Explore the system
 
-- [Architecture](technical/architecture.qmd) describes the intended component
-  and data-flow documentation.
+- [Architecture](technical/architecture.qmd) describes the current system
+  boundary, components, data flows, and trust boundaries.
+- [International review and localization](development/international-review.qmd)
+  defines a traceable review protocol for multi-country and multilingual use.
 - [Database](technical/database.qmd) defines the database documentation scope.
 - [Excel integration](technical/excel-integration.qmd) defines the boundary
   between Excel, VBA, and external services.
@@ -43,11 +45,10 @@ version-controlled source and supported NADABAS environments.
 
 ## Documentation roadmap
 
-The first documentation increment establishes a searchable, reviewable book
-around the existing developer guides. Later increments will add the system
-architecture, database design, Excel integration, component reference,
-operations, and release documentation after each section has been verified
-against the exported VBA source and supported database versions.
+The current increment adds the system architecture and international review
+method. Later increments will add database design, Excel integration, component
+reference, operations, and release documentation after each section has been
+verified against the exported VBA source and supported database versions.
 
 Incomplete material should be tracked as a GitHub issue rather than left as an
 unowned placeholder in published documentation.

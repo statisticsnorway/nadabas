@@ -1,0 +1,250 @@
+---
+title: International review and localization
+description: A repeatable review protocol for multi-country NADABAS documentation.
+---
+
+::: {.callout-important title="Scope"}
+This guide makes a technical review package easier to assess across countries
+and languages. It does not establish legal compliance, certification, or
+approval by the African Union, European Union, ASEAN, a member state, or a
+national institution.
+:::
+
+## Review principles
+
+1. **Use one traceable technical baseline.** Every review identifies a Git
+   commit, documentation version, deployment profile, and review date.
+2. **Separate fact from proposal.** Mark statements as source-verified,
+   environment-dependent, legacy-draft, or unknown.
+3. **Review by concern and role.** Technical, domain, database, security,
+   operations, accessibility, and localization reviewers sign off only on their
+   scope.
+4. **Keep English plain and translation-ready.** Define terms, avoid idioms,
+   keep sentences focused, and separate translatable prose from identifiers.
+5. **Record national differences explicitly.** Do not hide a jurisdiction,
+   language, infrastructure, or operating-model difference in a generic
+   regional statement.
+6. **Preserve every disposition.** Accepted, rejected, deferred, and superseded
+   comments remain traceable to evidence and a decision.
+
+These principles are informed by
+[ISO/IEC/IEEE 42010:2022](https://www.iso.org/standard/74393.html),
+[ISO/IEC/IEEE 42030:2019](https://www.iso.org/standard/73436.html), the
+[ISO plain-language principles](https://www.iso.org/standard/78907.html), and
+the [Web Content Accessibility Guidelines 2.2](https://www.w3.org/TR/WCAG22/).
+They are guidance for this project, not a claim of standards conformance.
+
+## Language and translation policy
+
+The English repository version is the normative technical working version
+unless a release explicitly designates another authoritative version.
+
+| Translation status | Meaning |
+|---|---|
+| **Normative working version** | The version against which technical changes and review dispositions are recorded. |
+| **Reviewed translation** | A human reviewer has checked the translation against an identified source commit and terminology set. |
+| **Assisted translation** | Machine or computer-assisted output awaiting human review; it is informative only. |
+| **Superseded translation** | A translation whose source version has changed; keep it for provenance but do not use it for current decisions. |
+
+Every translated artifact must record:
+
+- document identifier and title;
+- source commit and source-language version;
+- language using a valid [BCP 47 language
+  tag](https://www.w3.org/WAI/WCAG22/Techniques/html/H57.html);
+- translation status, translator or service, and human reviewer;
+- review date and known untranslated or disputed terms.
+
+Code identifiers, VBA names, SQL identifiers, file names, registry keys, command
+names, and claim IDs stay unchanged. Translate their explanation, not the
+identifier.
+
+## Review package
+
+Prepare a small, self-contained package rather than asking reviewers to infer
+context from the repository.
+
+| Item | Required content |
+|---|---|
+| Cover note | Purpose, decision requested, owner, deadline, and contact point. |
+| Baseline | Repository URL, commit, branch or release, documentation version, and generated-output checksum when distributed outside GitHub. |
+| Scope | Included components, deployment profile, languages, jurisdictions, and explicit exclusions. |
+| Architecture | Context and component views, data flows, trust boundaries, and claim IDs. |
+| Evidence register | Source or test evidence for every material architecture claim. |
+| Risk and decision log | Security findings, known unknowns, deferred work, and relevant ADRs. |
+| Terminology set | Approved English terms, acronyms, definitions, non-translatable identifiers, and disputed translations. |
+| Review form | Reviewer role, context, comments, outcome, limitations, and sign-off. |
+
+## Reviewer roles
+
+One person may hold several roles, but the review record must state which role
+was exercised.
+
+| Role | Questions to answer |
+|---|---|
+| Domain reviewer | Does the behaviour and terminology match national accounts practice in the reviewed context? |
+| Technical reviewer | Are components, interfaces, states, and dependencies accurate and maintainable? |
+| Database reviewer | Are products, schemas, permissions, transactions, backup, restore, and migration assumptions correct? |
+| Security and privacy reviewer | Are data classifications, credentials, logs, privileges, transfers, retention, and trust boundaries acceptable? |
+| Operations reviewer | Can the solution be installed, configured, monitored, recovered, and supported locally? |
+| Accessibility reviewer | Can the documentation and relevant interface be used with required assistive technologies and input methods? |
+| Localization reviewer | Are language, terminology, character handling, layout, formats, and cultural assumptions appropriate? |
+| Governance reviewer | Is the decision owner identified and is the evidence sufficient for the stated decision? |
+
+## Comment format and deferred findings
+
+Use one comment per issue. A recommended identifier is
+`IR-<review-code>-<sequence>`, for example `IR-EU-SEC-004`. The identifier does
+not imply endorsement by the named region.
+
+| Field | Content |
+|---|---|
+| Claim or section | Architecture claim ID, heading, file, or line. |
+| Category | Accuracy, domain, security/privacy, interoperability, accessibility, localization, operations, governance, or editorial. |
+| Severity | Blocking, major, minor, or editorial. |
+| Context | Country or organization, deployment type, database type, Office version, and language where relevant. |
+| Finding | One observable problem, ambiguity, or missing decision. |
+| Evidence | Source, test result, policy, standard, or operational experience supporting the finding. |
+| Proposed disposition | Change, accept with rationale, defer to an issue and owner, or reject with rationale. |
+
+A deferred finding is not closed merely by labelling it “fix later.” Record an
+owner, target milestone, risk acceptance authority, and the condition that will
+trigger re-evaluation. Security, data-integrity, legal, or accessibility blockers
+need explicit acceptance by the accountable role; a documentation editor cannot
+accept them alone.
+
+## Review workflow
+
+```{mermaid}
+flowchart LR
+  prepare["Prepare baseline and review package"] --> screen["Completeness and terminology screen"]
+  screen --> review["Independent role-based review"]
+  review --> triage["Triage and assign dispositions"]
+  triage --> revise["Revise source, evidence, and decisions"]
+  revise --> verify["Reviewer verifies resolved findings"]
+  verify --> translate["Synchronize reviewed translations"]
+  translate --> accept["Record scoped acceptance"]
+  accept --> archive["Archive package and provenance"]
+```
+
+**Diagram description.** A review starts from a versioned package, proceeds
+through independent role-based assessment, and records dispositions before
+translations are synchronized. Acceptance is scoped and the full provenance is
+retained.
+
+### Acceptance outcomes
+
+- **Accepted for stated scope:** evidence is sufficient for the named version,
+  deployment, role, and decision.
+- **Accepted with conditions:** named actions have owners, dates, and explicit
+  risk acceptance.
+- **Revision required:** blocking findings prevent the requested decision.
+- **Not assessed:** the reviewer lacked evidence, authority, environment, or
+  subject-matter coverage. This is not a negative decision.
+
+## Translation-ready authoring rules
+
+- Use UTF-8/Unicode throughout source and generated web content.
+- Declare the page language and identify passages in another language; WCAG 2.2
+  addresses both language of page and language of parts.
+- Use approved terms consistently and expand acronyms on first use.
+- Avoid idioms, humour, culturally specific metaphors, flags, and unexplained
+  institutional abbreviations.
+- Keep one main idea per sentence and prefer active, direct language.
+- Use ISO 8601-style unambiguous dates in technical records, include time zone
+  where timing matters, and state units and decimal conventions.
+- Keep text out of raster images. Store diagrams as editable text and provide a
+  prose description of every material diagram.
+- Design tables and callouts so that text expansion does not destroy meaning.
+- Do not encode meaning by colour alone.
+- Test Arabic and other right-to-left content for direction, ordering,
+  punctuation, code fragments, and mixed-direction identifiers. W3C provides
+  [language-aware HTML guidance](https://www.w3.org/TR/i18n-html-tech-lang/).
+- Maintain a terminology decision log; do not silently replace a nationally
+  reviewed term.
+
+## Regional review profiles
+
+These profiles identify planning considerations. Member-state requirements and
+the actual users of a deployment remain authoritative for review scope.
+
+### African Union contexts
+
+The [African Union lists](https://au.int/en/about/languages) Arabic, English,
+French, Portuguese, Spanish, Kiswahili, and other African languages among its
+official languages. An English-only technical baseline can support coordination,
+but it must not be treated as sufficient language coverage for all AU contexts.
+
+For an AU or African member-state review:
+
+- decide working and user-facing languages from the participating institutions;
+- plan for Arabic right-to-left presentation from the beginning;
+- involve local domain reviewers for national accounts terminology;
+- record character-set, Office locale, number/date formatting, connectivity,
+  support, and database-infrastructure assumptions by deployment;
+- avoid describing one national review as “African Union compliant.”
+
+### European Union contexts
+
+The EU has [24 official languages](https://european-union.europa.eu/principles-countries-history/languages_en).
+EU guidance notes that specialized technical information may use fewer
+languages depending on its target audience, while priority public content has
+broader coverage ([languages on EU
+websites](https://european-union.europa.eu/languages-our-websites_en)).
+
+For an EU or EU member-state review:
+
+- use target-user research to decide translation coverage and record the
+  decision instead of assuming that English is always sufficient;
+- assess legal, organizational, semantic, and technical interoperability;
+- include accessibility, security/privacy, multilingualism, openness, data
+  portability, and preservation as explicit concerns, reflecting the
+  [European Interoperability
+  Framework](https://interoperable-europe.ec.europa.eu/collection/iopeu-monitoring/european-interoperability-framework-detail);
+- separate source terms, translated UI labels, statistical concepts, and data
+  exchange identifiers so that semantic differences remain visible.
+
+### ASEAN contexts
+
+Article 34 of the [ASEAN
+Charter](https://www.asean.org/wp-content/uploads/2021/09/2.-February-2015-The-ASEAN-Charter-18th-Reprint.pdf)
+establishes English as ASEAN's working language. English is therefore a sensible
+common technical review language for cross-ASEAN collaboration. It does not
+remove the need to assess national terminology, user-facing language, scripts,
+formats, policy, accessibility, infrastructure, and operating practice in each
+participating member state.
+
+### Other international contexts
+
+Use the same baseline and roles for other regions. Add a local profile only
+when it captures an evidenced difference. Do not duplicate the common
+architecture or create region-specific forks that cannot be reconciled.
+
+## Review completion checklist
+
+- [ ] Baseline commit, documentation version, scope, and owner are recorded.
+- [ ] Architecture claims link to evidence and distinguish unknowns.
+- [ ] Deployment, database, Office, operating-system, and language assumptions
+  are explicit.
+- [ ] Domain, technical, database, security/privacy, operations, accessibility,
+  and localization coverage is recorded, including roles not assessed.
+- [ ] All blocking and major comments have an accountable disposition.
+- [ ] Deferred items have an issue, owner, target, risk authority, and review
+  trigger.
+- [ ] Translations identify their source version and human-review status.
+- [ ] Diagrams have text descriptions and do not rely on colour alone.
+- [ ] Acceptance names its exact scope and does not imply regional or national
+  certification beyond the reviewers' authority.
+
+## Reference set
+
+- [ISO/IEC/IEEE 42010:2022 — Architecture description](https://www.iso.org/standard/74393.html)
+- [ISO/IEC/IEEE 42030:2019 — Architecture evaluation](https://www.iso.org/standard/73436.html)
+- [ISO 24495-1:2023 — Plain language](https://www.iso.org/standard/78907.html)
+- [C4 model — Diagrams](https://c4model.com/diagrams)
+- [WCAG 2.2](https://www.w3.org/TR/WCAG22/)
+- [W3C — Language attribute and BCP 47](https://www.w3.org/WAI/WCAG22/Techniques/html/H57.html)
+- [African Union languages](https://au.int/en/about/languages)
+- [EU languages on websites](https://european-union.europa.eu/languages-our-websites_en)
+- [European Interoperability Framework](https://interoperable-europe.ec.europa.eu/collection/iopeu-monitoring/european-interoperability-framework-detail)
+- [ASEAN Charter](https://www.asean.org/wp-content/uploads/2021/09/2.-February-2015-The-ASEAN-Charter-18th-Reprint.pdf)
