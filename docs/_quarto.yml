@@ -14,7 +14,6 @@ book:
   page-navigation: true
   search: true
   reader-mode: true
-  downloads: [docx]
   sidebar:
     style: docked
     collapse-level: 1
@@ -67,8 +66,4 @@ format:
     number-sections: false
     toc: true
     code-copy: true
-  docx:
-    toc: true
-    number-sections: true
-
 lang: en
