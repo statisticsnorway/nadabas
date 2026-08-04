@@ -1,40 +1,197 @@
 # NADABAS
 
-National Accounts Database System (NADABAS)
+**National Accounts Database System**
 
-NADABAS is a system for compiling national accounts statistics
-using Microsoft Excel, VBA, and SQL Server.
+[![Tests](https://github.com/statisticsnorway/nadabas/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/statisticsnorway/nadabas/actions/workflows/tests.yml)
+[![VBA security scan](https://github.com/statisticsnorway/nadabas/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/statisticsnorway/nadabas/actions/workflows/security.yml)
+[![Documentation](https://github.com/statisticsnorway/nadabas/actions/workflows/documentation.yml/badge.svg?branch=main)](https://github.com/statisticsnorway/nadabas/actions/workflows/documentation.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)
 
-## Repository structure
+NADABAS is an Excel-first system for structuring national accounts compilation.
+It keeps calculations visible in Microsoft Excel while replacing fragile direct
+links between workbooks with controlled transfers through a shared database.
 
-- `vba/` VBA source code exported from Excel
-- `sql/` SQL Server schema and migration scripts
-- `tools/` Python tools for import/export and build automation
-- `docs/` Documentation and installation guides
-- `tests/` Automated tests and validation routines
+This repository contains the version-controlled VBA source, supporting Python
+tools, automated checks, and technical documentation. The Excel add-in is a
+build and release artifact; the exported files below [`vba/`](vba/) are the
+reviewable source of truth.
 
-## VBA review and XLAM build
+- **Project website:** <https://sites.google.com/nadabas.net/nadabas>
+- **Technical documentation:** <https://statisticsnorway.github.io/nadabas/>
+- **Training and user resources:**
+  <https://sites.google.com/nadabas.net/nadabas/nadabas-resources>
 
-Export a complete VBA project from an existing NADABAS add-in with
-`tools/export_vba.py`. See
-[`docs/developer-guide/export-vba.md`](docs/developer-guide/export-vba.md) for
-prerequisites and the release-to-Git workflow.
+## Quick navigation
 
-VBA source can be reviewed through normal GitHub pull requests and imported
-into a copy of the NADABAS add-in with `tools/import_vba.py`. See
-[`docs/developer-guide/import-vba.md`](docs/developer-guide/import-vba.md) for
-prerequisites, commands, UserForm handling, and the recommended release flow.
+### I want to use or learn NADABAS
 
-Review security-relevant VBA operations with `tools/scan_vba_security.py`:
+- Read the [NADABAS overview](https://sites.google.com/nadabas.net/nadabas/overview).
+- Follow the [tutorials and training resources](https://sites.google.com/nadabas.net/nadabas/nadabas-resources)
+  for installation, database creation, classifications, key families, workbook
+  registration, data transfers, and batch processing.
+- Use the [project contact and registration page](https://sites.google.com/nadabas.net/nadabas/contact-and-registration)
+  for training-package or access questions.
 
-```bash
-python tools/scan_vba_security.py vba
+### I maintain a NADABAS installation
+
+- Start with the [technical documentation](https://statisticsnorway.github.io/nadabas/).
+- Review the [system architecture](docs/technical/architecture.qmd) and
+  [VBA internals](docs/vba/index.qmd).
+- Check the [database access and schema guide](docs/vba/database-access.qmd)
+  before changing database structures or configuration.
+- Treat backup, restore, conversion, credentials, and multi-user behaviour as
+  deployment-specific operations that require testing with non-production data.
+
+### I want to develop or contribute
+
+- Follow [Getting started](docs/developer-guide/getting-started.md).
+- Read the [contribution guide](CONTRIBUTING.md) before making changes.
+- Use the [VBA export](docs/developer-guide/export-vba.md) and
+  [VBA import](docs/developer-guide/import-vba.md) workflows.
+- Review [VBA security scanning](docs/developer-guide/scan-vba-security.md)
+  before approving native APIs, file operations, shell access, or process control.
+
+## What NADABAS does
+
+NADABAS connects registered Excel workbooks to a Microsoft Access or SQL Server
+database through an Excel ribbon and VBA workflows.
+
+Key capabilities include:
+
+- loading data from a database into defined Excel ranges;
+- saving workbook values and provenance back to the database;
+- organizing data through key families and dimensions;
+- managing classifications and correspondences;
+- registering, opening, reserving, and coordinating workbooks;
+- running ordered batches of workbook updates;
+- linking supporting documents and generating metadata reports;
+- providing administrator, permission, period, backup, and diagnostic tools;
+- loading translated ribbon, form, message, and error text from workbook resources.
+
+```mermaid
+flowchart LR
+  user["National accounts user"]
+  excel["Microsoft Excel\nNADABAS ribbon and VBA"]
+  workbooks["Registered workbooks\nNamed ranges and calculations"]
+  database[("Access or SQL Server\nData and metadata")]
+
+  user --> excel
+  excel <--> workbooks
+  excel <--> database
 ```
 
-The scanner removes VBA comments, distinguishes errors from review warnings,
-and supports narrow, documented approvals. See
-[`docs/developer-guide/scan-vba-security.md`](docs/developer-guide/scan-vba-security.md).
+NADABAS currently depends on desktop Microsoft Excel, VBA, Windows APIs, and
+database drivers. The repository's Python tools and documentation checks do not
+replace functional testing in a supported Excel environment. See the
+[architecture evidence register](docs/technical/architecture-evidence.qmd) for
+the distinction between source-verified and environment-dependent behaviour.
 
-## Status
+## Repository layout
 
-Initial repository setup.
+```text
+vba/                     Exported VBA source
+  modules/               Standard modules (.bas)
+  classes/               Class and workbook modules (.cls)
+  forms/                 UserForms and binary resources (.frm/.frx)
+tools/                   VBA export, import, and security-scanning tools
+tests/                   Automated tests and test fixtures
+docs/                    Quarto technical documentation and contributor guides
+.github/workflows/       Tests, security checks, and documentation deployment
+experimental/            Isolated exploratory work; not production source
+```
+
+VBA text files use CRLF line endings because Excel can otherwise import some
+components incorrectly. Keep every UserForm `.frm` file together with its
+required `.frx` resource.
+
+## Development setup
+
+### Prerequisites
+
+- Git;
+- Python 3.12 or newer;
+- Poetry 2.2 or newer;
+- pre-commit;
+- Windows and Microsoft Excel for VBA import/export and functional testing;
+- Quarto for local documentation preview.
+
+Clone the repository and install the development environment:
+
+```powershell
+git clone https://github.com/statisticsnorway/nadabas.git
+Set-Location nadabas
+poetry install
+poetry run pre-commit install
+```
+
+Run the same core checks used by GitHub Actions:
+
+```powershell
+poetry run pre-commit run --all-files
+poetry run pytest -v
+poetry run python tools/scan_vba_security.py vba `
+  --approvals tools/vba-security-approvals.json `
+  --show-approved
+```
+
+The security scanner reports operations that require human review. A warning is
+not automatically a vulnerability, and a documented approval is not a general
+exception for future code.
+
+## VBA source workflow
+
+1. Export a complete VBA project to a staging directory with
+   [`tools/export_vba.py`](tools/export_vba.py).
+2. Review the staged differences before copying intended changes into `vba/`.
+3. Run pre-commit, tests, and the VBA security scanner.
+4. Dry-run the import with [`tools/import_vba.py`](tools/import_vba.py).
+5. Import into a copy of the approved Excel template and perform documented
+   functional tests.
+6. Build and sign release artifacts only after source review and approval.
+
+Never use an `.xlam` or `.xlsm` file to silently overwrite reviewed source.
+Editing VBA invalidates an existing digital signature.
+
+## Documentation
+
+The technical documentation is a Quarto book published through GitHub Pages.
+Preview or render it locally from the repository root:
+
+```powershell
+quarto preview docs
+quarto render docs --to html
+```
+
+Documentation changes should accompany changes to behaviour, configuration,
+security controls, or supported workflows. Exact module, class, form, table,
+and setting names should match the exported source.
+
+## Project status
+
+The repository is actively establishing reproducible source control, automated
+review, and technical documentation for an existing Excel/VBA system. Static
+checks cover the exported source and tooling, but Excel behaviour, supported
+Office/database combinations, signing, and deployment-specific recovery still
+require manual evidence.
+
+For project history, governance, and adoption information, see the official
+[background](https://sites.google.com/nadabas.net/nadabas/background) and
+[countries](https://sites.google.com/nadabas.net/nadabas/countries) pages.
+
+## Contributing
+
+Contributions are welcome. Keep changes focused, avoid production data and
+credentials, and include automated and manual verification appropriate to the
+risk. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the complete workflow.
+
+## Security
+
+Do not report suspected vulnerabilities in a public issue. Follow
+[`SECURITY.md`](SECURITY.md) and use GitHub private vulnerability reporting.
+
+## License
+
+This repository is published under the [MIT License](LICENSE.md). Individual
+third-party components may retain additional notices or distribution terms;
+see the [component reference](docs/vba/localization-and-components.qmd#third-party-tree-view-classes)
+before redistributing extracted VBA modules.
