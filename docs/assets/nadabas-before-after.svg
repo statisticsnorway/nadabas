@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="720" viewBox="0 0 1400 720" role="img" aria-labelledby="title description">
+  <title id="title">How NADABAS simplifies data exchange between Excel workbooks</title>
+  <desc id="description">Before NADABAS, source data, calculation workbooks, and results are connected through many direct links. With NADABAS, they exchange data through one shared database, with metadata and access controls managed centrally.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#35515a"/>
+    </marker>
+    <style>
+      text { font-family: Arial, Helvetica, sans-serif; fill: #17242a; }
+      .panel-title { font-size: 30px; font-weight: 700; }
+      .panel-subtitle { font-size: 18px; fill: #52656d; }
+      .group-label { font-size: 17px; font-weight: 700; fill: #43575f; }
+      .box-label { font-size: 16px; font-weight: 700; text-anchor: middle; }
+      .small-label { font-size: 14px; text-anchor: middle; }
+      .link { fill: none; stroke: #35515a; stroke-width: 2.8; marker-end: url(#arrow); }
+      .controlled-link { fill: none; stroke: #2c6b48; stroke-width: 3.2; marker-end: url(#arrow); }
+      .source { fill: #7259d9; stroke: #443296; stroke-width: 2; }
+      .workbook { fill: #3d9bd1; stroke: #1d5e84; stroke-width: 2; }
+      .result { fill: #ffffff; stroke: #52656d; stroke-width: 2; }
+      .metadata { fill: #e5eaec; stroke: #7b8b91; stroke-width: 1.5; }
+    </style>
+  </defs>
+
+  <rect width="1400" height="720" fill="#ffffff"/>
+  <text x="700" y="48" font-size="34" font-weight="700" text-anchor="middle">From workbook links to controlled data exchange</text>
+  <text x="700" y="78" font-size="18" fill="#52656d" text-anchor="middle">NADABAS provides a shared connection point for Excel-based national accounts production</text>
+
+  <!-- Before NADABAS -->
+  <rect x="35" y="105" width="640" height="575" rx="18" fill="#f8fafb" stroke="#cbd5d9" stroke-width="2"/>
+  <text class="panel-title" x="70" y="150">Before NADABAS</text>
+  <text class="panel-subtitle" x="70" y="179">Direct workbook-to-workbook links</text>
+
+  <rect x="490" y="205" width="135" height="70" rx="8" class="result"/>
+  <text class="box-label" x="557" y="234">Published</text>
+  <text class="small-label" x="557" y="255">results</text>
+
+  <text class="group-label" x="70" y="315">Calculation workbooks</text>
+  <rect x="70" y="335" width="100" height="72" rx="6" class="workbook"/>
+  <rect x="185" y="335" width="100" height="72" rx="6" class="workbook"/>
+  <rect x="300" y="335" width="100" height="72" rx="6" class="workbook"/>
+  <rect x="415" y="335" width="100" height="72" rx="6" class="workbook"/>
+  <rect x="530" y="335" width="100" height="72" rx="6" class="workbook"/>
+  <text class="small-label" x="120" y="366"><tspan x="120">Industry</tspan><tspan x="120" dy="19">A</tspan></text>
+  <text class="small-label" x="235" y="366"><tspan x="235">Industry</tspan><tspan x="235" dy="19">B</tspan></text>
+  <text class="small-label" x="350" y="366"><tspan x="350">Final</tspan><tspan x="350" dy="19">use</tspan></text>
+  <text class="small-label" x="465" y="366"><tspan x="465">Imports /</tspan><tspan x="465" dy="19">exports</tspan></text>
+  <text class="small-label" x="580" y="377">Prices</text>
+
+  <text class="group-label" x="70" y="515">Source data</text>
+  <rect x="160" y="535" width="105" height="72" rx="6" class="source"/>
+  <rect x="285" y="535" width="105" height="72" rx="6" class="source"/>
+  <rect x="410" y="535" width="105" height="72" rx="6" class="source"/>
+  <text class="box-label" x="212" y="578" fill="#ffffff">Source A</text>
+  <text class="box-label" x="337" y="578" fill="#ffffff">Source B</text>
+  <text class="box-label" x="462" y="578" fill="#ffffff">…</text>
+
+  <!-- A deliberately tangled selection of direct links -->
+  <path class="link" d="M 212 535 C 165 475, 130 460, 120 407"/>
+  <path class="link" d="M 212 535 C 250 470, 330 455, 350 407"/>
+  <path class="link" d="M 337 535 C 315 480, 255 460, 235 407"/>
+  <path class="link" d="M 337 535 C 390 470, 450 455, 465 407"/>
+  <path class="link" d="M 462 535 C 430 470, 390 455, 350 407"/>
+  <path class="link" d="M 462 535 C 500 470, 560 455, 580 407"/>
+  <path class="link" d="M 120 335 C 170 235, 455 220, 490 238"/>
+  <path class="link" d="M 235 335 C 270 265, 455 245, 490 245"/>
+  <path class="link" d="M 350 335 C 390 290, 470 270, 505 275"/>
+  <path class="link" d="M 465 335 C 465 305, 500 285, 525 275"/>
+  <path class="link" d="M 170 370 C 178 350, 180 350, 185 370"/>
+  <path class="link" d="M 400 380 C 407 350, 410 350, 415 380"/>
+
+  <rect x="70" y="628" width="190" height="32" rx="16" fill="#fde7df"/>
+  <circle cx="91" cy="644" r="6" fill="#c34a25"/>
+  <text x="108" y="650" font-size="16" font-weight="700" fill="#8f361c">Many fragile links</text>
+
+  <!-- With NADABAS -->
+  <rect x="725" y="105" width="640" height="575" rx="18" fill="#f7fbf8" stroke="#b8d1c2" stroke-width="2"/>
+  <text class="panel-title" x="760" y="150">With NADABAS</text>
+  <text class="panel-subtitle" x="760" y="179">One controlled exchange point</text>
+
+  <text class="group-label" x="760" y="235">Excel calculation workbooks</text>
+  <rect x="760" y="255" width="100" height="72" rx="6" class="workbook"/>
+  <rect x="875" y="255" width="100" height="72" rx="6" class="workbook"/>
+  <rect x="990" y="255" width="100" height="72" rx="6" class="workbook"/>
+  <text class="small-label" x="810" y="286"><tspan x="810">Industry</tspan><tspan x="810" dy="19">A</tspan></text>
+  <text class="small-label" x="925" y="286"><tspan x="925">Final</tspan><tspan x="925" dy="19">use</tspan></text>
+  <text class="small-label" x="1040" y="286"><tspan x="1040">Imports /</tspan><tspan x="1040" dy="19">exports</tspan></text>
+
+  <rect x="1190" y="235" width="125" height="72" rx="8" class="result"/>
+  <text class="box-label" x="1252" y="266">Published</text>
+  <text class="small-label" x="1252" y="287">results</text>
+
+  <!-- Database cylinder -->
+  <path d="M 930 398 L 930 510 C 930 532, 1050 532, 1050 510 L 1050 398 Z" fill="#1f9d50" stroke="#126735" stroke-width="2.5"/>
+  <ellipse cx="990" cy="398" rx="60" ry="24" fill="#35ae63" stroke="#126735" stroke-width="2.5"/>
+  <path d="M 930 510 C 930 532, 1050 532, 1050 510" fill="none" stroke="#126735" stroke-width="2.5"/>
+  <text class="box-label" x="990" y="444" fill="#ffffff">NADABAS</text>
+  <text class="small-label" x="990" y="466" fill="#ffffff">shared database</text>
+  <text class="small-label" x="990" y="486" fill="#ffffff">and metadata</text>
+
+  <text class="group-label" x="760" y="515">Source data</text>
+  <rect x="760" y="535" width="105" height="72" rx="6" class="source"/>
+  <rect x="880" y="535" width="105" height="72" rx="6" class="source"/>
+  <text class="box-label" x="812" y="578" fill="#ffffff">Source A</text>
+  <text class="box-label" x="932" y="578" fill="#ffffff">Source B</text>
+
+  <text class="group-label" x="1125" y="383">Managed centrally</text>
+  <rect x="1125" y="400" width="190" height="36" rx="5" class="metadata"/>
+  <rect x="1125" y="446" width="190" height="36" rx="5" class="metadata"/>
+  <rect x="1125" y="492" width="190" height="36" rx="5" class="metadata"/>
+  <text class="small-label" x="1220" y="423">Classifications</text>
+  <text class="small-label" x="1220" y="469">Correspondences</text>
+  <text class="small-label" x="1220" y="515">Permissions and provenance</text>
+
+  <!-- Controlled connections through the database -->
+  <path class="controlled-link" d="M 812 535 C 835 505, 890 485, 930 475"/>
+  <path class="controlled-link" d="M 932 535 C 940 520, 955 518, 965 520"/>
+  <path class="controlled-link" d="M 955 398 C 920 360, 830 360, 810 327" marker-start="url(#arrow)"/>
+  <path class="controlled-link" d="M 990 374 L 925 327" marker-start="url(#arrow)"/>
+  <path class="controlled-link" d="M 1025 398 C 1060 360, 1050 350, 1040 327" marker-start="url(#arrow)"/>
+  <path class="controlled-link" d="M 1050 420 C 1110 365, 1160 320, 1190 280"/>
+  <path class="controlled-link" d="M 1125 418 L 1050 430"/>
+  <path class="controlled-link" d="M 1125 464 L 1050 464"/>
+  <path class="controlled-link" d="M 1125 510 L 1050 495"/>
+
+  <rect x="1085" y="628" width="230" height="32" rx="16" fill="#dff3e6"/>
+  <circle cx="1106" cy="644" r="6" fill="#1f8b49"/>
+  <text x="1123" y="650" font-size="16" font-weight="700" fill="#176b3a">Shared data and metadata</text>
+</svg>

@@ -68,17 +68,14 @@ Key capabilities include:
 - providing administrator, permission, period, backup, and diagnostic tools;
 - loading translated ribbon, form, message, and error text from workbook resources.
 
-```mermaid
-flowchart LR
-  user["National accounts user"]
-  excel["Microsoft Excel\nNADABAS ribbon and VBA"]
-  workbooks["Registered workbooks\nNamed ranges and calculations"]
-  database[("Access or SQL Server\nData and metadata")]
+![Before NADABAS, workbooks exchange data through many direct links. With
+NADABAS, workbooks exchange data through one shared
+database.](docs/assets/nadabas-before-after.svg)
 
-  user --> excel
-  excel <--> workbooks
-  excel <--> database
-```
+Before NADABAS, workbook-to-workbook links create a fragile network. With
+NADABAS, workbooks read and write through a shared database while
+classifications, correspondences, permissions, and provenance are managed
+centrally.
 
 NADABAS currently depends on desktop Microsoft Excel, VBA, Windows APIs, and
 database drivers. The repository's Python tools and documentation checks do not
