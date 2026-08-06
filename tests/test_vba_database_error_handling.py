@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -49,10 +48,10 @@ class VbaDatabaseErrorHandlingTests(unittest.TestCase):
         self.assertIn("CloseDbAll", procedure)
         self.assertIn("Set CurrentDB.DBCnn = Nothing", procedure)
         self.assertIn("SetNadabasIsSleeping (True)", procedure)
-        self.assertIn("MsgBox errorMessage, vbCritical, \"NADABAS\"", procedure)
+        self.assertIn('MsgBox errorMessage, vbCritical, "NADABAS"', procedure)
 
         user_message = procedure[
-            procedure.index('errorMessage = "NADABAS could not open'):procedure.index(
+            procedure.index('errorMessage = "NADABAS could not open') : procedure.index(
                 "MsgBox errorMessage"
             )
         ]
