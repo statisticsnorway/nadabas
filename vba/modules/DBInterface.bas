@@ -6,6 +6,12 @@ Dim rs As ADODB.Recordset      ' The current Cursor into the database (recordset
 Dim RSGet As ADODB.Recordset   ' The current Cursor into the database (recordset)
 Dim RSSum As ADODB.Recordset   ' The current Cursor into the database (recordset)
 
+Private Const ERR_CURSOR_NOT_OPEN As Long = vbObjectError + 6000
+
+Dim LastCursorSql As String
+Dim LastCursorErrorNumber As Long
+Dim LastCursorErrorDescription As String
+
 Dim qcursorRead As Long
 Dim qcursorUpdate As Long
 Dim qcursorAdd As Long
@@ -29,8 +35,14 @@ End Function
 
 Public Function CreateCursor(ssql As String) As Boolean
 
+    Dim errorNumber As Long
+    Dim errorDescription As String
 
     On Error GoTo someerror
+
+    LastCursorSql = vbNullString
+    LastCursorErrorNumber = 0
+    LastCursorErrorDescription = vbNullString
 
     AddToSQLLog "Cursor = "
     AddToSQLLog ssql
@@ -68,8 +80,22 @@ Public Function CreateCursor(ssql As String) As Boolean
 
 someerror:
 
+   errorNumber = err.Number
+   errorDescription = err.Description
+
+   LastCursorSql = ssql
+   LastCursorErrorNumber = errorNumber
+   LastCursorErrorDescription = errorDescription
+
+   On Error Resume Next
+   If Not rs Is Nothing Then
+      If rs.state = adStateOpen Then rs.Close
+   End If
+   Set rs = Nothing
+   On Error GoTo 0
+
    AddToSQLLog "Creater Cursor failed " & vbCrLf & _
-           err.Number & ":" & err.Description
+           errorNumber & ":" & errorDescription
    CreateCursor = False
 End Function
 
@@ -298,10 +324,41 @@ End Sub
 
 Public Sub CursorAddNew()
 
+        If Not CursorIsOpen Then RaiseCursorNotOpen "CursorAddNew"
         rs.AddNew
 
 
    qcursorAdd = qcursorAdd + 1
+End Sub
+
+Private Function CursorIsOpen() As Boolean
+
+    On Error GoTo CursorNotOpen
+
+    If rs Is Nothing Then Exit Function
+    CursorIsOpen = (rs.state = adStateOpen)
+
+CursorNotOpen:
+
+End Function
+
+Private Sub RaiseCursorNotOpen(operationName As String)
+
+    Dim message As String
+
+    message = "Cannot execute " & operationName & _
+              " because the database cursor is not open."
+
+    If LastCursorErrorNumber <> 0 Then
+        message = message & vbCrLf & vbCrLf & _
+                  "The cursor failed to open for this SQL statement:" & vbCrLf & _
+                  LastCursorSql & vbCrLf & vbCrLf & _
+                  "Original error " & LastCursorErrorNumber & ": " & _
+                  LastCursorErrorDescription
+    End If
+
+    err.Raise ERR_CURSOR_NOT_OPEN, "DBInterface." & operationName, message
+
 End Sub
 
 

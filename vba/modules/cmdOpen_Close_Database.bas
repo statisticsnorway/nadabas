@@ -12,6 +12,13 @@ Public Sub OpenDatabase()
 ' *                                             *
 ' ***********************************************
 
+    Dim errorNumber As Long
+    Dim errorDescription As String
+    Dim errorMessage As String
+    Dim isAccessDatabase As Boolean
+
+    On Error GoTo OpenError
+
 ' * changed so dialog box is always shows even when only one database is in use
 ' *
 '  If Databases.count = 1 Then
@@ -104,6 +111,40 @@ someerror:
     SetNadabasIsSleeping (True)
     Set Globals.CurrentDB = New clsDB
     Exit Sub
+
+OpenError:
+
+    errorNumber = err.Number
+    errorDescription = err.Description
+
+    On Error Resume Next
+    isAccessDatabase = (CurrentDB.DBType = accdb)
+    AddToSQLLog "Open database failed " & vbCrLf & _
+                errorNumber & ":" & errorDescription
+    CloseDbAll
+    Set CurrentDB.DBCat = Nothing
+    Set CurrentDB.DBCnn = Nothing
+    SetNadabasIsSleeping (True)
+    Set Globals.CurrentDB = New clsDB
+    On Error GoTo 0
+
+    errorMessage = "NADABAS could not open the database."
+
+    If isAccessDatabase Then
+        errorMessage = errorMessage & vbCrLf & vbCrLf & _
+                       "Open the database in Microsoft Access. " & _
+                       "If you see a security warning, select Enable Content. " & _
+                       "Then close Access and try again."
+    Else
+        errorMessage = errorMessage & vbCrLf & vbCrLf & _
+                       "Check that the database is available, then try again."
+    End If
+
+    errorMessage = errorMessage & vbCrLf & vbCrLf & _
+                   "If the problem continues, contact NADABAS support. " & _
+                   "Technical details are available in the NADABAS log."
+
+    MsgBox errorMessage, vbCritical, "NADABAS"
 End Sub
 
 
