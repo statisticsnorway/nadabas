@@ -79,6 +79,7 @@ Public SaveAfterSave As Boolean
 Public DropboxTest As Boolean
 Public SatelliteSystem As Boolean
 Public ImportExportAllowed As Boolean
+Public CheckForUpdates As Boolean
 
 '
 ' Noversion control is in registry (not in DB)
@@ -127,6 +128,7 @@ Private Sub Class_Initialize()
     DropboxTest = False
     SatelliteSystem = False
     ImportExportAllowed = False
+    CheckForUpdates = True
     NoVersionControl = False
 End Sub
 
@@ -174,6 +176,7 @@ Public Sub LoadUserSettings()
         DropboxTest = GetColumn("Dropbox")
         SatelliteSystem = GetColumn("SatelliteSystem")
         ImportExportAllowed = GetColumn("ImportExport")
+        CheckForUpdates = (GetColumn("CheckForUpdates") <> 0)
     End If
 
 quit:
@@ -239,6 +242,7 @@ Public Sub SaveSettingsToDB()
     PutColumn "Dropbox", DropboxTest
     PutColumn "SatelliteSystem", SatelliteSystem
     PutColumn "ImportExport", ImportExportAllowed
+    PutColumn "CheckForUpdates", CheckForUpdates
     CursorUpdate
     CloseCursor
 

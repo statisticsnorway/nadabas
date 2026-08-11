@@ -297,6 +297,20 @@ Public Sub CommonGetLabel(control As IRibbonControl, ByRef label)
     label = GetRibbon(control.ID)
 End Sub
 
+Public Sub AboutGetLabel(control As IRibbonControl, ByRef label)
+    On Error GoTo DefaultLabel
+
+    If InterfaceVersionUpdate.IsUpdateAvailable Then
+        label = GetRibbon("btnAboutUpdate")
+    Else
+        label = GetRibbon("btnAbout")
+    End If
+    Exit Sub
+
+DefaultLabel:
+    label = "About"
+End Sub
+
 '
 ' ****'***************************************************************
 ' *                                                                  *
@@ -1441,6 +1455,32 @@ Public Sub AboutClick(control As IRibbonControl)
     If IsAddInAlive Then
         cmdAbout.showAbout
     End If
+End Sub
+
+Public Sub VersionCheckState(control As IRibbonControl, ByRef returnedVal)
+    On Error GoTo DefaultState
+    returnedVal = Usersettings.CheckForUpdates
+    Exit Sub
+
+DefaultState:
+    returnedVal = True
+End Sub
+
+Public Sub VersionCheckClick(control As IRibbonControl, pressed As Boolean)
+    If Not IsAddInAlive Then Exit Sub
+    If NadabasIsSleeping Or Not isAdministrator Then Exit Sub
+
+    Usersettings.CheckForUpdates = pressed
+    Usersettings.SaveSettingsToDB
+
+    If pressed Then
+        InterfaceVersionUpdate.ScheduleLatestVersionCheck True
+    Else
+        InterfaceVersionUpdate.CancelScheduledVersionCheck
+        InterfaceVersionUpdate.ClearUpdateState
+    End If
+
+    DoInvalidateIf
 End Sub
 '
 ' ****'***************************************************************

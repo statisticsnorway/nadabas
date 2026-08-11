@@ -4,6 +4,27 @@ Option Private Module
 
 Private Const NADABAS_ADDIN_NAME As String = "NADABAS.XLAM"
 
+Private Function InstallMessage(ByVal key As String, _
+                                ByVal englishFallback As String) As String
+    On Error GoTo UseFallback
+    InstallMessage = CStr(GetMsg(key))
+    If Len(InstallMessage) > 0 Then Exit Function
+
+UseFallback:
+    InstallMessage = englishFallback
+End Function
+
+Private Function InstallMessage1(ByVal key As String, _
+                                 ByVal replacement As String, _
+                                 ByVal englishFallback As String) As String
+    On Error GoTo UseFallback
+    InstallMessage1 = CStr(GetMsg1(key, replacement))
+    If Len(InstallMessage1) > 0 Then Exit Function
+
+UseFallback:
+    InstallMessage1 = Replace(englishFallback, "%1", replacement)
+End Function
+
 Private Function WithTrailingBackslash(ByVal folderPath As String) As String
     If Right$(folderPath, 1) = "\" Then
         WithTrailingBackslash = folderPath
@@ -64,6 +85,8 @@ Sub DoInstallAsAddIn()
     Dim installedPath As String
     Dim sourceIsTarget As Boolean
     Dim upperName As String
+    Dim installErrorNumber As Long
+    Dim installErrorDescription As String
 
     On Error GoTo InstallFailed
 
@@ -131,5 +154,28 @@ Sub DoInstallAsAddIn()
     Exit Sub
 
 InstallFailed:
-    MsgBox "NADABAS add-in installation failed: " & err.Description, vbCritical
+    installErrorNumber = err.Number
+    installErrorDescription = err.Description
+
+    If installErrorNumber = 53 Then
+        MsgBox InstallMessage( _
+                   "M215A", _
+                   "Windows may have blocked the downloaded NADABAS file.") & _
+               vbCrLf & vbCrLf & _
+               InstallMessage( _
+                   "M215B", _
+                   "Close Excel. Find the extracted NADABAS.xlam file, " & _
+                   "right-click it, and select Properties.") & _
+               vbCrLf & vbCrLf & _
+               InstallMessage( _
+                   "M215C", _
+                   "On the General tab, select Unblock, then select Apply " & _
+                   "or OK. Open NADABAS again and retry the installation."), _
+               vbCritical, "NADABAS"
+    Else
+        MsgBox InstallMessage1( _
+                   "M216", installErrorDescription, _
+                   "NADABAS could not be installed. Technical details: %1"), _
+               vbCritical, "NADABAS"
+    End If
 End Sub

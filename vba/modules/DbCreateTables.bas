@@ -578,6 +578,7 @@ Public Sub CreateTableUserSettings()
       AddLongCol "Dropbox", True
       AddLongCol "SatelliteSystem", True
       AddLongCol "ImportExport", True
+      AddLongCol "CheckForUpdates", True
       AttachTable
 
 End Sub

@@ -91,6 +91,7 @@ Public Sub auto_open()
     BatchRunData.BatchIgnoreFormulas = False
     cmdSetYears.DropYear = False
     ConvertXLS.FileConversionInProgress = False
+
 End Sub
 
 '---------------------------------------------------------------------------------------------
@@ -99,6 +100,6 @@ End Sub
 '              Currently, it contains no additional logic.
 '---------------------------------------------------------------------------------------------
 Public Sub auto_close()
-    ' Placeholder for any cleanup logic when the workbook is closed
-    ' Uncomment and implement logic if needed
+    ' Do not leave a delayed update check behind after the add-in is closed.
+    InterfaceVersionUpdate.CancelScheduledVersionCheck
 End Sub

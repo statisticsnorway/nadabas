@@ -18,5 +18,39 @@ non-production NADABAS environment before they are treated as instructions.
 - incident handling and rollback;
 - known limitations and escalation routes.
 
+## Publishing a version for the automatic update check
+
+The Excel add-in checks the latest published release at
+`statisticsnorway/nadabas`. For the comparison to work, publish a non-draft,
+non-prerelease GitHub release whose tag contains the same numeric version shown
+by `dlgAbout.VersionNumber`, for example `v5.10.001`. A repository tag without
+a GitHub release is not sufficient. Attach only reviewed, signed release
+artifacts and keep installation a deliberate user action. GitHub supplies the
+version number, while NADABAS sends users to the familiar installation page at
+<https://nadabas.net/nadabas/documents-and-downloads>; it does not download or
+install the artifact itself. The automatic check runs at most once every seven
+days unless an administrator re-enables it and thereby requests a fresh check.
+
+The check is enabled by default for every database. A recognized database
+administrator can disable or re-enable it from the administration ribbon menu;
+the choice is stored in the database-wide `UserSettings` row. Keep the setting
+enabled unless the deployment has a documented reason not to contact the
+public GitHub API. A user-specific switch would not enforce the intended
+database policy and is therefore not exposed.
+
 Examples must use synthetic values. Credentials, internal endpoints, production
 paths, and personal or statistical production data do not belong in this site.
+
+## A downloaded add-in is blocked by Windows
+
+If installation ends with run-time error 53 after a download, close Excel and
+locate the extracted `NADABAS.xlam` file. Right-click the file, select
+**Properties**, select **Unblock** on the **General** tab, and then select
+**Apply** or **OK**. Open NADABAS and retry the installation. The installer
+shows these steps in the selected NADABAS language when it encounters this
+error. Do not unblock a file unless it came from the official NADABAS download
+channel and its signature or published checksum has been verified.
+
+Microsoft documents this behaviour as Mark of the Web and recommends removing
+it only for Office files from a trusted source:
+<https://learn.microsoft.com/en-us/microsoft-365-apps/security/internet-macros-blocked>.

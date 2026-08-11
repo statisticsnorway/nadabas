@@ -1,0 +1,606 @@
+<customUI onLoad="NADABAS.RibbonUI.NadabasRibOnLoad" 
+ xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+<!-- *******************************************************************-->
+<!-- *****Set startFromScratch to true to hide the Ribbon and QAT*******-->
+<!-- *******************************************************************-->
+
+  <ribbon>
+
+    <tabs>
+
+      <tab id="NADABAS" label="NADABAS" >
+    
+<!-- *******************************************************************-->
+<!-- **                  WORKBOOKS                                    **-->
+<!-- *******************************************************************-->
+ 
+        <group id="grpWorkbooks" 
+               getLabel="NADABAS.RibbonUI.CommonGetLabel" >
+             <button id="btnWorkbooks" size="large" 
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     image="Workbooks" 
+                     getEnabled="NADABAS.RibbonUI.EnabledWorkbooks"
+                     onAction="NADABAS.RibbonUI.WorkbooksClick" 
+        />
+        </group>
+
+<!-- *******************************************************************-->
+<!-- **                  LOAD/SAVE                                    **-->
+<!-- *******************************************************************-->
+
+        <group id="grpLoadSave"   
+               getLabel="NADABAS.RibbonUI.CommonGetLabel" >
+             <button id="btnLoaddata" size="large"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel" 
+                     image="LoadArrow"
+                     getEnabled="NADABAS.RibbonUI.EnabledLoadData"
+                     onAction="NADABAS.RibbonUI.LoadData" 
+             />
+             <button id="btnSavedata" size="large"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     image="SaveArrow"
+                     getEnabled="NADABAS.RibbonUI.EnabledSaveData"
+                     onAction="NADABAS.RibbonUI.SaveData" 
+             />
+             <button id="btnLoadSavedata" size="large"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     image="LoadAndSaveArrow"
+                     getEnabled="NADABAS.RibbonUI.EnabledLoadAndSaveData"
+                     onAction="NADABAS.RibbonUI.LoadAndSaveData" 
+             />
+        </group>
+
+<!-- *******************************************************************-->
+<!-- **                  MISCELLANUES                                 **-->
+<!-- *******************************************************************-->
+
+        <group id="grpMics"  
+               getLabel="NADABAS.RibbonUI.CommonGetLabel" >
+            <button id="btnReserveWb" size="normal" 
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="ReserveWB"  
+                    getVisible="NADABAS.RibbonUI.VisibleReserveWB" 
+                    getEnabled="NADABAS.RibbonUI.EnabledReserveWB"  
+                    onAction="NADABAS.RibbonUI.ReserveWBClick" 
+             /> 
+            <button id="btnFreeeWb" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="FreeWb"  
+                    getVisible="NADABAS.RibbonUI.VisibleFreeWB" 
+                    getEnabled="NADABAS.RibbonUI.EnabledFreeWB"  
+                    onAction="NADABAS.RibbonUI.FreeWBClick" 
+           /> 
+           <button id="btnCellinfos" size="normal"
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                   getEnabled="NADABAS.RibbonUI.EnabledCellInfo"  
+                   image="info"
+                   onAction="NADABAS.RibbonUI.CellInfoClick"
+           />
+ <!--           <button id="btnWho"  
+                      label="Used Where"
+                      image="whouses" 
+                      getEnabled="NADABAS.RibbonUI.mnuEnabledWho"
+                      onAction="NADABAS.RibbonUI.WhoClick"
+            />
+
+           <menu id="mnuLinks" size="normal"
+                 label="Links" 
+                 image="icoLinks"
+                 getEnabled="NADABAS.RibbonUI.mnuEnabledLinks" 
+            >
+
+              <button id="btnLinks"  
+                      label="Links"  
+                      image="icoLinks"
+                      onAction="NADABAS.RibbonUI.LinksClick"
+              />
+              <button id="btnWho"  
+                      label="Used Where"
+                      image="whouses" 
+                      onAction="NADABAS.RibbonUI.WhoClick"
+              />
+              <button id="btnMissLinks"  
+                      label="Missing links"  
+                      image="info"
+                      getEnabled="NADABAS.RibbonUI.EnabledMissing"  
+                      onAction="NADABAS.RibbonUI.MissingClick"
+              />
+           </menu>
+-->
+    	</group>
+
+<!-- *******************************************************************-->
+<!-- **                  DOCUMENTS                                    **-->
+<!-- *******************************************************************-->
+  
+        <group id="grpDocuments" 
+                getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                tag="Documentation" >
+            <button id="btnDocuments" size="normal"
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"     
+                    image="documentsfolder"
+                    getEnabled="NADABAS.RibbonUI.EnabledOpenDocuments"
+                    onAction="NADABAS.RibbonUI.OpenDocument" 
+             />
+            <button id="btnRegDocuments" size="normal"
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="documents" 
+                    getEnabled="NADABAS.RibbonUI.EnabledRegisterDocuments"
+                    onAction="NADABAS.RibbonUI.RegisterDocumentClick"
+             />
+             <button id="btnExtractDoc" size="normal"
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                    image="documents"
+                    getEnabled="NADABAS.RibbonUI.EnabledExtractDocumentation"
+                    onAction="NADABAS.RibbonUI.ExtractDocumentation" 
+             />
+    	</group>
+       
+<!-- *******************************************************************-->
+<!-- **                  DATABASE                                     **-->
+<!-- *******************************************************************-->
+
+        <group id="grpDatabase" 
+                getLabel="NADABAS.RibbonUI.CommonGetLabel"   >
+            <button id="btnOpenDB" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                    onAction="NADABAS.RibbonUI.OpenCloseDB"  
+                    image="OpenDatabase"
+                    getVisible="NADABAS.RibbonUI.VisibleOpenDB"
+                    getEnabled="NADABAS.RibbonUI.EnabledOpenDB"
+             />      
+             <button id="btnCloseDB" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    onAction="NADABAS.RibbonUI.OpenCloseDB"  
+                    image="CloseDatabase"
+                    getVisible="NADABAS.RibbonUI.VisibleCloseDB"
+             />    
+            <button id="btnManageDB" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="manageDB"
+                    onAction="NADABAS.RibbonUI.ManageDBClick" 
+             />
+        </group>  
+
+<!-- *******************************************************************-->
+<!-- **               Classifications                                 **-->
+<!-- *******************************************************************-->
+   
+     <group id="grpClassifications" 
+             getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+        >
+            <button id="btnClassifications" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="Classifications"
+                    onAction="NADABAS.RibbonUI.ClassificationsClick"
+                    getEnabled="NADABAS.RibbonUI.EnabledClassificationsB"
+            />
+            <button id="btmCorrespondences" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="Correspondence"
+                    onAction="NADABAS.RibbonUI.CorrespondencesClick"
+                    getEnabled="NADABAS.RibbonUI.EnabledCorrespondence"
+            />
+            <button id="btnKeyFam" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="KeyFam"
+                    onAction="NADABAS.RibbonUI.KeyFamiliesClick"
+                    getEnabled="NADABAS.RibbonUI.EnabledKeyFamilies"
+            />
+        </group>   
+
+<!-- *******************************************************************-->
+<!-- **              Batch RUN                                        **-->
+<!-- *******************************************************************-->
+   
+
+       <group id="grpBatchRun"
+              getLabel="NADABAS.RibbonUI.CommonGetLabel" 
+              getVisible ="NADABAS.RibbonUI.BatchRunVisible"
+       >  
+            <button id="btnBatchRuns" size="large" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="batchRun"
+                    onAction="NADABAS.RibbonUI.BatchRunClick"
+                    getEnabled="NADABAS.RibbonUI.EnabledBatchRun"
+            />  
+       </group>
+
+<!-- *******************************************************************-->
+<!-- **              DESIGN                                           **-->
+<!-- *******************************************************************-->
+
+        <group id="grpDesign" 
+               getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+               getVisible="NADABAS.RibbonUI.VisibleDesign"
+        > 
+              <dynamicMenu id="mnuDesign"
+                           getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                           image="Design" 
+                           size="large" 
+                           getContent="NADABAS.RibbonUI.GetContentForDesign" invalidateContentOnDrop="true"/>   
+              </group>
+
+
+<!-- *******************************************************************-->
+<!-- **              Administration                                   **-->
+<!-- *******************************************************************-->
+
+       <group id="grpAdministration"
+              getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+              getVisible ="NADABAS.RibbonUI.grpAdministrationVisible"
+       >  
+ 
+
+             <button id="btnRegisterWB"  size="normal"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                     onAction="NADABAS.RibbonUI.RegisterWBClick"
+                     getEnabled="NADABAS.RibbonUI.EnabledRegisterWB"
+             />
+             <menu id="mnuManageContent"  size="normal"
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                   image="cogwheel" 
+                   getEnabled="NADABAS.RibbonUI.EnabledManageContent"
+             >
+             
+                 <button id="btnManageWorkbooks"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageWorkbooksClick" 
+                 />
+                 <button id="btnManageDocuments"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageDocumentsClick" 
+                 />
+                 <button id="btnCreateNewKeyFam"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.CreaNewKeyFamClick"   
+                 /> 
+                 <button id="btnManageKeyFamilies"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageKeyFamiliesClick" 
+                 />
+                 <button id="btnManageClassifications"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageClassificationsClick" 
+                 />
+                 <button id="btnManageCorrespondences"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageCorrespondencesClick" 
+                 />
+                 <button id="btnManageDimensions"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageDimensionsClick" 
+                 />
+             </menu> 
+  
+             <menu id="mnuBackup"  size="normal"
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                   image="backup" 
+                   getEnabled="NADABAS.RibbonUI.EnabledBackup"
+             > 
+	       <button id="btnSellectBackupFolder"  
+                      getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                       onAction="NADABAS.RibbonUI.SellectBackupFoldeClick"
+               /> 
+	       <button id="btnBackup"  
+                       getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                       onAction="NADABAS.RibbonUI.BackupClick"
+               /> 	     
+               <button id="btnBRestore"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"     
+                     onAction="NADABAS.RibbonUI.RestoreClick"  
+               />  
+            </menu> 
+
+           <menu id="mnuSetting" size="normal" 
+                 getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                 image="settings"
+                 getEnabled="NADABAS.RibbonUI.EnabledmnuAdministration"
+           >
+             <button id="btnUserSettings"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                     onAction="NADABAS.RibbonUI.UserSettingsClick"  
+             />
+             <button id="btnAdministrators"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                     onAction="NADABAS.RibbonUI.AdministratorsClick"
+              />
+             <button id="btnPermissions"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"     
+                     onAction="NADABAS.RibbonUI.PermissionsClick" 
+             />
+             <button id="btnSetYears"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"      
+                     onAction="NADABAS.RibbonUI.SetYearsClick" 
+             />
+             <button id="btnGlobals"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                     onAction="NADABAS.RibbonUI.GlobalsClick"  
+             />
+             <button id="btnSetbaseFolder"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                     onAction="NADABAS.RibbonUI.SetbaseFolderClick"  
+             />
+             <button id="btnLanguage"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                     onAction="NADABAS.RibbonUI.LanguageClick"  
+             />             
+          </menu> 
+
+           <menu id="mnuAdministration" size="normal" 
+                 getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                 image="A"
+                 getEnabled="NADABAS.RibbonUI.EnabledmnuAdministration"
+           >
+             
+             <button id="ShowWB"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                     onAction="NADABAS.RibbonUI.ShowWBClick"  
+             />
+        
+	     <menuSeparator id="mySeparator1" />
+
+
+             <button id="btnSaveVersion"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"     
+                     onAction="NADABAS.RibbonUI.SaveVersionClick"  
+             />
+
+
+             <menuSeparator id="mySeparator2" />
+             <toggleButton id="tglVersionCheck"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"
+                     getPressed="NADABAS.RibbonUI.VersionCheckState"
+                     onAction="NADABAS.RibbonUI.VersionCheckClick"
+             />
+	     <button id="btnCopyToAccDB"  
+                      getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                      getVisible="NADABAS.RibbonUI.VisibleCopyToAccDB"  
+                      onAction="NADABAS.RibbonUI.btnConvertClick"  
+             />  
+	     <button id="btnUpgradeToSQL"  
+                      getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                      getVisible="NADABAS.RibbonUI.VisibleUpgradeToSQL"  
+                      onAction="NADABAS.RibbonUI.btnConvertClick"  
+             />  
+             
+             <menuSeparator id="mySeparator3" />
+             <button id="btnCreateExchLink"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     getEnabled="NADABAS.RibbonUI.EnabledCreateExchLink"
+                     onAction="NADABAS.RibbonUI.btnCreateExchLink "   
+             /> 
+             
+             <menuSeparator id="mySeparator4" />
+             
+             <button id="btnSetPasswords"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel" 
+                     getVisible="NADABAS.RibbonUI.VisibleSetPasswords"                       
+                     onAction="NADABAS.RibbonUI.btnSetRemPasswordsClick"   
+             /> 
+             <button id="btnRemovePasswords"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel" 
+                     getVisible="NADABAS.RibbonUI.VisibleRemovePasswords"                            
+                     onAction="NADABAS.RibbonUI.btnSetRemPasswordsClick"   
+             /> 
+          </menu>
+
+             <menu id="mnuDebug"  size="normal"
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                   image="debug" 
+                   getEnabled="NADABAS.RibbonUI.EnabledDebug"
+              >
+                <checkBox id="cbxTrace"  
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                   onAction="NADABAS.RibbonUI.TraceClick"  
+                   getPressed="NADABAS.RibbonUI.TraceState"
+                   />   
+                <checkBox id="cbxSQLLog"  
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                   onAction="NADABAS.RibbonUI.SQLLogClick"  
+                   getPressed="NADABAS.RibbonUI.SQLLogState"
+                   /> 
+            </menu>
+
+       </group>  
+
+<!-- *******************************************************************-->
+<!-- **             About                                             **-->
+<!-- *******************************************************************-->
+
+       <group id="grpAbout"
+              getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+       > 
+              <button id="btnAbout"  size="large"
+                      getLabel="NADABAS.RibbonUI.AboutGetLabel"  
+                      image="info"  
+                     onAction="NADABAS.RibbonUI.AboutClick"   
+              />
+       </group>  
+
+
+<!-- *******************************************************************-->
+<!-- **              Exch Imort/export                                **-->
+<!-- *******************************************************************-->
+
+        <group id="grpExpLoadSave" 
+               getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+ 		       getVisible="NADABAS.RibbonUI.VisibleExchange"
+	>
+             <button id="btnExpLoaddata" size="large"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     image="ExchLoadArrow"
+                     getEnabled="NADABAS.RibbonUI.EnabledImportData"
+                     onAction="NADABAS.RibbonUI.ExchIMportData" 
+             />
+             <button id="btnExportdata" size="large"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"    
+                     image="ExchSaveArrow"
+                     getEnabled="NADABAS.RibbonUI.EnabledExportData"
+                     onAction="NADABAS.RibbonUI.ExchExportData" 
+             />
+        </group>
+
+
+<!-- *******************************************************************-->
+<!-- **              Exch Database                                    **-->
+<!-- *******************************************************************-->
+
+        <group id="grpExchDatabase" 
+               getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+               getVisible="NADABAS.RibbonUI.VisibleExchange"
+         >
+            <button id="btnOpenExchDB" size="large" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    onAction="NADABAS.RibbonUI.OpenCloseExchDB"  
+                    image="ExchOpenDB"
+                    getVisible="NADABAS.RibbonUI.VisibleOpenExchDB"
+                    getEnabled="NADABAS.RibbonUI.EnabledExchOpenDB"
+             />      
+             <button id="btnCloseExchDB" size="large" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                    onAction="NADABAS.RibbonUI.OpenCloseExchDB"  
+                    image="ExchCloseDB"
+                    getVisible="NADABAS.RibbonUI.VisibleCloseExchDB"
+             />    
+
+        </group>  
+<!-- *******************************************************************-->
+<!-- **              Exch Classifications                             **-->
+<!-- *******************************************************************-->
+
+        <group id="grpExchClassifications" 
+                getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                getVisible="NADABAS.RibbonUI.VisibleExchange"
+        >
+            <button id="btnExchClassifications" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                    image="ExchClassifications"
+                    onAction="NADABAS.RibbonUI.ExchClassificationsClick"
+                    getEnabled="NADABAS.RibbonUI.ExchEnabledClassificationsB"
+            />
+
+            <button id="btnExchKeyFam" size="normal" 
+                    getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                    image="ExchKeyFam"
+                    onAction="NADABAS.RibbonUI.KeyFamiliesClick"
+                    getEnabled="NADABAS.RibbonUI.EnabledExchKeyFamilies"
+            />
+        </group> 
+ 
+<!-- *******************************************************************-->
+<!-- **              Exch Exch Design                                 **-->
+<!-- *******************************************************************-->
+
+      <group id="grpExchDesign" 
+               getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+               getVisible="NADABAS.RibbonUI.VisibleExchDesign"
+        >    
+          <menu id="mnuExchDesign" size="large"
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                   image="exchDesign" >
+             <button id="btnExchTestDesign"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     getEnabled="NADABAS.RibbonUI.EnabledExchDesignGroup"
+                     onAction="NADABAS.RibbonUI.ExchTestDesignClick"
+              />
+             <button id="btnExchMarkAreas"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"   
+                     getEnabled="NADABAS.RibbonUI.EnabledExchDesignGroup"
+                     onAction="NADABAS.RibbonUI.ExchMarkAreasClick" 
+             />
+             <button id="btnExchGetColNames" 
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     getEnabled="NADABAS.RibbonUI.EnabledExchDesignGroup"
+                     onAction="NADABAS.RibbonUI.ExchGetColNameClick" 
+             />
+             <button id="btnExchAddRowDbl"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     getEnabled="NADABAS.RibbonUI.EnabledExchAddRowDbl"
+                     onAction="NADABAS.RibbonUI.ExchAddRowClick"   
+             /> 
+             <button id="btnExchClearDB"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                     getEnabled="NADABAS.RibbonUI.EnabledExchDesignGroup"
+                     onAction="NADABAS.RibbonUI.ExchClearDBClick"    
+             />
+         </menu>
+        </group>
+ 
+<!-- *******************************************************************-->
+<!-- **              Exch Exch Administration                         **-->
+<!-- *******************************************************************-->
+
+     <group id="grpExchAdministration"
+             getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+              getVisible ="NADABAS.RibbonUI.grpExchAdministrationVisible"
+       >  
+ 
+
+             <menu id="mnuExchManageContent"  size="normal"
+                   getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                   image="exchAdm" 
+                   getEnabled="NADABAS.RibbonUI.EnabledExchManageContent"
+             >
+             
+                 <button id="btnExchCreateNewKeyFam"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.CreaNewExchKeyFamClick"   
+                 /> 
+                 <button id="btnExchManageKeyFamilies"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageExchKeyFamiliesClick" 
+                 />
+                 <button id="btnExchManageClassifications"  
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageExchClassificationsClick" 
+                 />
+
+                 <button id="btnExchManageDimensions"  
+                         getLabel="NADABAS.RibbonUI.CommonGetLabel"  
+                         onAction="NADABAS.RibbonUI.ManageExchDimensionsClick" 
+                 />
+             </menu> 
+ 
+       </group>  
+
+<!-- *******************************************************************-->
+<!-- **              Debug & Development group                        **-->
+<!-- *******************************************************************-->
+
+     <group id="grpDebugDevelopment"
+             label="Debug/Development"  
+            getVisible ="NADABAS.RibbonUI.grpDebugDevelopment"
+
+       >  
+           
+            <menu id="mnuDebugDevelop" size="normal"
+                   label="Debug" 
+                   image="Design" 
+             > 
+	            <button id="btnToAddinMode"  
+                      label="Make AddIn"    
+                      getEnabled="NADABAS.RibbonUI.EnabledToAddIn"
+                       onAction="NADABAS.RibbonUI.ToAddIn"
+               /> 
+	            <button id="btnDropAddinMode" 
+	                   label="Drop AddIn"    
+                       getEnabled="NADABAS.RibbonUI.EnabledDropAddIn"
+                       onAction="NADABAS.RibbonUI.DropAddIn"
+               /> 	     
+               <button id="btnPublich"  
+                       label="Publish"   
+                       getEnabled="NADABAS.RibbonUI.EnabledPublish"
+                       onAction="NADABAS.RibbonUI.Publish"  
+                />  
+            </menu>          
+           
+    </group>  
+        
+        
+    </tab>
+		
+    </tabs>
+
+  </ribbon>
+</customUI>

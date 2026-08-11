@@ -25,6 +25,8 @@ reviewable source of truth.
 
 ### I want to use or learn NADABAS
 
+- Download and install NADABAS from the
+  [documents and downloads page](https://nadabas.net/nadabas/documents-and-downloads).
 - Read the [NADABAS overview](https://sites.google.com/nadabas.net/nadabas/overview).
 - Follow the [tutorials and training resources](https://sites.google.com/nadabas.net/nadabas/nadabas-resources)
   for installation, database creation, classifications, key families, workbook
@@ -90,6 +92,8 @@ vba/                     Exported VBA source
   modules/               Standard modules (.bas)
   classes/               Class and workbook modules (.cls)
   forms/                 UserForms and binary resources (.frm/.frx)
+  customUI/              Ribbon XML, relationships, and image resources
+  resources/             Reviewed additions to hidden language worksheets
 tools/                   VBA export, import, and security-scanning tools
 tests/                   Automated tests and test fixtures
 docs/                    Quarto technical documentation and contributor guides

@@ -22,6 +22,8 @@ sequenceDiagram
   participant Events as "AppEvents"
   participant State as "Globals and RibbonUI"
   participant Registry as "InterfaceRegistry"
+  participant Database as "Database settings"
+  participant Release as "GitHub releases"
 
   Excel->>Startup: Open NADABAS workbook or add-in
   Startup->>Language: LoadLanguage
@@ -30,6 +32,9 @@ sequenceDiagram
   Startup->>State: Initialize sleeping state, collections, DB objects, settings
   Startup->>Registry: GetDBSettings and GetSatelliteSettings
   Startup->>State: Reset menu, batch, year, and conversion flags
+  Excel->>Database: Open NADABAS database
+  Database->>State: Load administrator and shared user settings
+  State->>Release: Schedule delayed weekly release check when enabled
 ```
 
 The source performs these steps:
@@ -43,10 +48,30 @@ The source performs these steps:
    settings; clear administrator and false-user state.
 6. Load base and satellite database definitions from the Windows registry.
 7. Reset menu selection, batch, year, and file-conversion flags.
+8. When a database is opened, load its shared settings and schedule a release
+   check five seconds later when the administrator-controlled setting is on and
+   no check has been attempted in the last seven days.
+
+The update check is scheduled through `Application.OnTime` after database
+startup. It sends a read-only HTTPS `GET` request with a NADABAS-specific
+user-agent and short per-phase timeouts, then compares the numeric components
+of the release tag with `dlgAbout.VersionNumber`. A newer version changes the
+existing About ribbon label; the About dialog shows installed/latest version
+information and links users to the familiar NADABAS download page at
+<https://nadabas.net/nadabas/documents-and-downloads>. GitHub remains the
+technical source for the latest published version number. There is no modal
+startup message and the check never downloads or installs a file.
+
+The database-wide `UserSettings.CheckForUpdates` value defaults to enabled and
+can only be changed from the administrator ribbon menu. Current versions,
+missing releases, offline use, proxy failures, and malformed responses remain
+silent. The last-attempt day and last successfully observed public version are
+cached in the current user's `NADABAS\VersionUpdate` registry settings so the
+passive About indicator survives Excel sessions between weekly checks.
 
 [`auto_close`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/AutoOpenClose.bas#L101)
-is an empty placeholder. Explicit shutdown cleanup, persistence, and connection
-release beyond normal Excel/VBA object teardown are therefore **unknown**.
+cancels a pending delayed release check so Excel does not call back into an
+add-in that has already closed. Other shutdown cleanup remains **unknown**.
 
 ## Application events
 
@@ -83,7 +108,7 @@ Callback responsibilities fall into three groups:
 | Group | Examples | Responsibility |
 |---|---|---|
 | State callbacks | `Enabled...`, `Visible...`, `...State` | Decide whether a control is enabled, visible, or pressed from database, administrator, workbook, and named-range state. |
-| Text callbacks | `CommonGetLabel` | Resolve translated labels from the ribbon language collection. |
+| Text callbacks | `CommonGetLabel`, `AboutGetLabel` | Resolve translated labels from the ribbon language collection and select the passive update label when needed. |
 | Action callbacks | `...Click`, `LoadData`, `SaveData`, `OpenCloseDB` | Capture the active workbook where needed and dispatch to command modules or forms. |
 
 `SetNadabasIsSleeping`, `SetCurrentWBData`, and collection update routines call

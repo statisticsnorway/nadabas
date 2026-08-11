@@ -8,6 +8,7 @@
 # and R-ignores from GitHub.
 
 *.csv
+!vba/resources/*.csv
 *.db
 *.feather
 *.gz

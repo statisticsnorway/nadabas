@@ -30,12 +30,30 @@ sources, and lists every planned component operation without changing a file.
 ```powershell
 python tools/import_vba.py C:\path\to\NADABAS.xlam `
   --source-root vba `
-  --output build\NADABAS-review.xlam
+  --output build\NADABAS-review-code.xlam
 ```
 
 Use `--force` only when an existing output file may be replaced. The importer
 works on a temporary copy and moves it to the output path only after Excel has
 saved successfully.
+
+## Apply reviewed Ribbon and language resources
+
+The VBA importer changes project components but does not modify the Office
+Ribbon package or hidden language worksheets. Apply the reviewed files under
+`vba/customUI/` and `vba/resources/` to a second output copy:
+
+```powershell
+python tools/apply_office_ui.py build\NADABAS-review-code.xlam `
+  --source-root vba `
+  --output build\NADABAS-review.xlam
+```
+
+This command opens only its staging copy in Excel, updates the reviewed
+language rows, replaces the existing `customUI` package parts byte-for-byte,
+and publishes the output only after both operations succeed. It never modifies
+the input add-in. `vba/resources/office-ui.csv` contains reviewed additions to
+the hidden `Ribbon`, `Forms`, and `Messages` language sheets.
 
 ## Modules, classes, and UserForms
 
@@ -69,8 +87,8 @@ an LF-only `.frm` as an ordinary standard module. The repository's
 2. Run the security scan and unit tests.
 3. Open a pull request and review the text-based VBA diff.
 4. Merge the approved pull request.
-5. Check out the approved commit and run the importer against the official
-   NADABAS template.
+5. Check out the approved commit, run the VBA importer against the official
+   NADABAS template, and apply the reviewed Office UI resources.
 6. Open the generated add-in in Excel and run the functional test checklist.
 7. Apply the Statistics Norway digital signature after testing, then publish
    the signed artifact through the normal release channel.
