@@ -6,7 +6,6 @@ from tools.apply_office_ui import OfficeUiError
 from tools.apply_office_ui import read_resource_rows
 from tools.apply_office_ui import replace_custom_ui
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 TEST_TEMP_ROOT = REPOSITORY_ROOT / "build" / "test-fixtures"
 

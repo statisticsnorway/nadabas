@@ -3,7 +3,6 @@ import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -117,9 +116,7 @@ class VbaVersionUpdateTests(unittest.TestCase):
         self.assertIn('"lblVersionUpdateAvailable"', self.about_source)
         self.assertIn('"lblLatestRelease"', self.about_source)
         self.assertIn('"cmdVersionRelease"', self.about_source)
-        self.assertIn(
-            "InterfaceVersionUpdate.OpenDownloadPage", self.about_source
-        )
+        self.assertIn("InterfaceVersionUpdate.OpenDownloadPage", self.about_source)
         self.assertIn(
             '"https://nadabas.net/nadabas/documents-and-downloads"',
             self.update_source,
@@ -163,9 +160,7 @@ class VbaVersionUpdateTests(unittest.TestCase):
 
         self.assertIn(("Ribbon", "btnAboutUpdate", ""), identities)
         self.assertIn(("Ribbon", "tglVersionCheck", ""), identities)
-        self.assertIn(
-            ("Forms", "dlgAbout", "lblVersionUpdateAvailable"), identities
-        )
+        self.assertIn(("Forms", "dlgAbout", "lblVersionUpdateAvailable"), identities)
         self.assertIn(("Forms", "dlgAbout", "lblLatestRelease"), identities)
         self.assertIn(("Forms", "dlgAbout", "cmdVersionRelease"), identities)
 

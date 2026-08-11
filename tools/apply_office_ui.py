@@ -20,7 +20,6 @@ from pathlib import Path
 from typing import Any
 from typing import Sequence
 
-
 MSO_AUTOMATION_SECURITY_FORCE_DISABLE = 3
 RESOURCE_FILE = Path("resources/office-ui.csv")
 CUSTOM_UI_DIRECTORY = Path("customUI")
