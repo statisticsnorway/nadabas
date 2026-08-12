@@ -16,6 +16,10 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
+Private WithEvents releaseButton As MSForms.CommandButton
+Private updateHeading As MSForms.Label
+Private latestReleaseLabel As MSForms.Label
+
 Private Sub cmdErrors_Click()
     OpenNadabasError
 End Sub
@@ -32,6 +36,10 @@ Private Sub cmdWEB_Click()
      OpenNadabasWeb
 End Sub
 
+Private Sub releaseButton_Click()
+    InterfaceVersionUpdate.OpenDownloadPage
+End Sub
+
 
 Private Sub Label15_Click()
 
@@ -41,5 +49,46 @@ Private Sub UserForm_Initialize()
 
   DropClose Me               ' get rid of Close button on frame
 '
+   AddVersionUpdateControls
    Translateform Me    ' translate all labels etc.
+
+   If Not latestReleaseLabel Is Nothing Then
+       latestReleaseLabel.Caption = latestReleaseLabel.Caption & ": " & _
+                                    InterfaceVersionUpdate.LatestVersion
+   End If
+End Sub
+
+Private Sub AddVersionUpdateControls()
+    If Not InterfaceVersionUpdate.IsUpdateAvailable Then Exit Sub
+
+    Set updateHeading = Me.Controls.Add( _
+        "Forms.Label.1", "lblVersionUpdateAvailable", True)
+    With updateHeading
+        .Caption = "A newer NADABAS version is available."
+        .Left = 36
+        .Top = 492
+        .Width = 276
+        .Height = 18
+        .Font.Bold = True
+    End With
+
+    Set latestReleaseLabel = Me.Controls.Add( _
+        "Forms.Label.1", "lblLatestRelease", True)
+    With latestReleaseLabel
+        .Caption = "Latest version"
+        .Left = 36
+        .Top = 516
+        .Width = 276
+        .Height = 18
+    End With
+
+    Set releaseButton = Me.Controls.Add( _
+        "Forms.CommandButton.1", "cmdVersionRelease", True)
+    With releaseButton
+        .Caption = "Download from nadabas.net"
+        .Left = 36
+        .Top = 540
+        .Width = 174
+        .Height = 24
+    End With
 End Sub

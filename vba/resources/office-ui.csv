@@ -1,0 +1,10 @@
+sheet,key,control,english,french,portuguese
+Ribbon,btnAboutUpdate,,About - new version,À propos - nouvelle version,Sobre - nova versão
+Ribbon,tglVersionCheck,,Check automatically for new NADABAS versions,Rechercher automatiquement les nouvelles versions de NADABAS,Verificar automaticamente novas versões do NADABAS
+Forms,dlgAbout,lblVersionUpdateAvailable,A newer NADABAS version is available.,Une nouvelle version de NADABAS est disponible.,Uma nova versão do NADABAS está disponível.
+Forms,dlgAbout,lblLatestRelease,Latest version,Dernière version,Versão mais recente
+Forms,dlgAbout,cmdVersionRelease,Download from nadabas.net,Télécharger depuis nadabas.net,Baixar de nadabas.net
+Messages,M215A,,Windows may have blocked the downloaded NADABAS file.,Windows a peut-être bloqué le fichier NADABAS téléchargé.,O Windows pode ter bloqueado o ficheiro NADABAS transferido.
+Messages,M215B,,"Close Excel. Find the extracted NADABAS.xlam file, right-click it, and select Properties.","Fermez Excel. Recherchez le fichier NADABAS.xlam extrait, cliquez dessus avec le bouton droit, puis sélectionnez Propriétés.","Feche o Excel. Localize o ficheiro NADABAS.xlam extraído, clique nele com o botão direito do rato e selecione Propriedades."
+Messages,M215C,,"On the General tab, select Unblock, then select Apply or OK. Open NADABAS again and retry the installation.","Dans l'onglet Général, cochez Débloquer, puis cliquez sur Appliquer ou OK. Ouvrez de nouveau NADABAS et relancez l'installation.","No separador Geral, marque Desbloquear e, em seguida, selecione Aplicar ou OK. Abra novamente o NADABAS e repita a instalação."
+Messages,M216,,NADABAS could not be installed. Technical details: %1,NADABAS n'a pas pu être installé. Détails techniques : %1,Não foi possível instalar o NADABAS. Detalhes técnicos: %1
