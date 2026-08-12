@@ -17,8 +17,8 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Private WithEvents releaseButton As MSForms.CommandButton
-Private updateHeading As MSForms.Label
-Private latestReleaseLabel As MSForms.Label
+Private updateHeading As MSForms.label
+Private latestReleaseLabel As MSForms.label
 
 Private Sub cmdErrors_Click()
     OpenNadabasError
@@ -54,7 +54,7 @@ Private Sub UserForm_Initialize()
 
    If Not latestReleaseLabel Is Nothing Then
        latestReleaseLabel.Caption = latestReleaseLabel.Caption & ": " & _
-                                    InterfaceVersionUpdate.LatestVersion
+                                    InterfaceVersionUpdate.latestVersion
    End If
 End Sub
 

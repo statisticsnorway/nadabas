@@ -46,7 +46,7 @@ Public Sub Initialize(AsAdministrator As Boolean)
        cmdEdit.Enabled = False
        cmdDelete.Enabled = False
     End If
-    lbWorkBooks.Visible = False
+    lbWorkbooks.Visible = False
     lblWorkbooks.Visible = False
 
      DescriptionDirty = False
@@ -161,13 +161,13 @@ Dim BookName As Variant
         End If
      Next Keyname
      CloseDB
-     lbWorkBooks.Clear
+     lbWorkbooks.Clear
      For Each wb In WbNames.WBs
-        lbWorkBooks.AddItem wb.name
+        lbWorkbooks.AddItem wb.name
 
      Next wb
 
-     lbWorkBooks.Visible = True
+     lbWorkbooks.Visible = True
      lblWorkbooks.Visible = True
 End Sub
 Private Sub cmdImportFrom_Click()
@@ -227,7 +227,7 @@ Dim Dclass As clsClassDescription
  End Sub
 
 Private Sub lbClassValues_Click()
-    lbWorkBooks.Visible = False
+    lbWorkbooks.Visible = False
     lblWorkbooks.Visible = False
 End Sub
 
