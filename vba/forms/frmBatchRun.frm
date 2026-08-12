@@ -48,7 +48,7 @@ Public Sub DoInitialize()
      cmdRename.Visible = isAdministrator
      cmdSave.Visible = isAdministrator
      cmdCancel.Visible = isAdministrator
-     txtDescription.Locked = isAdministrator
+     TxtDescription.Locked = isAdministrator
 
  End Sub
  Private Sub GetCandidates()
@@ -132,9 +132,9 @@ End Sub
        Set BDesc = CurrentDB.Batch2Descriptions(CurrentBlist.name)
     End If
     If BDesc Is Nothing Then
-        txtDescription.Text = ""
+        TxtDescription.Text = ""
     Else
-        txtDescription.Text = BDesc.Description
+        TxtDescription.Text = BDesc.Description
     End If
     Isdirty = False
     EnableDisable
@@ -213,7 +213,7 @@ Private Sub EnableDisable()
        cbRepeatUntill.Visible = Not EditMode
        cbListName.Enabled = Not EditMode
        cmdOK.Enabled = Not EditMode
-       txtDescription.Locked = Not EditMode And isAdministrator
+       TxtDescription.Locked = Not EditMode And isAdministrator
 
        If cbListName.ListCount = 0 Then
           cmdEdit.Visible = False
@@ -635,7 +635,7 @@ Dim BDesc As clsBatchDescription
     End If
     Set BDesc = New clsBatchDescription
     BDesc.name = CurrentBlist.name
-    BDesc.Description = txtDescription.Text
+    BDesc.Description = TxtDescription.Text
 
     If BatchType = 1 Then
        CurrentBlist.savetoBatchlist

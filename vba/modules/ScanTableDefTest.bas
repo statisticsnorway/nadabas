@@ -425,7 +425,7 @@ QuitDefar:
         DefineType2 = Trim(UCase(DBLinksRange.Cells(i, DBLConstNumber + 4).value))
         If DefineType1 = DefineType2 Or DefineType1 = "MIXED" Or DefineType2 = "MIXED" Then
             If Not Intersect(DataRange1, DataRange2) Is Nothing Then
-               If DataRange1.Worksheet.Index = DataRange2.Worksheet.Index Then ' test not on same sheet
+               If DataRange1.Worksheet.index = DataRange2.Worksheet.index Then ' test not on same sheet
                AddError2 "DE020", DataAreaName1, DataArea2Name       'Overlapping data areas: %1, %2
                End If
             End If

@@ -1401,11 +1401,11 @@ Const cPad As Long = 6
     sEdit = moEditBox
 
     If InStr(1, sEdit, vbNewLine) Then
-        splt = split(sEdit, vbNewLine)
+        splt = Split(sEdit, vbNewLine)
     ElseIf InStr(1, sEdit, vbCr) Then
-        splt = split(sEdit, vbCr)
+        splt = Split(sEdit, vbCr)
     ElseIf InStr(1, sEdit, vbLf) Then
-        splt = split(sEdit, vbLf)
+        splt = Split(sEdit, vbLf)
     Else
         ReDim splt(0)
         splt(0) = sEdit
@@ -1420,7 +1420,7 @@ Const cPad As Long = 6
         lRows = 1
 
         For i = 0 To ub
-            splt2 = split(splt(i), " ")
+            splt2 = Split(splt(i), " ")
             For Each v In splt2
                 .Caption = .Caption & v & " "
                 .AutoSize = True
