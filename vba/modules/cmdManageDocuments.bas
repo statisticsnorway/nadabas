@@ -1,5 +1,4 @@
 Attribute VB_Name = "cmdManageDocuments"
-
 Option Explicit
 Option Private Module
 

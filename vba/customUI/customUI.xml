@@ -348,11 +348,30 @@
 
 
              <menuSeparator id="mySeparator2" />
+             <button id="btnCheckNadabasVersion"
+                     getLabel="NADABAS.RibbonUI.CommonGetLabel"
+                     image="info"
+                     onAction="NADABAS.InterfaceVersionUpdate.CheckLatestVersionClick"
+             />
              <toggleButton id="tglVersionCheck"
                      getLabel="NADABAS.RibbonUI.CommonGetLabel"
                      getPressed="NADABAS.RibbonUI.VersionCheckState"
                      onAction="NADABAS.RibbonUI.VersionCheckClick"
              />
+<!--
+             <button id="btnAutoUpdateOn"
+                     label="Turn Autoupdate On"
+                     getVisible="NADABAS.RibbonUI.VisbibleAutoUpdateOn"
+                     onAction="NADABAS.RibbonUI.AutoUpdateOnClick"
+             />
+
+             <button id="btnAutoUpdateOff"
+                     label="Turn Autoupdate Off"
+                     getVisible="NADABAS.RibbonUI.VisbibleAutoUpdateOff"
+                     onAction="NADABAS.RibbonUI.AutoUpdateOffClick"
+             />
+
+-->
 	     <button id="btnCopyToAccDB"
                       getLabel="NADABAS.RibbonUI.CommonGetLabel"
                       getVisible="NADABAS.RibbonUI.VisibleCopyToAccDB"
@@ -412,7 +431,7 @@
               getLabel="NADABAS.RibbonUI.CommonGetLabel"
        >
               <button id="btnAbout"  size="large"
-                      getLabel="NADABAS.RibbonUI.AboutGetLabel"
+                      getLabel="NADABAS.RibbonUI.CommonGetLabel"
                       image="info"
                      onAction="NADABAS.RibbonUI.AboutClick"
               />

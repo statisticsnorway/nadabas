@@ -139,6 +139,7 @@ Public Sub SaveVersionControl()
    SaveSetting "NADABAS", "VersionControl", "Control", NoVersionControl
 End Sub
 Public Sub LoadUserSettings()
+    Dim automaticCheckValue As Variant
 
 
     OpenDb
@@ -176,7 +177,13 @@ Public Sub LoadUserSettings()
         DropboxTest = GetColumn("Dropbox")
         SatelliteSystem = GetColumn("SatelliteSystem")
         ImportExportAllowed = GetColumn("ImportExport")
-        CheckForUpdates = (GetColumn("CheckForUpdates") <> 0)
+        err.Clear
+        automaticCheckValue = Empty
+        automaticCheckValue = GetColumn("CheckForUpdates")
+        If err.Number = 0 And Not IsNull(automaticCheckValue) Then
+            CheckForUpdates = (automaticCheckValue <> 0)
+        End If
+        err.Clear
     End If
 
 quit:

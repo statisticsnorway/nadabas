@@ -45,7 +45,7 @@ Public Sub HideTemplateSheets()
 
 Dim k As Long
 '
-' Sheets holding DataDefinitions or TableDefiniÃ³ns and DB links are hidden and password protected
+' Sheets holding DataDefinitions or TableDefinións and DB links are hidden and password protected
 '
 
 Dim sheetname As String
@@ -72,7 +72,7 @@ Public Sub ShowTemplateSheets()
 
 Dim k As Long
 '
-' Sheets holding DataDefinitions or TableDefiniÃ³ns and DB links are unhidden
+' Sheets holding DataDefinitions or TableDefinións and DB links are unhidden
 '
 
 Dim sheetname As String

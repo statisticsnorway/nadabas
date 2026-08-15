@@ -92,7 +92,7 @@ Dim wbdata As New clsWBData
    Set LastOpenWorkbook = Nothing
    Set LastOpenWorkbook = Application.WorkBooks(GetFilename(LastOpenFullName))
 
-   On Error GoTo openerror:
+   On Error GoTo OpenError:
    If Not LastOpenWorkbook Is Nothing Then
       LastOpenWorkbook.Activate
       DoOpenWorkbook = -1
@@ -173,7 +173,7 @@ nofile:
     MsgBox GetMsg1("M117", vbCrLf & WBtoOpen.path & "\" & WBtoOpen.WorkBookName), vbOKOnly 'Cannot locate file
     DoOpenWorkbook = 2
     Exit Function
-openerror:
+OpenError:
    RemoveWBDataColl wbdata.WBName
    MsgBox GetMsg1("M118", vbCrLf & err.Description), vbOKOnly  'Unable to open file
    DoOpenWorkbook = 2

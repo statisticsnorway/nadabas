@@ -73,7 +73,7 @@ Dim sDBDefName As String
 Dim rDBDefRange As Range
 Dim DBLinksRange As Range
 '
-' All areas holding DataDefinitions or TableDefiniÃ³ns and DB links are marked with colored background
+' All areas holding DataDefinitions or TableDefinións and DB links are marked with colored background
 '
 '
     If Not TestDefinitions(ActiveWorkbook, True, True) Then Exit Sub
@@ -144,7 +144,7 @@ Dim rTabDefRange As Range
 Dim sDBDefName As String
 Dim rDBDefRange As Range
 '
-' for sheets holding DataDefinitions or TableDefiniÃ³ns all colors are removed
+' for sheets holding DataDefinitions or TableDefinións all colors are removed
 '
 
 Dim sheetname As String
@@ -199,8 +199,6 @@ Public Sub GetColNames()
 '   *  The function then picks up all column names a places then in the cells below the current cell *                                                                                               *
 '   **************************************************************************************************
 '
-Dim Qdef As QueryDef
-Dim tdef As TableDef
 
 Dim fi As clsFieldNames
 Dim n As Long
