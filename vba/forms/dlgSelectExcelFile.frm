@@ -34,19 +34,19 @@ Dim file As Variant
     lbLabels.Column(1, 0) = Me.lblCreated.Caption
     lbLabels.Column(2, 0) = Me.lblLastChange.Caption
 
-    lbsheets.Clear
+    lbSheets.Clear
 
-    lbsheets.ColumnCount = 3
-    lbsheets.ColumnWidths = "120;90;"
+    lbSheets.ColumnCount = 3
+    lbSheets.ColumnWidths = "120;90;"
 
-    lbsheets.AddItem
+    lbSheets.AddItem
     n = 0
     For Each file In files
     If DropFileType(file.name) = FName Then
-       lbsheets.AddItem
-      lbsheets.Column(0, n) = file.name
-      lbsheets.Column(1, n) = file.DateCreated
-      lbsheets.Column(2, n) = file.DateLastModified
+       lbSheets.AddItem
+      lbSheets.Column(0, n) = file.name
+      lbSheets.Column(1, n) = file.DateCreated
+      lbSheets.Column(2, n) = file.DateLastModified
 
       n = n + 1
     End If
@@ -64,9 +64,9 @@ Private Sub cmdCancel_Click()
 End Sub
 
 Private Sub cmdOK_Click()
-         If lbsheets.ListIndex < 0 Then Exit Sub
+         If lbSheets.ListIndex < 0 Then Exit Sub
          cancel = False
-         FileSelected = lbsheets.Column(0, lbsheets.ListIndex)
+         FileSelected = lbSheets.Column(0, lbSheets.ListIndex)
          Me.Hide
 End Sub
 

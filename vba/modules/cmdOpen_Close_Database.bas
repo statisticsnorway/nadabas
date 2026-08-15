@@ -66,12 +66,10 @@ Dim dbx As clsDB
        CurrentDB.TestForClassDescriptions
        CurrentDB.TestForCorrespondences
        CurrentDB.TestForGlobals
+       testNadabasVersion
        Set Usersettings = New clsUserSettings
        Usersettings.LoadUserSettings
-       testNadabasVersion
-       ' Run the public-release check after the database-wide administrator
-       ' setting has been loaded. The actual request is delayed until Excel is idle.
-       InterfaceVersionUpdate.ScheduleLatestVersionCheck
+       InterfaceVersionUpdate.ApplyDatabaseVersionCheckSetting
        ResetWbDataCollAtOpen
        CloseDbAll
     Else

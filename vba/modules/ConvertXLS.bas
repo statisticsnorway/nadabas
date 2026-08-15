@@ -80,7 +80,7 @@ Dim ReadOnly As Boolean
         ReadOnly = fsFileIsReadOnly(fullname)
         Name fullname As backupname
         ufConvertXLS.AddText GetMsg1("M192", sBackupName)                          'File renamed to
-        On Error GoTo openerror
+        On Error GoTo OpenError
         If ReadOnly Then
            WorkBooks.Open filename:=backupname, ReadOnly:=True, Password:="Gonsalves", UpdateLinks:=False
        Else
@@ -103,7 +103,7 @@ closeerror:
        ufConvertXLS.AddText GetMsg("M194") 'Unable to create .xlsb
        GoTo rename
 
-openerror:
+OpenError:
        ufConvertXLS.AddText GetMsg("M195")  'Open failed
        Name backupname As fullname
 rename:

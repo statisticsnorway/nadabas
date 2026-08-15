@@ -5,12 +5,14 @@ from types import SimpleNamespace
 from tools.import_vba import ExistingComponent
 from tools.import_vba import VbaImportError
 from tools.import_vba import _is_complete_export
+from tools.import_vba import _repair_and_validate_references
 from tools.import_vba import _replace_component_code
 from tools.import_vba import discover_sources
 from tools.import_vba import parse_source
 from tools.import_vba import plan_import
 
 FIXTURES = Path(__file__).with_name("fixtures")
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 class ImportVbaTests(unittest.TestCase):
@@ -24,6 +26,24 @@ class ImportVbaTests(unittest.TestCase):
             source.code,
             'Option Explicit\nPublic Sub Run()\n    MsgBox "Hei"\nEnd Sub\n',
         )
+
+    def test_member_attribute_does_not_remove_withevents_declaration(self) -> None:
+        source = parse_source(REPOSITORY_ROOT / "vba/classes/AppEvents.cls")
+
+        self.assertIn("Public WithEvents App As Application\n", source.code)
+        self.assertNotIn("Attribute App.VB_VarHelpID", source.code)
+
+    def test_member_attributes_preserve_all_clsnode_declarations(self) -> None:
+        source = parse_source(REPOSITORY_ROOT / "vba/classes/clsNode.cls")
+
+        for declaration in (
+            "Private WithEvents mctlControl As MSForms.label",
+            "Private WithEvents mctlExpander As MSForms.label",
+            "Private WithEvents moEditBox As MSForms.TextBox",
+            "Private WithEvents mctlCheckBox As MSForms.label",
+        ):
+            self.assertIn(declaration, source.code)
+        self.assertNotIn(".VB_VarHelpID", source.code)
 
     def test_code_only_existing_form_preserves_designer(self) -> None:
         source = parse_source(FIXTURES / "code_only_form" / "Dialog.frm")
@@ -101,6 +121,75 @@ Attribute VB_Name = \"Dialog\"
         self.assertEqual(
             code_module.lines, ["Option Explicit", "Sub Run()", "End Sub", ""]
         )
+
+    def test_code_replacement_reports_all_excel_changes(self) -> None:
+        class FakeCodeModule:
+            def __init__(self) -> None:
+                self.lines = ["old"]
+
+            @property
+            def CountOfLines(self) -> int:
+                return len(self.lines)
+
+            def DeleteLines(self, start: int, count: int) -> None:
+                del self.lines[start - 1 : start - 1 + count]
+
+            def AddFromString(self, code: str) -> None:
+                self.lines = ["Option Explicit", "sub Run()", "end Sub"]
+
+            def Lines(self, start: int, count: int) -> str:
+                return "\r\n".join(self.lines[start - 1 : start - 1 + count])
+
+        component = SimpleNamespace(Name="Example", CodeModule=FakeCodeModule())
+
+        with self.assertRaisesRegex(VbaImportError, r"line 2:.*line 3:"):
+            _replace_component_code(component, "Option Explicit\nSub Run()\nEnd Sub\n")
+
+    def test_obsolete_broken_dao_reference_is_removed(self) -> None:
+        dao_reference = SimpleNamespace(
+            IsBroken=True,
+            Guid="{00025E01-0000-0000-C000-000000000046}",
+            Name="MISSING: Microsoft DAO 3.6 Object Library",
+        )
+        excel_reference = SimpleNamespace(
+            IsBroken=False,
+            Guid="{00020813-0000-0000-C000-000000000046}",
+            Name="Excel",
+        )
+
+        class FakeReferences:
+            def __init__(self) -> None:
+                self.items = [excel_reference, dao_reference]
+
+            @property
+            def Count(self) -> int:
+                return len(self.items)
+
+            def Item(self, index: int) -> object:
+                return self.items[index - 1]
+
+            def Remove(self, reference: object) -> None:
+                self.items.remove(reference)
+
+        references = FakeReferences()
+        _repair_and_validate_references(SimpleNamespace(References=references))
+
+        self.assertEqual(references.items, [excel_reference])
+
+    def test_unknown_broken_reference_stops_import(self) -> None:
+        broken_reference = SimpleNamespace(
+            IsBroken=True,
+            Guid="{11111111-1111-1111-1111-111111111111}",
+            Name="MissingLibrary",
+        )
+        references = SimpleNamespace(
+            Count=1,
+            Item=lambda index: broken_reference,
+            Remove=lambda reference: None,
+        )
+
+        with self.assertRaisesRegex(VbaImportError, "MissingLibrary"):
+            _repair_and_validate_references(SimpleNamespace(References=references))
 
     def test_component_type_mismatch_is_rejected(self) -> None:
         source = parse_source(FIXTURES / "module" / "Example.bas")

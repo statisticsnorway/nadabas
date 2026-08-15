@@ -30,6 +30,7 @@ VBEXT_CT_MS_FORM = 3
 VBEXT_CT_DOCUMENT = 100
 VBEXT_PP_NONE = 0
 MSO_AUTOMATION_SECURITY_FORCE_DISABLE = 3
+LEGACY_DAO_36_GUID = "{00025E01-0000-0000-C000-000000000046}"
 
 VBA_SUFFIXES = {".bas", ".cls", ".frm"}
 KIND_ORDER = {"module": 0, "class": 1, "form": 2}
@@ -38,6 +39,8 @@ COMPONENT_NAME_RE = re.compile(r"[A-Za-z_]\w*\Z", re.ASCII)
 ATTRIBUTE_NAME_RE = re.compile(
     r'^\s*Attribute\s+VB_Name\s*=\s*"([^"]+)"\s*$', re.IGNORECASE | re.MULTILINE
 )
+MODULE_ATTRIBUTE_RE = re.compile(r"^\s*Attribute\s+VB_[A-Za-z0-9_]+\s*=", re.IGNORECASE)
+ATTRIBUTE_LINE_RE = re.compile(r"^\s*Attribute\s+", re.IGNORECASE)
 FRX_REFERENCE_RE = re.compile(r'"([^"]+\.frx)"\s*:', re.IGNORECASE)
 USERFORM_BEGIN_RE = re.compile(
     r"^\s*Begin\s+(?:VB\.UserForm\b|\{C62A69F0-16DC-11CE-9E98-00AA00574A4F\})(?=\s|$)",
@@ -130,18 +133,18 @@ def _extract_code(path: Path, kind: str, text: str) -> str:
     """Return code accepted by CodeModule.AddFromString.
 
     Export-only metadata and a possible UserForm designer block are excluded.
-    In a regular exported component, executable code follows the final
-    ``Attribute`` line.
+    In a regular exported component, executable code follows the final module
+    ``Attribute VB_...`` line. Member attributes such as
+    ``Attribute App.VB_VarHelpID`` can occur after an ordinary declaration;
+    those metadata lines are excluded without discarding the declaration.
     """
 
     lines = text.splitlines()
-    attribute_indexes = [
-        index
-        for index, line in enumerate(lines)
-        if line.lstrip().lower().startswith("attribute ")
+    module_attribute_indexes = [
+        index for index, line in enumerate(lines) if MODULE_ATTRIBUTE_RE.match(line)
     ]
-    if attribute_indexes:
-        code_lines = lines[max(attribute_indexes) + 1 :]
+    if module_attribute_indexes:
+        code_lines = lines[max(module_attribute_indexes) + 1 :]
     elif kind == "form" and _is_complete_export(kind, text):
         raise VbaImportError(
             f"Complete UserForm export has no Attribute block; cannot isolate code safely: {path}"
@@ -152,6 +155,8 @@ def _extract_code(path: Path, kind: str, text: str) -> str:
             for line in lines
             if not line.strip().upper().startswith(VERSION_PREFIX)
         ]
+
+    code_lines = [line for line in code_lines if not ATTRIBUTE_LINE_RE.match(line)]
 
     while code_lines and not code_lines[0].strip():
         code_lines.pop(0)
@@ -367,8 +372,31 @@ def _replace_component_code(component: Any, code: str) -> None:
         actual = current_text()
 
     if actual != expected:
+        expected_lines = expected.splitlines()
+        actual_lines = actual.splitlines()
+        differences: list[str] = []
+        for index in range(max(len(expected_lines), len(actual_lines))):
+            expected_line = (
+                expected_lines[index]
+                if index < len(expected_lines)
+                else "<end of component>"
+            )
+            actual_line = (
+                actual_lines[index]
+                if index < len(actual_lines)
+                else "<end of component>"
+            )
+            if expected_line != actual_line:
+                differences.append(
+                    f"line {index + 1}: expected {expected_line!r}, got {actual_line!r}"
+                )
+
+        shown_differences = "; ".join(differences[:10])
+        if len(differences) > 10:
+            shown_differences += f"; and {len(differences) - 10} more"
         raise VbaImportError(
-            f"Excel changed code while updating component {component.Name!r}."
+            f"Excel changed code while updating component {component.Name!r}. "
+            f"Differences: {shown_differences}."
         )
 
 
@@ -424,6 +452,49 @@ def _get_unprotected_project(workbook: Any) -> Any:
             "The VBA project is locked. Unlock it before importing source files."
         )
     return project
+
+
+def _repair_and_validate_references(project: Any) -> None:
+    """Remove the obsolete DAO 3.6 reference and reject other broken references."""
+
+    references = project.References
+    for index in range(int(references.Count), 0, -1):
+        reference = references.Item(index)
+        try:
+            is_broken = bool(reference.IsBroken)
+        except Exception:
+            is_broken = True
+        try:
+            guid = str(reference.Guid).upper()
+        except Exception:
+            guid = ""
+
+        if is_broken and guid == LEGACY_DAO_36_GUID:
+            references.Remove(reference)
+
+    broken_references: list[str] = []
+    for index in range(1, int(references.Count) + 1):
+        reference = references.Item(index)
+        try:
+            is_broken = bool(reference.IsBroken)
+        except Exception:
+            is_broken = True
+        if not is_broken:
+            continue
+        try:
+            name = str(reference.Name)
+        except Exception:
+            name = "<unavailable>"
+        try:
+            guid = str(reference.Guid)
+        except Exception:
+            guid = "<unavailable>"
+        broken_references.append(f"{name} ({guid})")
+
+    if broken_references:
+        raise VbaImportError(
+            "VBA project has broken reference(s): " + ", ".join(broken_references)
+        )
 
 
 def _validate_paths(
@@ -494,6 +565,7 @@ def import_vba(
         if dry_run:
             workbook = _open_excel_workbook(excel, template, read_only=True)
             project = _get_unprotected_project(workbook)
+            _repair_and_validate_references(project)
             actions = plan_import(
                 sources,
                 _project_components(project),
@@ -507,6 +579,7 @@ def import_vba(
         shutil.copy2(template, staging)
         workbook = _open_excel_workbook(excel, staging, read_only=False)
         project = _get_unprotected_project(workbook)
+        _repair_and_validate_references(project)
         actions = plan_import(
             sources,
             _project_components(project),

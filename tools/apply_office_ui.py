@@ -94,8 +94,8 @@ def _resource_row_number(sheet: Any, resource: ResourceRow) -> int:
     last_row = first_row + int(sheet.UsedRange.Rows.Count) - 1
 
     for row_number in range(first_row, last_row + 1):
-        key = str(sheet.Cells(row_number, 1).Value or "").strip()
-        control = str(sheet.Cells(row_number, 2).Value or "").strip()
+        key = str(sheet.Cells(row_number, 1).Value2 or "").strip()
+        control = str(sheet.Cells(row_number, 2).Value2 or "").strip()
         if key.casefold() != resource.key.casefold():
             continue
         if (
@@ -137,11 +137,11 @@ def _apply_language_resources(workbook_path: Path, rows: Sequence[ResourceRow]) 
                 ) from exc
 
             row_number = _resource_row_number(sheet, resource)
-            sheet.Cells(row_number, 1).Value = resource.key
-            sheet.Cells(row_number, 2).Value = resource.control
-            sheet.Cells(row_number, 3).Value = resource.english
-            sheet.Cells(row_number, 4).Value = resource.french
-            sheet.Cells(row_number, 5).Value = resource.portuguese
+            sheet.Cells(row_number, 1).Value2 = resource.key
+            sheet.Cells(row_number, 2).Value2 = resource.control
+            sheet.Cells(row_number, 3).Value2 = resource.english
+            sheet.Cells(row_number, 4).Value2 = resource.french
+            sheet.Cells(row_number, 5).Value2 = resource.portuguese
 
         workbook.Save()
         workbook.Close(SaveChanges=False)

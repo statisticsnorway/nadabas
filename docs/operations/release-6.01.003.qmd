@@ -1,0 +1,77 @@
+---
+title: Release 6.01.003 installation and source record
+---
+
+This page records the reviewed package, installation path, and source
+provenance for NADABAS 6.01.003. It is both a maintainer checklist and a precise
+support reference for this release.
+
+## Package manifest
+
+| File | Purpose | Size (bytes) | SHA-256 |
+|---|---|---:|---|
+| `NADABAS.6.01.003.zip` | User download containing both signed Office files | 3,287,181 | `355B3B6F7CF160FCB2F42A8B14C7AEDDC90ED4D3CE6086CCC12E92B169B4E632` |
+| `NADABAS.xlam` | Excel add-in and source of the release VBA project | 1,927,984 | `7A367951C9C53C06F65148207034EA1E198CB6BAA0909081645353433B20B55F` |
+| `NADABAS.6.01.003.xlsm` | Versioned installer opened by the user | 1,498,043 | `3FF33EE263B9A2CE4F66880C511AAE2480F7585E9D83C16DAE191E0258A6FA03` |
+
+The ZIP stores the two Office files at its root. A checksum proves byte
+identity with the reviewed artifact; it does not establish publisher identity.
+Excel must also report a valid, trusted digital signature for each Office file.
+Signature validity must be checked again on the final uploaded release asset.
+
+## Installation checklist
+
+1. Close every Excel window.
+2. Download `NADABAS.6.01.003.zip` from the official NADABAS channel.
+3. Verify the ZIP checksum shown above.
+4. Extract both files to the same folder; do not open them inside the ZIP.
+5. When **Unblock** appears in Windows file properties, use it only after the
+   source, checksum, and signature have been verified.
+6. Open `NADABAS.6.01.003.xlsm` and follow its installation action. Do not
+   rename or separate the companion `NADABAS.xlam` first.
+7. Close and reopen Excel. Confirm that the NADABAS ribbon loads with translated
+   labels rather than icons without captions.
+8. Open a test database as an administrator. Under the administration menu,
+   confirm **Check for updates** and the automatic-check toggle are present.
+9. Confirm that About still opens normally and does not contain update controls.
+
+For a clean-install test, first disable the NADABAS Excel add-in through
+**File > Options > Add-ins > Manage: Excel Add-ins > Go**. Remove an obsolete
+installed copy only after confirming its exact path and keeping a recoverable
+copy. Then repeat the checklist above in a new Excel session.
+
+## Source provenance
+
+The signed `NADABAS.xlam` is the release evidence used for this synchronization:
+
+- 186 exported `.bas`, `.cls`, and `.frm` text components compare equal to the
+  repository source after normalizing text encoding and line endings;
+- the two Ribbon XML variants, their relationships, and all 40 image resources
+  are represented under `vba/customUI/`;
+- complete `.frm`/`.frx` pairs are retained for the UserForms that changed;
+- `vba/resources/office-ui.csv` records the English, French, and Portuguese
+  rows for `btnCheckNadabasVersion` and `tglVersionCheck`;
+- `InterfaceVersionUpdate.CURRENT_VERSION` is `6.01.003`, and no forced or
+  simulated later version is present in production source.
+
+The signed binaries are not expected to be reproducible byte-for-byte from the
+repository because Excel serializes VBA projects and signing changes the Office
+package. The controlled workflow is therefore: export, review, test, rebuild
+into an approved template, test again in Excel, and sign the final artifacts.
+Editing either signed Office file invalidates its existing signature.
+
+## Version-check acceptance criteria
+
+- Startup remains responsive and the check is delayed by five seconds.
+- The automatic request is attempted no more than once every seven days.
+- A newer public GitHub release produces a translated prompt.
+- Yes opens the NADABAS downloads page, not GitHub and not a direct executable.
+- A current version is silent automatically and reported by a manual check.
+- Offline or blocked GitHub access does not prevent NADABAS from opening.
+- Only a database administrator can change the shared automatic-check setting.
+- Both Office 2007 and Office 2010+ Ribbon definitions contain the same update
+  controls under administration.
+
+A local clean-install test and both the normal and simulated-newer-version paths
+were reported successful for the supplied 6.01.003 package before this source
+record was prepared.

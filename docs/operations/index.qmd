@@ -2,55 +2,89 @@
 title: Operations and administration
 ---
 
-::: {.callout-warning title="Outline"}
-Operational procedures require review by a maintainer with access to a safe,
-non-production NADABAS environment before they are treated as instructions.
+::: {.callout-important title="Release baseline"}
+The repository source is synchronized with the signed `NADABAS.xlam` supplied
+for release 6.01.003. The signed `.xlam` and `.xlsm` files remain release
+artifacts; they are not committed as editable source files.
 :::
 
-## Planned content
+## Installation package
 
-- installation and supported configuration;
-- administrator roles and permissions;
-- connection diagnostics and logging;
-- backup and restore;
-- batch monitoring and recovery;
-- release deployment and signature verification;
-- incident handling and rollback;
-- known limitations and escalation routes.
+Release 6.01.003 is distributed as a ZIP archive containing two signed Office
+files:
 
-## Publishing a version for the automatic update check
+- `NADABAS.6.01.003.xlsm` is the versioned installer that the user opens;
+- `NADABAS.xlam` is the companion Excel add-in and contains the VBA project.
 
-The Excel add-in checks the latest published release at
-`statisticsnorway/nadabas`. For the comparison to work, publish a non-draft,
-non-prerelease GitHub release whose tag contains the same numeric version shown
-by `dlgAbout.VersionNumber`, for example `v5.10.001`. A repository tag without
-a GitHub release is not sufficient. Attach only reviewed, signed release
-artifacts and keep installation a deliberate user action. GitHub supplies the
-version number, while NADABAS sends users to the familiar installation page at
-<https://nadabas.net/nadabas/documents-and-downloads>; it does not download or
-install the artifact itself. The automatic check runs at most once every seven
-days unless an administrator re-enables it and thereby requests a fresh check.
+Keep both files together after extraction. Verify the publisher and validity of
+both Office signatures before opening the installer. The complete release
+manifest, SHA-256 checksums, and installation checklist are recorded in the
+[6.01.003 release and installation record](release-6.01.003.qmd).
 
-The check is enabled by default for every database. A recognized database
-administrator can disable or re-enable it from the administration ribbon menu;
-the choice is stored in the database-wide `UserSettings` row. Keep the setting
-enabled unless the deployment has a documented reason not to contact the
-public GitHub API. A user-specific switch would not enforce the intended
-database policy and is therefore not exposed.
+## Automatic version check
 
-Examples must use synthetic values. Credentials, internal endpoints, production
-paths, and personal or statistical production data do not belong in this site.
+`InterfaceVersionUpdate` schedules a check five seconds after NADABAS starts.
+The check is enabled by default and runs at most once every seven days. It sends
+a synchronous, read-only HTTPS `GET` request to GitHub's latest-release API and
+compares the numeric release tag with `CURRENT_VERSION`, which is `6.01.003` in
+this release. `Application.OnTime` delays the request until startup has
+completed; it does not make the HTTP request a background operation.
+
+If a newer version exists, NADABAS displays a translated Yes/No message with
+the installed and published versions. Selecting Yes opens the familiar
+<https://nadabas.net/nadabas/documents-and-downloads> page. NADABAS never
+downloads, replaces, or installs a file automatically. Network failures, proxy
+restrictions, malformed responses, and current versions are silent during the
+automatic check.
+
+The administration menu contains two translated controls:
+
+- **Check for updates** performs a manual check and reports a newer, current,
+  or failed result;
+- **Check automatically for new NADABAS versions** enables or disables the
+  shared policy.
+
+Only a recognized database administrator can change the automatic-check
+setting. `UserSettings.CheckForUpdates` stores the database-wide value and
+defaults to enabled. The registry values under `NADABAS\VersionUpdate` cache the
+last attempted day, last observed public version, and the setting used before a
+database has finished loading. Opening a database applies its shared value and
+updates the local mirror.
+
+### Publishing the version that NADABAS sees
+
+Publish a non-draft, non-prerelease GitHub release in
+`statisticsnorway/nadabas`. Its tag must contain the same numeric value as
+`InterfaceVersionUpdate.CURRENT_VERSION`, for example `v6.01.003`. A Git tag
+without a published GitHub release is not returned by the latest-release API.
+
+Attach only reviewed and signed release artifacts. The GitHub release supplies
+the public version number, while the user-facing download link remains on
+nadabas.net. A maintainer must update and test `CURRENT_VERSION` for every new
+release; do not add a test-only latest-version override to production source.
 
 ## A downloaded add-in is blocked by Windows
 
 If installation ends with run-time error 53 after a download, close Excel and
 locate the extracted `NADABAS.xlam` file. Right-click the file, select
 **Properties**, select **Unblock** on the **General** tab, and then select
-**Apply** or **OK**. Open NADABAS and retry the installation. The installer
-shows these steps in the selected NADABAS language when it encounters this
-error. Do not unblock a file unless it came from the official NADABAS download
-channel and its signature or published checksum has been verified.
+**Apply** or **OK**. Check the extracted `NADABAS.6.01.003.xlsm` file in the
+same way when Windows presents the option. Reopen the versioned installer and
+retry.
+
+Release 6.01.003 does not replace VBA's run-time error 53 with localized
+unblock instructions, so this recovery procedure must remain available to
+users and support staff. Do not unblock a file unless it came from the official
+NADABAS download channel and both its Office signature and published checksum
+have been verified.
 
 Microsoft documents this behaviour as Mark of the Web and recommends removing
 it only for Office files from a trusted source:
 <https://learn.microsoft.com/en-us/microsoft-365-apps/security/internet-macros-blocked>.
+
+## Operational safety
+
+Examples must use synthetic values. Credentials, internal endpoints,
+production paths, and personal or statistical production data do not belong in
+this site. Backup, restore, database conversion, signing, and deployment must
+be tested in a non-production environment with a documented rollback path.

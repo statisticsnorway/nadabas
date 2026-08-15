@@ -121,7 +121,7 @@ confirmation text, and recovery path need manual tests.
 | Globals | `cmdGlobals` | Edit database global variables and fill workbook `DBGlobals` before data operations. |
 | Base folder | `cmdBaseFolder` | Set and resolve the portable file root; Access initialization can use the database folder. |
 | Workbook status | `cmdWorkBookStatus` | Display registered workbook metadata and file-existence checks; list reserved workbooks. |
-| Version | `cmdVersion`, `InterfaceVersionUpdate` | Recreate/update `NADABASVersion`, compare the running add-in version with the database, execute legacy repair checks, and schedule the administrator-controlled public GitHub release check once per week. Newer releases are reported through About, which links to the NADABAS download page without automatic installation. |
+| Version | `cmdVersion`, `InterfaceVersionUpdate` | Recreate/update `NADABASVersion`, compare the running add-in version with the database, execute legacy repair checks, and schedule the administrator-controlled public GitHub release check once per week. A newer release produces a translated Yes/No prompt that can open the NADABAS download page; the administration menu also provides a manual check and shared on/off toggle. No file is downloaded or installed automatically. |
 | Workbook passwords | `cmdSetRemovePassword`, protection modules | Apply or remove a shared workbook password across registered files. Storage and use of workbook passwords require a security decision. |
 
 The retained draft says database-held settings ensure consistency across all

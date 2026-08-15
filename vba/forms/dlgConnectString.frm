@@ -49,10 +49,10 @@ Public Sub Initialize(Mode As Integer)
     txtUser.Text = CurrentDB.DBUser
     txtPassword.Text = CurrentDB.DBPassword
     If Mode = 1 Then
-       cmdAdd.Visible = True
+       CmdAdd.Visible = True
        cmdConnect.Visible = False
     Else
-       cmdAdd.Visible = False
+       CmdAdd.Visible = False
        cmdConnect.Visible = True
     End If
     cancel = True

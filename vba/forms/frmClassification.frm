@@ -31,12 +31,12 @@ Public Sub Initialize(AsAdministrator As Boolean)
          lbClassifications.AddItem CClass.classname
        Next CClass
     End If
-    cmdAdd.Visible = AsAdministrator
+    CmdAdd.Visible = AsAdministrator
     cmdEdit.Visible = AsAdministrator
     cmdDelete.Visible = AsAdministrator
     cmdImportFrom.Visible = AsAdministrator
     cmdRenameClass.Visible = AsAdministrator
-    txtDescription.Enabled = AsAdministrator
+    TxtDescription.Enabled = AsAdministrator
 
     If lbClassifications.ListCount > 0 Then
        cmdEdit.Enabled = AsAdministrator
@@ -46,7 +46,7 @@ Public Sub Initialize(AsAdministrator As Boolean)
        cmdEdit.Enabled = False
        cmdDelete.Enabled = False
     End If
-    lbWorkbooks.Visible = False
+    lbWorkBooks.Visible = False
     lblWorkbooks.Visible = False
 
      DescriptionDirty = False
@@ -114,7 +114,7 @@ End Sub
 
 
 Private Sub cmdSaveDesc_Click()
-      saveClassDescription CurrentClass, txtDescription.Text
+      saveClassDescription CurrentClass, TxtDescription.Text
       cmdSaveDesc.Visible = False
       DescriptionDirty = False
 End Sub
@@ -161,13 +161,13 @@ Dim BookName As Variant
         End If
      Next Keyname
      CloseDB
-     lbWorkbooks.Clear
+     lbWorkBooks.Clear
      For Each wb In WbNames.WBs
-        lbWorkbooks.AddItem wb.name
+        lbWorkBooks.AddItem wb.name
 
      Next wb
 
-     lbWorkbooks.Visible = True
+     lbWorkBooks.Visible = True
      lblWorkbooks.Visible = True
 End Sub
 Private Sub cmdImportFrom_Click()
@@ -217,9 +217,9 @@ Dim Dclass As clsClassDescription
       DescriptionDirty = True           ' to avoid flickering cmdsave
       If CurrentDB.ClassDescriptionExist(CClass.classname) Then
           Set Dclass = CurrentDB.ClassDescriptions(CClass.classname)
-          Me.txtDescription = Dclass.Description
+          Me.TxtDescription = Dclass.Description
       Else
-           Me.txtDescription = ""
+           Me.TxtDescription = ""
       End If
       DescriptionDirty = False
       cmdSaveDesc.Visible = False
@@ -227,7 +227,7 @@ Dim Dclass As clsClassDescription
  End Sub
 
 Private Sub lbClassValues_Click()
-    lbWorkbooks.Visible = False
+    lbWorkBooks.Visible = False
     lblWorkbooks.Visible = False
 End Sub
 
