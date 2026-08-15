@@ -36,8 +36,8 @@ Dim LastDir As String
     fullname = Application.GetOpenFilename("Word documents(*.doc;*.docx;*.docm), *.doc;*.docx;*.docm,All files (*.*),*.*", , "Find file")
     If fullname <> "" Then
        txtPath = GetPath(CStr(fullname))
-       txtFileName = GetFilename(CStr(fullname))
-       SaveSetting "NADABAS", "Document", "Path", GetPath(txtFileName)
+       txtFilename = GetFilename(CStr(fullname))
+       SaveSetting "NADABAS", "Document", "Path", GetPath(txtFilename)
     End If
 End Sub
 
@@ -56,7 +56,7 @@ Dim Docinfo As clsDocInfo
     End If
 
     Set Docinfo = New clsDocInfo
-    Docinfo.name = txtFileName.Text
+    Docinfo.name = txtFilename.Text
     Docinfo.path = DropBasePath(txtPath.Text)
     Docinfo.Level = Asstype
     Docinfo.DGroup = ""

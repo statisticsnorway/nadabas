@@ -52,22 +52,24 @@ The source performs these steps:
    check five seconds later when the administrator-controlled setting is on and
    no check has been attempted in the last seven days.
 
-The update check is scheduled through `Application.OnTime` after database
-startup. It sends a read-only HTTPS `GET` request with a NADABAS-specific
-user-agent and short per-phase timeouts, then compares the numeric components
-of the release tag with `dlgAbout.VersionNumber`. A newer version changes the
-existing About ribbon label; the About dialog shows installed/latest version
-information and links users to the familiar NADABAS download page at
-<https://nadabas.net/nadabas/documents-and-downloads>. GitHub remains the
-technical source for the latest published version number. There is no modal
-startup message and the check never downloads or installs a file.
+The update check is scheduled through `Application.OnTime` after startup. It
+sends a read-only HTTPS `GET` request with a NADABAS-specific user-agent and
+short per-phase timeouts, then compares the numeric components of the release
+tag with `InterfaceVersionUpdate.CURRENT_VERSION`. If GitHub reports a newer
+version, NADABAS shows a translated Yes/No message; Yes opens the familiar
+NADABAS download page at
+<https://nadabas.net/nadabas/documents-and-downloads>. The check never downloads
+or installs a file. The manual command also reports a current version or a
+network failure, while routine automatic failures remain silent.
 
 The database-wide `UserSettings.CheckForUpdates` value defaults to enabled and
-can only be changed from the administrator ribbon menu. Current versions,
-missing releases, offline use, proxy failures, and malformed responses remain
-silent. The last-attempt day and last successfully observed public version are
-cached in the current user's `NADABAS\VersionUpdate` registry settings so the
-passive About indicator survives Excel sessions between weekly checks.
+can only be changed from the administrator ribbon menu. The same menu contains
+the manual **Check for updates** command. Current versions, missing releases,
+offline use, proxy failures, and malformed responses remain silent during the
+automatic check. The last-attempt day, last observed public version, and local
+pre-database preference are cached in the current user's
+`NADABAS\VersionUpdate` registry settings. The About dialog is not part of the
+version-check interface in 6.01.003.
 
 [`auto_close`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/AutoOpenClose.bas#L101)
 cancels a pending delayed release check so Excel does not call back into an
@@ -108,7 +110,7 @@ Callback responsibilities fall into three groups:
 | Group | Examples | Responsibility |
 |---|---|---|
 | State callbacks | `Enabled...`, `Visible...`, `...State` | Decide whether a control is enabled, visible, or pressed from database, administrator, workbook, and named-range state. |
-| Text callbacks | `CommonGetLabel`, `AboutGetLabel` | Resolve translated labels from the ribbon language collection and select the passive update label when needed. |
+| Text callbacks | `CommonGetLabel` | Resolve translated labels from the ribbon language collection, including both administration version controls. |
 | Action callbacks | `...Click`, `LoadData`, `SaveData`, `OpenCloseDB` | Capture the active workbook where needed and dispatch to command modules or forms. |
 
 `SetNadabasIsSleeping`, `SetCurrentWBData`, and collection update routines call

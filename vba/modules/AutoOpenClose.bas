@@ -80,6 +80,7 @@ Public Sub auto_open()
     SetFalseUSername.FalseUsername = "" ' Clear any false username
     Globals.isAdministrator = False    ' Default to non-administrator privileges
     Set Globals.Usersettings = New clsUserSettings
+    InterfaceVersionUpdate.LoadStartupVersionCheckPreference
 
     ' Step 7: Load database and satellite settings from the registry
     GetDBSettings          ' Retrieve information about databases
@@ -92,6 +93,11 @@ Public Sub auto_open()
     cmdSetYears.DropYear = False
     ConvertXLS.FileConversionInProgress = False
 
+    ' Check for a newer published version after the rest of NADABAS has started.
+    ' Scheduling keeps the network request out of the critical opening sequence.
+    On Error Resume Next
+    InterfaceVersionUpdate.ScheduleLatestVersionCheck
+    On Error GoTo 0
 End Sub
 
 '---------------------------------------------------------------------------------------------
@@ -100,6 +106,6 @@ End Sub
 '              Currently, it contains no additional logic.
 '---------------------------------------------------------------------------------------------
 Public Sub auto_close()
-    ' Do not leave a delayed update check behind after the add-in is closed.
+    ' Cancel a pending check so Excel cannot try to call a closed add-in.
     InterfaceVersionUpdate.CancelScheduledVersionCheck
 End Sub

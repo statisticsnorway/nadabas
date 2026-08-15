@@ -2,156 +2,207 @@ Attribute VB_Name = "InterfaceVersionUpdate"
 Option Explicit
 Option Private Module
 
-' Checks the latest published GitHub release without downloading or installing files.
-' A failed check must never prevent NADABAS or Excel from starting.
+' A deliberately small, self-contained version check for NADABAS.
+' It does not change or invalidate the Ribbon and uses only late-bound
+' Windows components, so no additional VBA reference is required.
 
-Private Const LATEST_RELEASE_API As String = _
+Private Const CURRENT_VERSION As String = "6.01.003"
+Private Const RELEASE_API_URL As String = _
     "https://api.github.com/repos/statisticsnorway/nadabas/releases/latest"
-Private Const DOWNLOAD_PAGE As String = _
+Private Const DOWNLOAD_URL As String = _
     "https://nadabas.net/nadabas/documents-and-downloads"
 Private Const REGISTRY_SECTION As String = "VersionUpdate"
 Private Const REGISTRY_LAST_CHECK As String = "LastCheckDay"
 Private Const REGISTRY_LATEST_VERSION As String = "LatestVersion"
+Private Const REGISTRY_CHECKS_ENABLED As String = "ChecksEnabled"
 Private Const CHECK_INTERVAL_DAYS As Long = 7
-Private Const SCHEDULE_DELAY_SECONDS As Long = 5
-Private Const SCHEDULE_WINDOW_SECONDS As Long = 30
+Private Const STARTUP_DELAY_SECONDS As Long = 5
 
-Private scheduledCheckTime As Date
-Private scheduledCheckPending As Boolean
-Private scheduledCheckIsForced As Boolean
-Private latestPublishedVersion As String
-Private newerVersionIsAvailable As Boolean
+Private scheduledCheck As Date
+Private checkIsScheduled As Boolean
+
+Public Sub LoadStartupVersionCheckPreference()
+    On Error GoTo DefaultEnabled
+
+    If Usersettings Is Nothing Then Set Usersettings = New clsUserSettings
+    Usersettings.CheckForUpdates = _
+        (GetSetting("NADABAS", REGISTRY_SECTION, _
+                    REGISTRY_CHECKS_ENABLED, "1") <> "0")
+    Exit Sub
+
+DefaultEnabled:
+    If Not Usersettings Is Nothing Then Usersettings.CheckForUpdates = True
+End Sub
+
+Public Sub ApplyDatabaseVersionCheckSetting()
+    On Error GoTo SettingFailed
+
+    SaveSetting "NADABAS", REGISTRY_SECTION, REGISTRY_CHECKS_ENABLED, _
+                IIf(Usersettings.CheckForUpdates, "1", "0")
+
+    If Usersettings.CheckForUpdates Then
+        ScheduleLatestVersionCheck
+    Else
+        CancelScheduledVersionCheck
+    End If
+    Exit Sub
+
+SettingFailed:
+    ' A settings error must not interfere with opening the database.
+End Sub
 
 Public Sub ScheduleLatestVersionCheck(Optional ByVal force As Boolean = False)
     On Error GoTo ScheduleFailed
 
     If Not VersionChecksEnabled Then
         CancelScheduledVersionCheck
-        ClearUpdateState
         Exit Sub
     End If
 
-    LoadCachedLatestVersion
+    If checkIsScheduled Then
+        If Not force Then Exit Sub
+        CancelScheduledVersionCheck
+    End If
     If Not force Then
-        If Not UpdateCheckIsDue Then Exit Sub
+        If Not IsCheckDue Then Exit Sub
     End If
 
-    CancelScheduledVersionCheck
-    scheduledCheckTime = Now + TimeSerial(0, 0, SCHEDULE_DELAY_SECONDS)
-    scheduledCheckIsForced = force
-    scheduledCheckPending = True
-
-    Application.OnTime _
-        EarliestTime:=scheduledCheckTime, _
-        Procedure:=ScheduledProcedureName, _
-        LatestTime:=scheduledCheckTime + TimeSerial(0, 0, SCHEDULE_WINDOW_SECONDS)
-    Exit Sub
+    scheduledCheck = Now + TimeSerial(0, 0, STARTUP_DELAY_SECONDS)
+    Application.OnTime EarliestTime:=scheduledCheck, _
+        Procedure:=ScheduledProcedureName
+    checkIsScheduled = True
 
 ScheduleFailed:
-    scheduledCheckPending = False
-    scheduledCheckIsForced = False
-End Sub
-
-Public Sub RunScheduledVersionCheck()
-    Dim force As Boolean
-
-    On Error GoTo CheckFinished
-    force = scheduledCheckIsForced
-    scheduledCheckPending = False
-    scheduledCheckIsForced = False
-
-    If Not VersionChecksEnabled Then
-        ClearUpdateState
-        Exit Sub
-    End If
-
-    CheckForLatestVersion force
-
-CheckFinished:
-    scheduledCheckPending = False
-    scheduledCheckIsForced = False
+    ' Version checking must never prevent NADABAS from opening.
 End Sub
 
 Public Sub CancelScheduledVersionCheck()
     On Error Resume Next
-
-    If scheduledCheckPending Then
-        Application.OnTime _
-            EarliestTime:=scheduledCheckTime, _
-            Procedure:=ScheduledProcedureName, _
-            Schedule:=False
+    If checkIsScheduled Then
+        Application.OnTime EarliestTime:=scheduledCheck, _
+            Procedure:=ScheduledProcedureName, Schedule:=False
     End If
-
-    scheduledCheckPending = False
-    scheduledCheckIsForced = False
+    checkIsScheduled = False
+    On Error GoTo 0
 End Sub
 
-Public Sub CheckForLatestVersion(Optional ByVal force As Boolean = False)
-    Dim currentVersion As String
+Public Sub RunScheduledVersionCheck()
+    checkIsScheduled = False
+    CheckLatestVersion
+End Sub
+
+Public Sub CheckLatestVersion(Optional ByVal force As Boolean = False)
     Dim latestVersion As String
-    Dim releaseTag As String
-    Dim request As Object
 
     On Error GoTo CheckFailed
 
     If Not VersionChecksEnabled Then Exit Sub
 
-    LoadCachedLatestVersion
     If Not force Then
-        If Not UpdateCheckIsDue Then Exit Sub
+        If Not IsCheckDue Then Exit Sub
     End If
 
-    ' Record the attempt before connecting so an unavailable network is not retried
-    ' every time Excel starts. A new attempt is allowed after one week.
+    ' Record the attempt before connecting so an unavailable network cannot
+    ' cause a new synchronous request at every Excel start.
     SaveSetting "NADABAS", REGISTRY_SECTION, REGISTRY_LAST_CHECK, CStr(CLng(Date))
 
-    currentVersion = NormalizeVersion(CStr(dlgAbout.VersionNumber.Caption))
-    If Len(currentVersion) = 0 Then Exit Sub
-
-    Set request = CreateObject("WinHttp.WinHttpRequest.5.1")
-    request.SetTimeouts 1000, 1500, 1500, 2500
-    request.Open "GET", LATEST_RELEASE_API, False
-    request.SetRequestHeader "Accept", "application/vnd.github+json"
-    request.SetRequestHeader "X-GitHub-Api-Version", "2022-11-28"
-    request.SetRequestHeader "User-Agent", "NADABAS-version-check"
-    request.Send
-
-    If request.Status <> 200 Then Exit Sub
-
-    releaseTag = JsonStringValue(CStr(request.ResponseText), "tag_name")
-    latestVersion = NormalizeVersion(releaseTag)
+    latestVersion = FetchLatestPublishedVersion
     If Len(latestVersion) = 0 Then Exit Sub
 
     SaveSetting "NADABAS", REGISTRY_SECTION, REGISTRY_LATEST_VERSION, latestVersion
-    ApplyLatestVersion latestVersion, currentVersion
 
-    Set request = Nothing
+    If CompareVersions(latestVersion, CURRENT_VERSION) > 0 Then
+        ShowUpdateAvailable latestVersion
+    End If
+
+CheckFailed:
+    ' Offline use, proxy restrictions and GitHub errors are intentionally silent.
+End Sub
+
+Public Sub CheckLatestVersionClick(control As IRibbonControl)
+    CheckLatestVersionManually
+End Sub
+
+Public Sub CheckLatestVersionManually()
+    Dim latestVersion As String
+
+    On Error GoTo CheckFailed
+
+    SaveSetting "NADABAS", REGISTRY_SECTION, REGISTRY_LAST_CHECK, CStr(CLng(Date))
+    latestVersion = FetchLatestPublishedVersion
+
+    If Len(latestVersion) = 0 Then
+        ShowManualCheckFailed
+        Exit Sub
+    End If
+
+    SaveSetting "NADABAS", REGISTRY_SECTION, REGISTRY_LATEST_VERSION, latestVersion
+
+    If CompareVersions(latestVersion, CURRENT_VERSION) > 0 Then
+        ShowUpdateAvailable latestVersion
+    Else
+        ShowNoNewerVersion latestVersion
+    End If
     Exit Sub
 
 CheckFailed:
-    ' Deliberately silent: offline use, proxies, GitHub outages, or malformed
-    ' responses must not interrupt NADABAS startup.
-    Set request = Nothing
+    ShowManualCheckFailed
 End Sub
 
-Public Function IsUpdateAvailable() As Boolean
-    IsUpdateAvailable = newerVersionIsAvailable
+Public Function CompareVersions( _
+    ByVal candidateVersion As String, _
+    ByVal installedVersion As String) As Long
+
+    Dim candidateParts() As String
+    Dim installedParts() As String
+    Dim candidatePart As Long
+    Dim installedPart As Long
+    Dim maxPart As Long
+    Dim partIndex As Long
+
+    candidateVersion = NormalizeVersion(candidateVersion)
+    installedVersion = NormalizeVersion(installedVersion)
+    If Len(candidateVersion) = 0 Or Len(installedVersion) = 0 Then Exit Function
+
+    candidateParts = Split(candidateVersion, ".")
+    installedParts = Split(installedVersion, ".")
+    maxPart = UBound(candidateParts)
+    If UBound(installedParts) > maxPart Then maxPart = UBound(installedParts)
+
+    For partIndex = 0 To maxPart
+        candidatePart = 0
+        installedPart = 0
+        If partIndex <= UBound(candidateParts) Then
+            candidatePart = CLng(candidateParts(partIndex))
+        End If
+        If partIndex <= UBound(installedParts) Then
+            installedPart = CLng(installedParts(partIndex))
+        End If
+
+        If candidatePart > installedPart Then
+            CompareVersions = 1
+            Exit Function
+        End If
+        If candidatePart < installedPart Then
+            CompareVersions = -1
+            Exit Function
+        End If
+    Next partIndex
 End Function
 
-Public Function LatestVersion() As String
-    LatestVersion = latestPublishedVersion
-End Function
+Private Function IsCheckDue() As Boolean
+    Dim lastCheckDay As Long
 
-Public Sub OpenDownloadPage()
     On Error Resume Next
-    ThisWorkbook.FollowHyperlink Address:=DOWNLOAD_PAGE, NewWindow:=True
-End Sub
+    lastCheckDay = CLng(GetSetting( _
+        "NADABAS", REGISTRY_SECTION, REGISTRY_LAST_CHECK, "0"))
+    On Error GoTo 0
 
-Public Sub ClearUpdateState()
-    latestPublishedVersion = ""
-    newerVersionIsAvailable = False
-    RibbonUI.DoInvalidateIf
-End Sub
+    IsCheckDue = (lastCheckDay = 0)
+    If Not IsCheckDue Then
+        IsCheckDue = (CLng(Date) - lastCheckDay >= CHECK_INTERVAL_DAYS)
+    End If
+End Function
 
 Private Function VersionChecksEnabled() As Boolean
     On Error GoTo DefaultEnabled
@@ -164,146 +215,145 @@ DefaultEnabled:
     VersionChecksEnabled = True
 End Function
 
-Private Sub LoadCachedLatestVersion()
-    Dim cachedVersion As String
-    Dim currentVersion As String
+Private Function FetchLatestPublishedVersion() As String
+    Dim request As Object
+    Dim responseText As String
 
-    On Error GoTo CacheFailed
-    cachedVersion = NormalizeVersion(GetSetting( _
-        "NADABAS", REGISTRY_SECTION, REGISTRY_LATEST_VERSION, ""))
-    currentVersion = NormalizeVersion(CStr(dlgAbout.VersionNumber.Caption))
+    On Error GoTo RequestFailed
 
-    If Len(cachedVersion) = 0 Or Len(currentVersion) = 0 Then Exit Sub
-    ApplyLatestVersion cachedVersion, currentVersion
-    Exit Sub
+    Set request = CreateObject("WinHttp.WinHttpRequest.5.1")
+    request.SetTimeouts 3000, 3000, 5000, 5000
+    request.Open "GET", RELEASE_API_URL, False
+    request.SetRequestHeader "Accept", "application/vnd.github+json"
+    request.SetRequestHeader "User-Agent", "NADABAS-" & CURRENT_VERSION
+    request.Send
 
-CacheFailed:
-    ' An unreadable cache must not affect NADABAS.
-End Sub
+    If request.Status <> 200 Then Exit Function
+    responseText = CStr(request.responseText)
+    FetchLatestPublishedVersion = NormalizeVersion( _
+        ExtractJsonString(responseText, "tag_name"))
 
-Private Sub ApplyLatestVersion(ByVal latestVersion As String, _
-                               ByVal currentVersion As String)
-    latestPublishedVersion = latestVersion
-    newerVersionIsAvailable = _
-        (CompareVersions(latestVersion, currentVersion) > 0)
-    RibbonUI.DoInvalidateIf
-End Sub
-
-Private Function ScheduledProcedureName() As String
-    ScheduledProcedureName = "'" & Replace(ThisWorkbook.Name, "'", "''") & _
-                             "'!InterfaceVersionUpdate.RunScheduledVersionCheck"
+RequestFailed:
 End Function
 
-Private Function UpdateCheckIsDue() As Boolean
-    Dim lastCheckDay As Long
-    Dim currentDay As Long
+Private Function ExtractJsonString( _
+    ByVal jsonText As String, _
+    ByVal propertyName As String) As String
 
-    On Error GoTo CheckNow
-    lastCheckDay = CLng(Val(GetSetting( _
-        "NADABAS", REGISTRY_SECTION, REGISTRY_LAST_CHECK, "0")))
-    currentDay = CLng(Date)
-    UpdateCheckIsDue = (lastCheckDay <= 0 Or lastCheckDay > currentDay Or _
-                        currentDay - lastCheckDay >= CHECK_INTERVAL_DAYS)
-    Exit Function
-
-CheckNow:
-    UpdateCheckIsDue = True
-End Function
-
-Private Function JsonStringValue(ByVal json As String, ByVal key As String) As String
-    Dim marker As String
-    Dim keyPosition As Long
+    Dim markerPosition As Long
     Dim colonPosition As Long
     Dim valueStart As Long
     Dim valueEnd As Long
 
-    marker = Chr$(34) & key & Chr$(34)
-    keyPosition = InStr(1, json, marker, vbTextCompare)
-    If keyPosition = 0 Then Exit Function
+    markerPosition = InStr(1, jsonText, _
+        Chr$(34) & propertyName & Chr$(34), vbTextCompare)
+    If markerPosition = 0 Then Exit Function
 
-    colonPosition = InStr(keyPosition + Len(marker), json, ":")
+    colonPosition = InStr(markerPosition, jsonText, ":")
     If colonPosition = 0 Then Exit Function
-
-    valueStart = InStr(colonPosition + 1, json, Chr$(34))
+    valueStart = InStr(colonPosition + 1, jsonText, Chr$(34))
     If valueStart = 0 Then Exit Function
-
-    valueEnd = InStr(valueStart + 1, json, Chr$(34))
+    valueEnd = InStr(valueStart + 1, jsonText, Chr$(34))
     If valueEnd = 0 Then Exit Function
 
-    JsonStringValue = Mid$(json, valueStart + 1, valueEnd - valueStart - 1)
+    ExtractJsonString = Mid$(jsonText, valueStart + 1, valueEnd - valueStart - 1)
 End Function
 
-Private Function NormalizeVersion(ByVal rawVersion As String) As String
+Private Function NormalizeVersion(ByVal versionText As String) As String
+    Dim characterIndex As Long
     Dim character As String
-    Dim normalized As String
-    Dim started As Boolean
-    Dim index As Long
-    Dim parts() As String
 
-    rawVersion = Trim$(rawVersion)
-
-    For index = 1 To Len(rawVersion)
-        character = Mid$(rawVersion, index, 1)
-
-        If character >= "0" And character <= "9" Then
-            normalized = normalized & character
-            started = True
-        ElseIf character = "." And started Then
-            normalized = normalized & character
-        ElseIf started Then
-            Exit For
-        End If
-    Next index
-
-    If Len(normalized) = 0 Then Exit Function
-    If Right$(normalized, 1) = "." Then
-        normalized = Left$(normalized, Len(normalized) - 1)
+    versionText = Trim$(versionText)
+    If Len(versionText) = 0 Then Exit Function
+    If LCase$(Left$(versionText, 1)) = "v" Then
+        versionText = Mid$(versionText, 2)
     End If
+    If Len(versionText) = 0 Then Exit Function
+    If Left$(versionText, 1) = "." Or Right$(versionText, 1) = "." Then Exit Function
+    If InStr(1, versionText, "..", vbBinaryCompare) > 0 Then Exit Function
 
-    parts = Split(normalized, ".")
-    For index = LBound(parts) To UBound(parts)
-        If Len(parts(index)) = 0 Or Not IsNumeric(parts(index)) Then Exit Function
-    Next index
-
-    NormalizeVersion = normalized
-End Function
-
-Private Function CompareVersions(ByVal leftVersion As String, _
-                                 ByVal rightVersion As String) As Long
-    Dim leftParts() As String
-    Dim rightParts() As String
-    Dim leftValue As Long
-    Dim rightValue As Long
-    Dim lastPart As Long
-    Dim index As Long
-
-    leftParts = Split(leftVersion, ".")
-    rightParts = Split(rightVersion, ".")
-
-    lastPart = UBound(leftParts)
-    If UBound(rightParts) > lastPart Then lastPart = UBound(rightParts)
-
-    For index = 0 To lastPart
-        leftValue = 0
-        rightValue = 0
-
-        If index <= UBound(leftParts) Then leftValue = CLng(leftParts(index))
-        If index <= UBound(rightParts) Then rightValue = CLng(rightParts(index))
-
-        If leftValue > rightValue Then
-            CompareVersions = 1
-            Exit Function
-        ElseIf leftValue < rightValue Then
-            CompareVersions = -1
+    For characterIndex = 1 To Len(versionText)
+        character = Mid$(versionText, characterIndex, 1)
+        If (character < "0" Or character > "9") And character <> "." Then
             Exit Function
         End If
-    Next index
+    Next characterIndex
+
+    NormalizeVersion = versionText
 End Function
 
-Public Sub SelfTestVersionComparison()
-    Debug.Assert CompareVersions("6.01.003", "6.01.002") = 1
-    Debug.Assert CompareVersions("6.01.002", "6.01.002") = 0
-    Debug.Assert CompareVersions("6.01.001", "6.01.002") = -1
-    Debug.Assert NormalizeVersion("v6.01.003") = "6.01.003"
-    Debug.Assert NormalizeVersion("not-a-version") = ""
+Private Sub ShowNoNewerVersion(ByVal latestVersion As String)
+    Dim messageText As String
+
+    Select Case GetLanguageSetting(3)
+    Case 4
+        messageText = "Aucune version plus récente de NADABAS n'a été trouvée." & _
+            vbCrLf & vbCrLf & _
+            "Version installée : " & CURRENT_VERSION & vbCrLf & _
+            "Dernière version publiée : " & latestVersion
+    Case 5
+        messageText = "Não foi encontrada uma versão mais recente do NADABAS." & _
+            vbCrLf & vbCrLf & _
+            "Versão instalada: " & CURRENT_VERSION & vbCrLf & _
+            "Versão publicada mais recente: " & latestVersion
+    Case Else
+        messageText = "No newer NADABAS version was found." & vbCrLf & vbCrLf & _
+            "Installed version: " & CURRENT_VERSION & vbCrLf & _
+            "Latest published version: " & latestVersion
+    End Select
+
+    MsgBox messageText, vbInformation, "NADABAS"
 End Sub
+
+Private Sub ShowManualCheckFailed()
+    Dim messageText As String
+
+    Select Case GetLanguageSetting(3)
+    Case 4
+        messageText = "NADABAS n'a pas pu vérifier les mises à jour." & vbCrLf & _
+            "Vérifiez votre connexion réseau et réessayez plus tard."
+    Case 5
+        messageText = "O NADABAS não conseguiu verificar se existem atualizações." & _
+            vbCrLf & _
+            "Verifique a ligação de rede e tente novamente mais tarde."
+    Case Else
+        messageText = "NADABAS could not check for updates." & vbCrLf & _
+            "Check the network connection and try again later."
+    End Select
+
+    MsgBox messageText, vbExclamation, "NADABAS"
+End Sub
+
+Private Sub ShowUpdateAvailable(ByVal latestVersion As String)
+    Dim messageText As String
+    Dim promptResult As VbMsgBoxResult
+
+    Select Case GetLanguageSetting(3)
+    Case 4
+        messageText = "Une nouvelle version de NADABAS est disponible." & vbCrLf & vbCrLf & _
+            "Version installée : " & CURRENT_VERSION & vbCrLf & _
+            "Dernière version publiée : " & latestVersion & vbCrLf & vbCrLf & _
+            "Voulez-vous ouvrir la page de téléchargement sur nadabas.net ?"
+    Case 5
+        messageText = "Está disponível uma nova versão do NADABAS." & vbCrLf & vbCrLf & _
+            "Versão instalada: " & CURRENT_VERSION & vbCrLf & _
+            "Versão publicada mais recente: " & latestVersion & vbCrLf & vbCrLf & _
+            "Deseja abrir a página de transferências em nadabas.net?"
+    Case Else
+        messageText = "A newer NADABAS version is available." & vbCrLf & vbCrLf & _
+            "Installed version: " & CURRENT_VERSION & vbCrLf & _
+            "Latest published version: " & latestVersion & vbCrLf & vbCrLf & _
+            "Open the download page on nadabas.net?"
+    End Select
+
+    promptResult = MsgBox(messageText, vbYesNo + vbInformation, "NADABAS")
+    If promptResult = vbYes Then
+        ThisWorkbook.FollowHyperlink Address:=DOWNLOAD_URL
+    End If
+End Sub
+
+Private Function ScheduledProcedureName() As String
+    ScheduledProcedureName = "'" & _
+        Replace(ThisWorkbook.name, "'", "''") & _
+        "'!InterfaceVersionUpdate.RunScheduledVersionCheck"
+End Function

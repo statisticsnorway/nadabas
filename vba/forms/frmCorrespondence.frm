@@ -50,8 +50,8 @@ Dim n As Integer
 '       Filltreeview CurrentDB.Correspondences(1)
     End If
 
-    cmdAdd.Visible = AsAdministrator
-    cmdAdd.Enabled = AsAdministrator
+    CmdAdd.Visible = AsAdministrator
+    CmdAdd.Enabled = AsAdministrator
 
     cmdEdit.Visible = AsAdministrator
     cmdEdit.Enabled = AsAdministrator & lbCorrespondences.ListIndex > -1
