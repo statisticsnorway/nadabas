@@ -25,16 +25,16 @@ Dim fullname As String
 Dim LastDir As String
 
     On Error Resume Next
-    If getBasepath = "" Then
+    If Len(getBasepath) = 0 Then
        LastDir = GetSetting("NADABAS", "Document", "Path", "")
     Else
        LastDir = getBasepath
     End If
-    If LastDir <> "" Then
+    If Len(LastDir) <> 0 Then
        ChDir LastDir
     End If
     fullname = Application.GetOpenFilename("Word documents(*.doc;*.docx;*.docm), *.doc;*.docx;*.docm,All files (*.*),*.*", , "Find file")
-    If fullname <> "" Then
+    If Len(fullname) <> 0 Then
        txtPath = GetPath(CStr(fullname))
        txtFilename = GetFilename(CStr(fullname))
        SaveSetting "NADABAS", "Document", "Path", GetPath(txtFilename)
@@ -44,7 +44,7 @@ End Sub
 Private Sub cmdOK_Click()
 Dim Docinfo As clsDocInfo
 
-     If TestBasePath(txtPath.Text) = False Then
+     If Not TestBasePath(txtPath.Text) Then
        If Usersettings.DocsInBase Then
           MsgBox GetMsg("M022"), vbCritical 'Documents must be within scope of Base Folder
           Exit Sub

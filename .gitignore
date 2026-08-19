@@ -272,3 +272,7 @@ rsconnect/
 # Dynaconf secret and local files
 *.secrets.*
 *.local.*
+
+# Local Codex metadata and working files
+/.codex/
+/.codex_tmp/
