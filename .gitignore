@@ -16,6 +16,7 @@
 *.parquet
 *.sas7bdat
 *.xls
+*.xlsb
 *.xlsx
 *.zip
 *.rda
