@@ -146,7 +146,7 @@ Dim BookName As Variant
         If Keyname.TableDefinition.count > 0 Then
          For Each DCItem In Dimensions
            For Each field In Keyname.TableDefinition
-                   If UCase(field.name) = UCase(DCItem.Dimensionname) Then
+                   If UCase$(field.name) = UCase$(DCItem.Dimensionname) Then
                       CreateSnapshot "select distinct  Excelfile from " & InB(Keyname.Keyname) & _
                               " where " & InB(DCItem.Dimensionname) & " = " & InQ(code)
                       Do While Not CursorEoF
@@ -272,7 +272,7 @@ Dim NewName As String
     classname = lbClassifications.value
     dlgRenameClassif.lblOldClass = classname
     dlgRenameClassif.Show vbModal
-    If dlgRenameClassif.NewName = "" Then Exit Sub
+    If Len(dlgRenameClassif.NewName) = 0 Then Exit Sub
     NewName = dlgRenameClassif.NewName
     For Each Class In CurrentDB.Classifications
         If Class.classname = NewName Then

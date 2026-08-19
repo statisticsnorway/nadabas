@@ -176,7 +176,7 @@ Dim n As Long
 
        n = 0
        For Each BE In ListTags
-           If BE.Selecteditem = True Then
+           If BE.Selecteditem Then
               lstBatchList.Selected(n) = True
            End If
            n = n + 1
@@ -237,7 +237,7 @@ Private Sub cmdNew_Click()
 Dim BL As clsBatchList
     Load dlgNewBatch
     dlgNewBatch.Show vbModal
-    If dlgNewBatch.listname <> "" Then
+    If Len(dlgNewBatch.listname) <> 0 Then
 '
 ' ready for a new batch list
 '
@@ -298,7 +298,7 @@ Dim MWB As clsWorkBookInfo
     If BatchType = 1 Then
        If cbSelectFrom.Text = Me.lblAllWorkbooks.Caption Then
            For Each BE In Candidates
-               If BE.InBatchlist = False Or cbCircular.value = True Then
+               If Not BE.InBatchlist Or cbCircular.value Then
                   lstBaseList.AddItem BE.ElName
                   BaseTags.Add BE
                 End If
@@ -308,7 +308,7 @@ Dim MWB As clsWorkBookInfo
             For Each BEntry In BL.Entries
                Set MWB = CurrentDB.WorkBooks(BEntry.ElementName)
                Set BE = Candidates(MWB.WorkBookName)
-               If BE.InBatchlist = False Or cbCircular.value = True Then
+               If Not BE.InBatchlist Or cbCircular.value Then
                   lstBaseList.AddItem BE.ElName
                   BaseTags.Add BE
                 End If
@@ -316,7 +316,7 @@ Dim MWB As clsWorkBookInfo
           End If
      Else
         For Each BE In Candidates
-            If BE.InBatchlist = False Or cbCircular.value = True Then
+            If Not BE.InBatchlist Or cbCircular.value Then
                 lstBaseList.AddItem BE.ElName
                 BaseTags.Add BE
              End If
@@ -343,7 +343,7 @@ Private Sub cmdExclude_Click()
 Dim n As Long
 Dim BE As clsBatchElement
      For n = lstBatchList.ListCount - 1 To 0 Step -1
-        If lstBatchList.Selected(n) = True Then
+        If lstBatchList.Selected(n) Then
            Set BE = ListTags(n + 1)
            BE.InBatchlist = False
            lstBatchList.RemoveItem (n)
@@ -370,7 +370,7 @@ Dim n As Long
 
 Dim BE As clsBatchElement
     For n = 0 To lstBaseList.ListCount - 1
-        If lstBaseList.Selected(n) = True Then
+        If lstBaseList.Selected(n) Then
            Set BE = BaseTags(n + 1)
            BE.InBatchlist = True
            BE.BatchListNo = lstBatchList.ListCount + 1
@@ -412,7 +412,7 @@ Dim Newtop As Long
 
       For n = 0 To lstBatchList.ListCount - 1
           Set BE = ListTags(n + 1)
-          If lstBatchList.Selected(n) = True Then
+          If lstBatchList.Selected(n) Then
              BE.BatchListNo = BE.BatchListNo + 1
              moved = moved + 1
              BE.Selecteditem = True
@@ -463,7 +463,7 @@ Dim Newtop As Long
 
       For n = lstBatchList.ListCount - 1 To 0 Step -1
           Set BE = ListTags(n + 1)
-          If lstBatchList.Selected(n) = True Then
+          If lstBatchList.Selected(n) Then
              BE.BatchListNo = BE.BatchListNo - 1
              moved = moved + 1
              BE.Selecteditem = True
@@ -594,7 +594,7 @@ Private Sub cmdRename_Click()
      Load dlgRenameBatch
      dlgRenameBatch.TextBox1.Text = CurrentBlist.name
      dlgRenameBatch.Show vbModal
-     If dlgRenameBatch.listname <> "" Then
+     If Len(dlgRenameBatch.listname) <> 0 Then
 
         OpenDb
         If BatchType = 1 Then
@@ -665,7 +665,7 @@ Dim BE As clsBatchListEntry
 
      BatchRunData.bCircular = False
      BatchRunData.Repno = 1
-     If cbRepeatUntill.value = True Then
+     If cbRepeatUntill.value Then
         BatchRunData.bCircular = True
         Load dlgRepeatBatch
         dlgRepeatBatch.Show vbModal

@@ -153,21 +153,21 @@ Dim DBLinksRange As Range
        Set testscanres = New clsScanTableDefResults
        Set testscanres.DBConstants = New Collection
        testscanres.DBConstantNumber = DBLConstNumber
-       testscanres.DataAreaName = Trim(DBLinksRange.Cells(k, 1).value)
+       testscanres.DataAreaName = Trim$(DBLinksRange.Cells(k, 1).value)
        addAreaName testscanres.DataAreaName
        setErrorHeader k
-       testscanres.TabDefName = Trim(DBLinksRange.Cells(k, 2).value)
-       If testscanres.TabDefName <> "" Then                    ' if there is no definearea, data area   with extensions are used
+       testscanres.TabDefName = Trim$(DBLinksRange.Cells(k, 2).value)
+       If Len(testscanres.TabDefName) <> 0 Then                    ' if there is no definearea, data area   with extensions are used
           addAreaName testscanres.TabDefName
        End If
 
-       testscanres.DBDefName = Trim(DBLinksRange.Cells(k, 3).value)
+       testscanres.DBDefName = Trim$(DBLinksRange.Cells(k, 3).value)
        addAreaName testscanres.DBDefName
 
        For n = 1 To testscanres.DBConstantNumber
-           s = Trim(DBLinksRange.Cells(k, n + 3).value) 'values for constants
-           If Mid(s, 1, 1) = "%" Then
-                Set gv = CurrentDB.GetDBGlobal(Trim(Mid(s, 2)))
+           s = Trim$(DBLinksRange.Cells(k, n + 3).value) 'values for constants
+           If Mid$(s, 1, 1) = "%" Then
+                Set gv = CurrentDB.GetDBGlobal(Trim$(Mid$(s, 2)))
                 If gv Is Nothing Then
                     AddError1 "DE009", s  'Unknown Global variable %1
                 Else
@@ -175,13 +175,13 @@ Dim DBLinksRange As Range
                 End If
            End If
            Set dbc = New clsDBConstant
-           dbc.DBConstant = Trim(s)
+           dbc.DBConstant = Trim$(s)
            testscanres.DBConstants.Add dbc
        Next n
 
 
 
-       testscanres.DefineType = Trim(UCase(DBLinksRange.Cells(k, DBLConstNumber + 4).value))
+       testscanres.DefineType = Trim$(UCase$(DBLinksRange.Cells(k, DBLConstNumber + 4).value))
        Select Case testscanres.DefineType
        Case "OFF"
            testscanres.DefineGet = False
@@ -201,7 +201,7 @@ Dim DBLinksRange As Range
            testscanres.DefinePut = True
            testscanres.notvalid = "GETDB"
        Case "MIXED"
-          If testscanres.TabDefName = "" Then
+          If Len(testscanres.TabDefName) = 0 Then
              AddError0 "DE010"    ' MIXED not allowed when Tabdef is omitted
           End If
           testscanres.DefineGet = True
@@ -231,7 +231,7 @@ Dim DBLinksRange As Range
 
 
 
-       If testscanres.TabDefName <> "" Then
+       If Len(testscanres.TabDefName) <> 0 Then
         Set testscanres.TabdefRange = awb.Names(testscanres.TabDefName).RefersToRange
         If testscanres.TabdefRange Is Nothing Then
             AddError1 "DE013", testscanres.TabDefName  'Data definition %1 not found
@@ -309,7 +309,7 @@ Dim DBLinksRange As Range
 '     test that TabDefRange and DataRange fits by size
 '
 
-       If testscanres.TabDefName <> "" Then
+       If Len(testscanres.TabDefName) <> 0 Then
           If testscanres.TabdefRange.Rows.count <> testscanres.DataRange.Rows.count + testscanres.ColIdCount Or _
              testscanres.TabdefRange.Columns.count <> testscanres.DataRange.Columns.count + testscanres.RowIdCount Then
              AddError0 "DE017"      'Table definition does not match area definition
@@ -319,7 +319,7 @@ Dim DBLinksRange As Range
                  testscanres.DataRange.Rows.count & "," & testscanres.DataRange.Columns.count
           End If
        Else
-          If SetTabDefRange(awb, testscanres) = False Then                  ' construt TabDefRange from DataRange  from dataarea
+          If Not SetTabDefRange(awb, testscanres) Then                  ' construt TabDefRange from DataRange  from dataarea
              AddError0 "DE018"      'Unable to construct TabDef, to few columns before data area or to few rows above data area
           End If
        End If
@@ -352,10 +352,10 @@ Dim DBLinksRange As Range
 '
 '
 '
-        If testscanres.TabDefName <> "" Then
+        If Len(testscanres.TabDefName) <> 0 Then
             vstr = ""
             vstr = DefineAreas(testscanres.TabDefName)              ' don't mind if it fails
-            If vstr = "" Then
+            If Len(vstr) = 0 Then
                 vstr = testscanres.TabDefName
                 DefineAreas.Add vstr, testscanres.TabDefName
             Else
@@ -368,12 +368,12 @@ Dim DBLinksRange As Range
  '
  ' test that TabDefRange only containsPUTDb or GETDb fitting DBLinks
  '
-        If testscanres.TabDefName <> "" Then       ' skipped in case dataasre is used
-            If testscanres.notvalid <> "" Then
+        If Len(testscanres.TabDefName) <> 0 Then       ' skipped in case dataasre is used
+            If Len(testscanres.notvalid) <> 0 Then
                 testGetDbPutDB testscanres.notvalid
             End If                      ' however, if GETDB no cells must have a formula
         End If
-        If testscanres.TabDefName = "" Then  ' if dataarea is used, and GETB it must not contain formulas
+        If Len(testscanres.TabDefName) = 0 Then  ' if dataarea is used, and GETB it must not contain formulas
             If testscanres.DefineGet Then
                 testNoFormulas
             End If
@@ -416,13 +416,13 @@ QuitDefar:
  '
     ErrorHeader = ""
     For k = 1 To DBLinksRange.Rows.count - 1
-      DataAreaName1 = Trim(DBLinksRange.Cells(k, 1).value)
+      DataAreaName1 = Trim$(DBLinksRange.Cells(k, 1).value)
       Set DataRange1 = awb.Names(DataAreaName1).RefersToRange
-      DefineType1 = Trim(UCase(DBLinksRange.Cells(k, DBLConstNumber + 4).value))
+      DefineType1 = Trim$(UCase$(DBLinksRange.Cells(k, DBLConstNumber + 4).value))
       For i = k + 1 To DBLinksRange.Rows.count
-        DataArea2Name = Trim(DBLinksRange.Cells(i, 1).value)
+        DataArea2Name = Trim$(DBLinksRange.Cells(i, 1).value)
         Set DataRange2 = awb.Names(DataArea2Name).RefersToRange
-        DefineType2 = Trim(UCase(DBLinksRange.Cells(i, DBLConstNumber + 4).value))
+        DefineType2 = Trim$(UCase$(DBLinksRange.Cells(i, DBLConstNumber + 4).value))
         If DefineType1 = DefineType2 Or DefineType1 = "MIXED" Or DefineType2 = "MIXED" Then
             If Not Intersect(DataRange1, DataRange2) Is Nothing Then
                If DataRange1.Worksheet.Index = DataRange2.Worksheet.Index Then ' test not on same sheet
@@ -455,7 +455,7 @@ QuitDefar:
  ' must have same number ogf rows as clsDBlinks and areanames must match
 
             For k = 1 To DBLinksRange.Rows.count
-               If Trim(DBLinksRange.Cells(k, 1).value) <> Trim(DescriptionRange.Cells(k, 1).value) Then
+               If Trim$(DBLinksRange.Cells(k, 1).value) <> Trim$(DescriptionRange.Cells(k, 1).value) Then
                    AddError0 "DE051"                'Areaname Descriptions does not match DBLinks
                    Exit For
                End If
@@ -503,7 +503,7 @@ Dim j As Long
 
     For i = 1 To testscanres.InteriorTabDefRange.Rows.count
         For j = 1 To testscanres.InteriorTabDefRange.Columns.count
-           If UCase(Trim(testscanres.InteriorTabDefRange.Cells(i, j).value)) = UCase(notvalid) Then
+           If UCase$(Trim$(testscanres.InteriorTabDefRange.Cells(i, j).value)) = UCase$(notvalid) Then
               AddError2 "DE100", testscanres.TabDefName, notvalid   '%1  contains %2
 
               Exit Sub  ' no reason to continue the test
@@ -519,7 +519,7 @@ Dim s As String
     For i = 1 To testscanres.InteriorTabDefRange.Rows.count
         For j = 1 To testscanres.InteriorTabDefRange.Columns.count
                 If CellToBeIncluded(i, j, testscanres) Then
-                   If Mid(testscanres.InteriorTabDefRange.Cells(i, j).Formula, 1, 1) = "=" Then
+                   If Mid$(testscanres.InteriorTabDefRange.Cells(i, j).Formula, 1, 1) = "=" Then
                       s = testscanres.InteriorTabDefRange.Cells(i, j).Address
                       AddError2 "DE101", testscanres.DataAreaName, s  ' Dataarea %1  for GetDb has formula at  %2
                       Exit Sub    ' no reason to continue the test
@@ -538,9 +538,9 @@ Dim s As String
 
     For i = 1 To testscanres.InteriorTabDefRange.Rows.count
         For j = 1 To testscanres.InteriorTabDefRange.Columns.count
-                s = UCase(testscanres.InteriorTabDefRange(i, j))
+                s = UCase$(testscanres.InteriorTabDefRange(i, j))
                 If s = "GETDB" Then
-                   If Mid(testscanres.DataRange.Cells(i, j).Formula, 1, 1) = "=" Then
+                   If Mid$(testscanres.DataRange.Cells(i, j).Formula, 1, 1) = "=" Then
                      s = testscanres.DataRange.Cells(i, j).Address
                       AddError2 "DE101", testscanres.DataAreaName, s  ' Dataarea %1  for GetDb has formula at  %2
                       Exit Sub    ' no reason to continue the test
@@ -591,8 +591,8 @@ Dim MissKey As Boolean
     For i = 1 To testscanres.RowIdRange.Rows.count
         If RowHasGetOrPut(i, testscanres) Then
             For k = 1 To testscanres.RowIdCount
-                cellkey = Trim(testscanres.RowIdRange.Cells(i, k).value)
-                If cellkey = "" Then
+                cellkey = Trim$(testscanres.RowIdRange.Cells(i, k).value)
+                If Len(cellkey) = 0 Then
                     AddError3 "DE102", CStr(i), CStr(k), AreaName 'No key found at :%1, %2  in  %3
                     MissKey = True
                  End If
@@ -603,8 +603,8 @@ Dim MissKey As Boolean
     For j = 1 To testscanres.ColIdRange.Columns.count
         If ColHasGetOrPut(j, testscanres) Then
             For k = 1 To testscanres.ColIdCount
-                cellkey = Trim(testscanres.ColIdRange.Cells(k, j).value)
-                If cellkey = "" Then
+                cellkey = Trim$(testscanres.ColIdRange.Cells(k, j).value)
+                If Len(cellkey) = 0 Then
                 AddError3 "DE102", CStr(k), CStr(j), AreaName 'No key found at :%1, %2  in  %3
                 MissKey = True
                 End If
@@ -621,15 +621,15 @@ Dim MissKey As Boolean
          If RowHasGetOrPut(i, testscanres) Then
              combkeyr = ""
              For k = 1 To testscanres.RowIdCount
-                cellkey = Trim(testscanres.RowIdRange.Cells(i, k).value)
+                cellkey = Trim$(testscanres.RowIdRange.Cells(i, k).value)
                 combkeyr = combkeyr & cellkey & Usersettings.Sepchar
               Next k
             For j = 1 To testscanres.ColIdRange.Columns.count
-                s = Trim(testscanres.InteriorTabDefRange.Cells(i, j).value)
+                s = Trim$(testscanres.InteriorTabDefRange.Cells(i, j).value)
                  If s = "GETDB" Or s = "PUTDB" Then
                     combkeyc = combkeyr
                     For k = 1 To testscanres.ColIdCount
-                      cellkey = Trim(testscanres.ColIdRange.Cells(k, j).value)
+                      cellkey = Trim$(testscanres.ColIdRange.Cells(k, j).value)
                       combkeyc = combkeyc & cellkey & Usersettings.Sepchar
                     Next k
                     On Error GoTo DublicateRowcol
@@ -681,7 +681,7 @@ Dim AreaName As String
          If RowHasGetOrPut(i, testscanres) Then
              combkey = ""
              For k = 1 To testscanres.RowIdCount
-                cellkey = Trim(testscanres.RowIdRange.Cells(i, k).value)
+                cellkey = Trim$(testscanres.RowIdRange.Cells(i, k).value)
                 combkey = combkey & cellkey & Usersettings.Sepchar
             Next k
             On Error GoTo DublicateRow
@@ -695,7 +695,7 @@ Dim AreaName As String
           If ColHasGetOrPut(j, testscanres) Then
              combkey = ""
              For k = 1 To testscanres.ColIdCount
-                cellkey = Trim(testscanres.ColIdRange.Cells(k, j).value)
+                cellkey = Trim$(testscanres.ColIdRange.Cells(k, j).value)
                 combkey = combkey & cellkey & Usersettings.Sepchar
             Next k
             On Error GoTo DublicateCol
@@ -770,12 +770,12 @@ End Sub
 
     On Error Resume Next
     For Each rci In testscanres.RowIDFields
-        If rci.CorrClassName = "" Then
+        If Len(rci.CorrClassName) = 0 Then
             Set keyf = CurrentDB.GetKeyName(testscanres.TableName)
             Set x = keyf.TableDefinition(rci.DBFieldName)
             MaxLen = x.Length
             For i = 1 To testscanres.RowIdRange.Rows.count
-                  Keys = UCase(Trim(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value))
+                  Keys = UCase$(Trim$(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value))
                   If Len(Keys) > MaxLen Then
                      If RowHasGetOrPut(i, testscanres) Then
                        AddError4 "DE110", Keys, testscanres.TabDefName, rci.DBFieldName, CStr(MaxLen)   'Key : %1 in %2 for %3 > maxlen(%4)
@@ -786,13 +786,13 @@ End Sub
      Next rci
 
     For Each rci In testscanres.ColIdFields
-        If rci.CorrClassName = "" Then
+        If Len(rci.CorrClassName) = 0 Then
           Set keyf = CurrentDB.GetKeyName(testscanres.TableName)
           Set x = keyf.TableDefinition(rci.DBFieldName)
            MaxLen = x.Length
 
            For j = 1 To testscanres.ColIdRange.Columns.count
-              Keys = UCase(Trim(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value))
+              Keys = UCase$(Trim$(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value))
               If Len(Keys) > MaxLen Then
                  If ColHasGetOrPut(j, testscanres) Then
                     AddError4 "DE110", Keys, testscanres.TabDefName, rci.DBFieldName, CStr(MaxLen)  'Key : %1 in %2 for %3 > maxlen(%4)
@@ -805,9 +805,9 @@ End Sub
  ' test for quotes
  '
      For Each rci In testscanres.RowIDFields
-        If rci.CorrClassName = "" Then
+        If Len(rci.CorrClassName) = 0 Then
             For i = 1 To testscanres.RowIdRange.Rows.count
-                  Keys = UCase(Trim(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value))
+                  Keys = UCase$(Trim$(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value))
                   If KeyContainsQuote(Keys) Then
                      If RowHasGetOrPut(i, testscanres) Then
                        AddError3 "DE117", Keys, testscanres.TabDefName, rci.DBFieldName    'Key : %1 in  %2 for %3 contains quote or double quote
@@ -818,9 +818,9 @@ End Sub
      Next rci
 
     For Each rci In testscanres.ColIdFields
-        If rci.CorrClassName = "" Then
+        If Len(rci.CorrClassName) = 0 Then
            For j = 1 To testscanres.ColIdRange.Columns.count
-              Keys = UCase(Trim(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value))
+              Keys = UCase$(Trim$(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value))
               If KeyContainsQuote(Keys) Then
                  If ColHasGetOrPut(j, testscanres) Then
                     AddError3 "DE117", Keys, testscanres.TabDefName, rci.DBFieldName    'Key : %1 in  %2 for %3 contains quote or double quote
@@ -835,10 +835,10 @@ End Sub
  ' If any rowid of colID refers to a period format, check
  '
      For Each rci In testscanres.RowIDFields
-         If Mid(rci.ClassificationName, 1, 1) = "#" Then
+         If Mid$(rci.ClassificationName, 1, 1) = "#" Then
 '               this is a period type
              For i = 1 To testscanres.RowIdRange.Rows.count
-                Keys = Trim(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value)
+                Keys = Trim$(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value)
                 If Not TestDateFormat(Keys, rci.ClassificationName) Then
                    If RowHasGetOrPut(i, testscanres) Then
                       AddError3 "DE111", Keys, testscanres.TabDefName, rci.DBFieldName  'Key :  %1 in %2 for  %3  not a valid period
@@ -850,10 +850,10 @@ End Sub
 
 
     For Each rci In testscanres.ColIdFields
-         If Mid(rci.ClassificationName, 1, 1) = "#" Then
+         If Mid$(rci.ClassificationName, 1, 1) = "#" Then
 '               this is a period type
             For j = 1 To testscanres.ColIdRange.Columns.count
-               Keys = Trim(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value)
+               Keys = Trim$(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value)
                If Not TestDateFormat(Keys, rci.ClassificationName) Then
                    If ColHasGetOrPut(j, testscanres) Then
                       AddError3 "DE111", Keys, testscanres.TabDefName, rci.DBFieldName  'Key :  %1 in %2 for  %3  not a valid period
@@ -874,7 +874,7 @@ End Sub
         Set classif = GetClassif(rci)
         If Not classif Is Nothing Then
             For i = 1 To testscanres.RowIdRange.Rows.count
-               Keys = Trim(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value)
+               Keys = Trim$(testscanres.RowIdRange.Cells(i, rci.RowColNumber).value)
                If Not classif.CodeExists(Keys) Then
                    If RowHasGetOrPut(i, testscanres) Then
                       AddError4 "DE112", Keys, testscanres.TabDefName, rci.DBFieldName, classif.classname 'Key : %1 in  %2 for %3 not found in %4
@@ -888,7 +888,7 @@ End Sub
         Set classif = GetClassif(rci)
         If Not classif Is Nothing Then
            For j = 1 To testscanres.ColIdRange.Columns.count
-               Keys = Trim(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value)
+               Keys = Trim$(testscanres.ColIdRange.Cells(rci.RowColNumber, j).value)
                If Not classif.CodeExists(Keys) Then
                    If ColHasGetOrPut(j, testscanres) Then
                       AddError4 "DE112", Keys, testscanres.TabDefName, rci.DBFieldName, classif.classname 'Key : %1 in  %2 for %3 not found in %4
@@ -906,7 +906,7 @@ Dim x As Long
 Dim s As String
     KeyContainsQuote = False
     For x = 1 To Len(key)
-        s = Mid(key, x, 1)
+        s = Mid$(key, x, 1)
         If s = "'" Or s = """" Then
            KeyContainsQuote = True
            Exit Function
@@ -936,7 +936,7 @@ Dim s As String
         Set keyf = CurrentDB.GetKeyName(testscanres.TableName)
         Set x = keyf.TableDefinition(rci.DBFieldName)
         MaxLen = x.Length
-        Keys = UCase(Trim(rci.RowColValue))
+        Keys = UCase$(Trim$(rci.RowColValue))
         If Len(Keys) > MaxLen Then
            AddError4 "DE113", rci.RowColValue, testscanres.TableName, rci.DBFieldName, CStr(MaxLen)  'Constant : %1  in %2 for %3  > maxlen(%4)
 
@@ -948,10 +948,10 @@ Dim s As String
 
 
     For Each rci In testscanres.ConstFields
-        If rci.RowColValue <> "" Then
+        If Len(rci.RowColValue) <> 0 Then
            Set classif = GetClassif(rci)
            If Not classif Is Nothing Then
-              Keys = UCase(Trim(rci.RowColValue))
+              Keys = UCase$(Trim$(rci.RowColValue))
               If Not classif.CodeExists(Keys) Then
                   AddError4 "DE114", rci.RowColValue, testscanres.TableName, rci.DBFieldName, classif.classname ' Constant :%1 in  %2 for %3  not found in %4
             End If
@@ -982,7 +982,7 @@ Private Sub testWhereValues()
         Set keyf = CurrentDB.GetKeyName(testscanres.TableName)
         Set x = keyf.TableDefinition(rci.DBFieldName)
         MaxLen = x.Length
-        Keys = UCase(Trim(rci.RowColValue))
+        Keys = UCase$(Trim$(rci.RowColValue))
         If Len(Keys) > MaxLen Then
            AddError4 "DE115", rci.RowColValue, testscanres.TableName, rci.DBFieldName, CStr(MaxLen)    'WHERE : %1 in  %2 for %3 > maxlen(%4)
         End If
@@ -994,7 +994,7 @@ Private Sub testWhereValues()
     For Each rci In testscanres.WhereFields
         Set classif = GetClassif(rci)
         If Not classif Is Nothing Then
-           Keys = UCase(Trim(rci.RowColValue))
+           Keys = UCase$(Trim$(rci.RowColValue))
            If Not classif.CodeExists(Keys) Then
                AddError4 "DE116", rci.RowColValue, testscanres.TableName, rci.DBFieldName, classif.classname    'WHERE :%1 in  %2 for %3  not found in %4
            End If
@@ -1015,10 +1015,10 @@ Dim DimClass As clsDimClass
         Set GetClassif = Nothing
         Set DimClass = Nothing
 
-        If rci.CorrClassName <> "" Then
+        If Len(rci.CorrClassName) <> 0 Then
             Set GetClassif = CurrentDB.Classifications(rci.CorrClassName)
         Else
-           If rci.ClassificationName = "" Then
+           If Len(rci.ClassificationName) = 0 Then
               Set DimClass = CurrentDB.DimensionClasses(rci.DBFieldName)
               Set GetClassif = CurrentDB.Classifications(DimClass.classname)  ' locate classification
            Else
@@ -1106,7 +1106,7 @@ Dim UseRelCol As Boolean
 
        For i = 1 To testscanres.DBDefRange.Rows.count
            col1 = testscanres.DBDefRange.Cells(i, 1).value
-           col2 = Mid(UCase(testscanres.DBDefRange.Cells(i, 2).value), 1, 7)
+           col2 = Mid$(UCase$(testscanres.DBDefRange.Cells(i, 2).value), 1, 7)
            If col2 = "TABLE" Then
               Set keyf = CurrentDB.GetKeyName(col1)
               Exit For
@@ -1125,15 +1125,15 @@ Dim UseRelCol As Boolean
             fiOK = False
             For i = 1 To testscanres.DBDefRange.Rows.count
                 col1 = testscanres.DBDefRange.Cells(i, 1).value
-                col2 = Mid(UCase(testscanres.DBDefRange.Cells(i, 2).value), 1, 7)
-                If UCase(col1) = UCase(fi.name) And col2 <> "TABLE" Then
+                col2 = Mid$(UCase$(testscanres.DBDefRange.Cells(i, 2).value), 1, 7)
+                If UCase$(col1) = UCase$(fi.name) And col2 <> "TABLE" Then
                    fiOK = True
                    Exit For
                 End If
             Next i
 
-            If fiOK = False Then
-                Select Case UCase(fi.name)
+            If Not fiOK Then
+                Select Case UCase$(fi.name)
                   Case "VALUE", "COMMENT", "FORMULA", "USERNAME", "EXCELFILE", "TIMESTAMP", "DATAAREA"
                   Case Else
                      AddError1 "DE003", fi.name      'DB Column %1 not in DbDefinition
@@ -1143,16 +1143,16 @@ Dim UseRelCol As Boolean
 
      For i = 1 To testscanres.DBDefRange.Rows.count
         col1 = testscanres.DBDefRange.Cells(i, 1).value
-        col2 = Mid(UCase(testscanres.DBDefRange.Cells(i, 2).value), 1, 7)
+        col2 = Mid$(UCase$(testscanres.DBDefRange.Cells(i, 2).value), 1, 7)
         If col2 <> "TABLE" Then
             fiOK = False
             For Each fi In keyf.TableDefinition
-                If col1 = UCase(fi.name) And UCase(col2) Then
+                If col1 = UCase$(fi.name) And UCase$(col2) Then
                     fiOK = True
                     Exit For
                 End If
             Next fi
-            If fiOK = False Then
+            If Not fiOK Then
                 AddError1 "DE004", col1   'Column Name %1 not in Key Family
 
             End If
@@ -1161,25 +1161,25 @@ Dim UseRelCol As Boolean
 '
 ' now test that DB has columns Case "VALUE", "COMMENT", "FORMULA", "USERNAME", "EXCELFILE", "TIMESTAMP", "DATAAREA"
 '
-       If keyf.NameInTabledef("VALUE") = False Then
+       If Not keyf.NameInTabledef("VALUE") Then
           AddError0 "DE019A"     'Key Family database table do not have Value column
        End If
-       If keyf.NameInTabledef("COMMENT") = False Then
+       If Not keyf.NameInTabledef("COMMENT") Then
           AddError0 "DE019B"   ' Key Family database table do not have COMMENT column
        End If
-       If keyf.NameInTabledef("FORMULA") = False Then
+       If Not keyf.NameInTabledef("FORMULA") Then
           AddError0 "DE019C"  ' Key Family database table do not have FORMULA column
        End If
-       If keyf.NameInTabledef("USERNAME") = False Then
+       If Not keyf.NameInTabledef("USERNAME") Then
           AddError0 "DE019D"   'Key Family database table do not have USERNAME column
        End If
-       If keyf.NameInTabledef("EXCELFILE") = False Then
+       If Not keyf.NameInTabledef("EXCELFILE") Then
           AddError0 "DE019E"   'Key Family database table do not have EXCELFILE column
        End If
-        If keyf.NameInTabledef("TIMESTAMP") = False Then
+        If Not keyf.NameInTabledef("TIMESTAMP") Then
           AddError0 "DE019F"   'Key Family database table do not have TIMESTAMP column
        End If
-       If keyf.NameInTabledef("DATAAREA") = False Then
+       If Not keyf.NameInTabledef("DATAAREA") Then
           AddError0 "DE019G"    'Key Family database table do not have DATAAREA column
        End If
 '
@@ -1189,17 +1189,17 @@ Dim UseRelCol As Boolean
 
         If ClassColumnExists Then
            For i = 1 To testscanres.DBDefRange.Rows.count
-              col1 = Trim(testscanres.DBDefRange.Cells(i, 1).value)
-              col2 = Trim(UCase(testscanres.DBDefRange.Cells(i, 2).value))
-              Col3 = Trim(testscanres.DBDefRange.Cells(i, 3).value)
-              If Col3 <> "" Then            ' this is a classname or a periodFormat
-                 If Mid(Col3, 1, 1) <> "#" Then
+              col1 = Trim$(testscanres.DBDefRange.Cells(i, 1).value)
+              col2 = Trim$(UCase$(testscanres.DBDefRange.Cells(i, 2).value))
+              Col3 = Trim$(testscanres.DBDefRange.Cells(i, 3).value)
+              If Len(Col3) <> 0 Then            ' this is a classname or a periodFormat
+                 If Mid$(Col3, 1, 1) <> "#" Then
 '             this is a classname, not a periodFormat
-                     If UCase(Mid(col2, 1, 5)) <> "ROWID" And UCase(Mid(col2, 1, 5)) <> "COLID" And _
-                       UCase(Mid(col2, 1, 6)) <> "LROWID" And UCase(Mid(col2, 1, 6)) <> "TCOLID" And _
-                     UCase(Mid(col2, 1, 8)) <> "CONSTANT" And Mid(col2, 1, 1) <> "#" And Mid(col2, 1, 1) <> "%" And _
-                     UCase(Mid(col2, 1, 5)) <> "WHERE" And Mid(col2, 1, 3) <> "SUM" And Mid(col2, 1, 3) <> "AVG" And _
-                     UCase(Mid(col2, 1, 6)) <> "IGNORE" Then
+                     If UCase$(Mid$(col2, 1, 5)) <> "ROWID" And UCase$(Mid$(col2, 1, 5)) <> "COLID" And _
+                       UCase$(Mid$(col2, 1, 6)) <> "LROWID" And UCase$(Mid$(col2, 1, 6)) <> "TCOLID" And _
+                     UCase$(Mid$(col2, 1, 8)) <> "CONSTANT" And Mid$(col2, 1, 1) <> "#" And Mid$(col2, 1, 1) <> "%" And _
+                     UCase$(Mid$(col2, 1, 5)) <> "WHERE" And Mid$(col2, 1, 3) <> "SUM" And Mid$(col2, 1, 3) <> "AVG" And _
+                     UCase$(Mid$(col2, 1, 6)) <> "IGNORE" Then
                         AddError1 "DE005", Col3 ' Classification ( %1 ) only allowed for (T)RowID, (T)ColID or constant, WHERE, SUM, AVG and IGNORE
                      Else
     '               check that classname is valid
@@ -1212,7 +1212,7 @@ Dim UseRelCol As Boolean
                             Set DimClass = Nothing
                             Set DimClass = CurrentDB.DimensionClasses(col1)     ' test it is the same anyway
                             If Not DimClass Is Nothing Then
-                              If DimClass.classname <> "" Then
+                              If Len(DimClass.classname) <> 0 Then
                                If DimClass.classname <> Col3 Then
                                   AddError1 "DE007", col1  'Classification for  %1 does not fit classification assigned to Dimension
                                 End If
@@ -1240,16 +1240,16 @@ Dim UseRelCol As Boolean
            CurrentDB.LoadCorrespondences
            PeriodLimitExists = False
            For i = 1 To testscanres.DBDefRange.Rows.count
-              col1 = Trim(testscanres.DBDefRange.Cells(i, 1).value)
-              col2 = Trim(UCase(testscanres.DBDefRange.Cells(i, 2).value))
-              Col3 = Trim(testscanres.DBDefRange.Cells(i, 3).value)
-              Col4 = Trim(testscanres.DBDefRange.Cells(i, 4).value)
-              If Mid(Col3, 1, 1) <> "#" Then
-                  If Col4 <> "" Then
+              col1 = Trim$(testscanres.DBDefRange.Cells(i, 1).value)
+              col2 = Trim$(UCase$(testscanres.DBDefRange.Cells(i, 2).value))
+              Col3 = Trim$(testscanres.DBDefRange.Cells(i, 3).value)
+              Col4 = Trim$(testscanres.DBDefRange.Cells(i, 4).value)
+              If Mid$(Col3, 1, 1) <> "#" Then
+                  If Len(Col4) <> 0 Then
                      If testscanres.DefinePut Then
                         AddError0 "DE120"  'Correspondence not allowed with PutDB
                      End If
-                     If Col3 = "" Then
+                     If Len(Col3) = 0 Then
                         AddError0 "DE121"    'Correspondence class requires Basic Class
                      Else
                         Set Corrclass = Nothing
@@ -1260,9 +1260,9 @@ Dim UseRelCol As Boolean
                      End If
                   End If
                Else
-                  If Col4 <> "" Then
-                    If Mid(Col4, 1, 1) = "%" Then
-                       Set gv = CurrentDB.GetDBGlobal(Trim(Mid(col2, 2)))
+                  If Len(Col4) <> 0 Then
+                    If Mid$(Col4, 1, 1) = "%" Then
+                       Set gv = CurrentDB.GetDBGlobal(Trim$(Mid$(col2, 2)))
                        If gv Is Nothing Then
                           AddError1 "DE150", Col4 'Unknown Global variable  %1
                        Else
@@ -1273,7 +1273,7 @@ Dim UseRelCol As Boolean
                         AddError1 "DE130", col1 'Only one dimension may limit the period, dublicate in %1
                      End If
                      PeriodLimitExists = True
-                     If TestPeriodData(Col4) = False Then
+                     If Not TestPeriodData(Col4) Then
                         AddError1 "DE131", col1 'Period (%1) must be yyyy-yyyy
                      End If
                    End If
@@ -1286,23 +1286,23 @@ Dim UseRelCol As Boolean
 '
      WhereError = False
      For i = 1 To testscanres.DBDefRange.Rows.count
-        col1 = Trim(testscanres.DBDefRange.Cells(i, 1).value)
-        col2 = Trim(UCase(testscanres.DBDefRange.Cells(i, 2).value))
+        col1 = Trim$(testscanres.DBDefRange.Cells(i, 1).value)
+        col2 = Trim$(UCase$(testscanres.DBDefRange.Cells(i, 2).value))
 
-        If Mid(col2, 1, 6) = "WHERE(" Then
+        If Mid$(col2, 1, 6) = "WHERE(" Then
             col2 = "WHERE"
-            WhereName = Trim(Mid(testscanres.DBDefRange.Cells(i, 2).value, 8))
+            WhereName = Trim$(Mid$(testscanres.DBDefRange.Cells(i, 2).value, 8))
         End If
-        If Mid(col2, 1, 11) = "WHERELOCAL(" Then
+        If Mid$(col2, 1, 11) = "WHERELOCAL(" Then
            col2 = "WHERE"   ' dont mind here
-           WhereName = Trim(Mid(testscanres.DBDefRange.Cells(i, 2).value, 13))
+           WhereName = Trim$(Mid$(testscanres.DBDefRange.Cells(i, 2).value, 13))
         End If
            If col2 = "WHERE" Then
-              If Mid(WhereName, Len(WhereName) - 1) <> """)" Then
+              If Mid$(WhereName, Len(WhereName) - 1) <> """)" Then
                  AddError1 "DE140", testscanres.DBDefRange.Cells(i, 2).value 'Syntaxerror in WhereClause %1
                  WhereError = True
               Else
-                 WhereName = Mid(WhereName, 1, Len(WhereName) - 2)
+                 WhereName = Mid$(WhereName, 1, Len(WhereName) - 2)
                  addAreaName WhereName
                  Set WhereRange = Nothing
                  Set WhereRange = awb.Names(WhereName).RefersToRange
@@ -1341,32 +1341,32 @@ Dim UseRelCol As Boolean
        MultDiv = 0
 
        For i = 1 To testscanres.DBDefRange.Rows.count
-           col1 = Trim(testscanres.DBDefRange.Cells(i, 1).value)
-           col2 = Trim((UCase(testscanres.DBDefRange.Cells(i, 2).value)))
+           col1 = Trim$(testscanres.DBDefRange.Cells(i, 1).value)
+           col2 = Trim$((UCase$(testscanres.DBDefRange.Cells(i, 2).value)))
            Col3 = ""
            If ClassColumnExists Then
-              Col3 = Trim((testscanres.DBDefRange.Cells(i, 3).value))
+              Col3 = Trim$((testscanres.DBDefRange.Cells(i, 3).value))
            End If
            Col4 = ""
            If CorrespondenceColumnExists Then
-              Col4 = Trim((UCase(testscanres.DBDefRange.Cells(i, 4).value)))
+              Col4 = Trim$((UCase$(testscanres.DBDefRange.Cells(i, 4).value)))
            End If
            constno = 1
-           If Mid(col2, 1, 8) = "CONSTANT" Then
-               s = Trim(Mid(col2, 9))
+           If Mid$(col2, 1, 8) = "CONSTANT" Then
+               s = Trim$(Mid$(col2, 9))
               If Len(s) = 1 And s >= "1" And s <= "9" Then
                 col2 = "CONSTANT"
                 constno = s
               End If
            End If
 
-            If Mid(col2, 1, 1) = "#" Then
-                col2ConstPart = Trim(Mid(col2, 2))
+            If Mid$(col2, 1, 1) = "#" Then
+                col2ConstPart = Trim$(Mid$(col2, 2))
                 col2 = "#"
            End If
 
-           If Mid(col2, 1, 1) = "%" Then
-                Set gv = CurrentDB.GetDBGlobal(Trim(Mid(col2, 2)))
+           If Mid$(col2, 1, 1) = "%" Then
+                Set gv = CurrentDB.GetDBGlobal(Trim$(Mid$(col2, 2)))
                 If gv Is Nothing Then
                     AddError1 "DE150", col2 'Unknown Global variable  %1
                     col2ConstPart = ""
@@ -1379,52 +1379,52 @@ Dim UseRelCol As Boolean
 
            col2num = 1
 
-           If Mid(col2, 1, 5) = "ROWID" Then
-               s = Mid(col2, 6)
+           If Mid$(col2, 1, 5) = "ROWID" Then
+               s = Mid$(col2, 6)
               If Len(s) = 1 And s >= "1" And s <= "9" Then
                 col2 = "ROWID"
                 col2num = s
               End If
            End If
 
-            If Mid(col2, 1, 6) = "LROWID" Then
-               s = Mid(col2, 7)
+            If Mid$(col2, 1, 6) = "LROWID" Then
+               s = Mid$(col2, 7)
               If Len(s) = 1 And s >= "1" And s <= "9" Then
                 col2 = "LROWID"
                 col2num = s
               End If
            End If
-           If Mid(col2, 1, 5) = "COLID" Then
-              s = Mid(col2, 6)
+           If Mid$(col2, 1, 5) = "COLID" Then
+              s = Mid$(col2, 6)
               If Len(s) = 1 And s >= "1" And s <= "9" Then
                 col2 = "COLID"
                 col2num = s
               End If
            End If
 
-            If Mid(col2, 1, 6) = "TCOLID" Then
-              s = Mid(col2, 7)
+            If Mid$(col2, 1, 6) = "TCOLID" Then
+              s = Mid$(col2, 7)
               If Len(s) = 1 And s >= "1" And s <= "9" Then
                 col2 = "TCOLID"
                 col2num = s
               End If
            End If
 
-           If Mid(col2, 1, 6) = "WHERE(" Then
+           If Mid$(col2, 1, 6) = "WHERE(" Then
               col2 = "WHERE"
-              WhereName = Trim(Mid(testscanres.DBDefRange.Cells(i, 2).value, 8))
-              WhereName = Mid(WhereName, 1, Len(WhereName) - 2)
+              WhereName = Trim$(Mid$(testscanres.DBDefRange.Cells(i, 2).value, 8))
+              WhereName = Mid$(WhereName, 1, Len(WhereName) - 2)
             End If
-           If Mid(col2, 1, 11) = "WHERELOCAL(" Then
+           If Mid$(col2, 1, 11) = "WHERELOCAL(" Then
               col2 = "WHERELOCAL"
-              WhereName = Trim(Mid(testscanres.DBDefRange.Cells(i, 2).value, 13))
-              WhereName = Mid(WhereName, 1, Len(WhereName) - 2)
+              WhereName = Trim$(Mid$(testscanres.DBDefRange.Cells(i, 2).value, 13))
+              WhereName = Mid$(WhereName, 1, Len(WhereName) - 2)
            End If
 
 
            Select Case col2
            Case "TABLE"
-               If testscanres.TableName = "" Then
+               If Len(testscanres.TableName) = 0 Then
                   testscanres.TableName = col1
                Else
                   AddError1 "DE160", testscanres.DBDefName 'DBdefinition (" %1)  has multiple table-definition "
@@ -1442,11 +1442,11 @@ Dim UseRelCol As Boolean
                   rci.DBFieldName = col1
                   rci.ClassificationName = Col3
                   rci.CorrClassName = Col4
-                  If UCase(rci.DBFieldName) = UCase(Yeardata.YearName) Then
-                     If Mid(rci.ClassificationName, 1, 1) <> "#" And Yeardata.PeriodDefaultFormat <> "" Then
+                  If UCase$(rci.DBFieldName) = UCase$(Yeardata.YearName) Then
+                     If Mid$(rci.ClassificationName, 1, 1) <> "#" And Len(Yeardata.PeriodDefaultFormat) <> 0 Then
                         rci.ClassificationName = Yeardata.PeriodDefaultFormat      ' set default date format
                      End If
-                     If rci.ClassificationName = "" Then
+                     If Len(rci.ClassificationName) = 0 Then
                         rci.ClassificationName = "#yyyy"      ' set default date format
                      End If
                   End If
@@ -1455,7 +1455,7 @@ Dim UseRelCol As Boolean
                   AddError1 "DE161", testscanres.DBDefName  'DBdefinition (%1)  has multiple RowIDs"
 
                End If
-               If rci.CorrClassName <> "" Then
+               If Len(rci.CorrClassName) <> 0 Then
                   If SumAvg = 2 Then
                     AddError1 "DE163", testscanres.DBDefName 'Dbdefinition(%1)   mixes AVG with SUM or Correspondence "
                    End If
@@ -1476,11 +1476,11 @@ Dim UseRelCol As Boolean
                     rci.ClassificationName = Col3
                     rci.CorrClassName = Col4
 
-                    If UCase(rci.DBFieldName) = UCase(Yeardata.YearName) Then
-                        If Mid(rci.ClassificationName, 1, 1) <> "#" And Yeardata.PeriodDefaultFormat <> "" Then
+                    If UCase$(rci.DBFieldName) = UCase$(Yeardata.YearName) Then
+                        If Mid$(rci.ClassificationName, 1, 1) <> "#" And Len(Yeardata.PeriodDefaultFormat) <> 0 Then
                             rci.ClassificationName = Yeardata.PeriodDefaultFormat      ' set default date format
                         End If
-                        If rci.ClassificationName = "" Then
+                        If Len(rci.ClassificationName) = 0 Then
                             rci.ClassificationName = "#yyyy"      ' set default date format
                         End If
                     End If
@@ -1489,7 +1489,7 @@ Dim UseRelCol As Boolean
                   AddError1 "DE162", testscanres.DBDefName   'DBdefinition  (%1)  has multiple ColIds
 
                End If
-               If rci.CorrClassName <> "" Then
+               If Len(rci.CorrClassName) <> 0 Then
                   If SumAvg = 2 Then
                      AddError1 "DE163", testscanres.DBDefName 'Dbdefinition(%1)   mixes AVG with SUM or Correspondence
                    End If
@@ -1526,7 +1526,7 @@ Dim UseRelCol As Boolean
                testscanres.IgnoreFields.Add rci
 
              Case "VALUE"
-               If ValuesField = "" Then
+               If Len(ValuesField) = 0 Then
                   ValuesField = col1
                Else
                   AddError1 "DE190G", testscanres.DBDefName 'DBdefinition  (%1)  has multiple Value fields
@@ -1569,7 +1569,7 @@ Dim UseRelCol As Boolean
                   If Not WhereError Then
                      Set rci = New clsRowColId                 ' save for later check
                      rci.DBFieldName = col1
-                     rci.RowColValue = Trim(awb.Names(WhereName).RefersToRange.value)
+                     rci.RowColValue = Trim$(awb.Names(WhereName).RefersToRange.value)
                      testscanres.WhereFields.Add rci
                   End If
 
@@ -1577,7 +1577,7 @@ Dim UseRelCol As Boolean
                   If Not WhereError Then
                      Set rci = New clsRowColId                 ' save for later check
                      rci.DBFieldName = col1
-                     rci.RowColValue = Trim(MakeRelativeRange(awb, awb.Names(WhereName).RefersToRange, testscanres.DataRange).value)
+                     rci.RowColValue = Trim$(MakeRelativeRange(awb, awb.Names(WhereName).RefersToRange, testscanres.DataRange).value)
                      testscanres.WhereFields.Add rci
                   End If
 
@@ -1587,10 +1587,10 @@ Dim UseRelCol As Boolean
 
                Else
                 Set dbc = testscanres.DBConstants(constno)
-                  If dbc.DBConstant = "" Then
+                  If Len(dbc.DBConstant) = 0 Then
                      AddError1 "DE171", testscanres.DBDefName  'DBdefinition  (%1) refers to constant, but constant Cell is empty
                   End If
-                  If dbc.Used = True Then
+                  If dbc.Used Then
                      AddError1 "DE172", testscanres.DBDefName  'DBdefinition  (%1) refers twice to same constant
                   End If
                   Set rci = New clsRowColId                 ' save for later check
@@ -1610,14 +1610,14 @@ Dim UseRelCol As Boolean
 
 
            Case "COMMENT"
-               If CommentField = "" Then
+               If Len(CommentField) = 0 Then
                   CommentField = col1
                Else
                   AddError1 "DE190A", testscanres.DBDefName 'DBdefinition  (%1)  has multiple Comments fields
                End If
 
            Case "FORMULA"
-               If FormulaField = "" Then
+               If Len(FormulaField) = 0 Then
                   FormulaField = col1
                Else
                   AddError1 "DE190B", testscanres.DBDefName ' DBdefinition  (%1)  has multiple Formula fields
@@ -1625,28 +1625,28 @@ Dim UseRelCol As Boolean
                End If
 
            Case "USERNAME"
-               If UsernameField = "" Then
+               If Len(UsernameField) = 0 Then
                   UsernameField = col1
                Else
                   AddError1 "DE190C", testscanres.DBDefName   ' DBdefinition  (%1)  has multiple Username fields
                End If
 
            Case "TIMESTAMP"
-               If TimeStampField = "" Then
+               If Len(TimeStampField) = 0 Then
                   TimeStampField = col1
                Else
                   AddError1 "DE190D", testscanres.DBDefName  '  DBdefinition  (%1)  has multiple Timestamp fields  "
                End If
 
            Case "ORIGIN", "EXCELFILE"
-               If OriginField = "" Then
+               If Len(OriginField) = 0 Then
                  OriginField = col1
                Else
                   AddError1 "DE190E", testscanres.DBDefName ' DBdefinition  (%1)  has multiple Excelfile fields
                End If
 
            Case "DATAAREA"
-               If DataAreaField = "" Then
+               If Len(DataAreaField) = 0 Then
                   DataAreaField = col1
                Else
                   AddError1 "DE190F", testscanres.DBDefName 'DBdefinition  (%1)  has multiple DataArea fields
@@ -1657,7 +1657,7 @@ Dim UseRelCol As Boolean
            End Select
        Next i
 
-       If testscanres.TableName = "" Then
+       If Len(testscanres.TableName) = 0 Then
                AddError1 "DE180", testscanres.DBDefName ' DBdefinition  (%1) has no table reference
        End If
 
@@ -1697,7 +1697,7 @@ Dim UseRelCol As Boolean
 
        End If
 
-       If UseAbsCol And testscanres.TabDefName <> "" Then
+       If UseAbsCol And Len(testscanres.TabDefName) <> 0 Then
             AddError1 "DE187", testscanres.DBDefName    'DBdefinition  (%1) LROWID may only be used when there is no TabDef
 
        End If
@@ -1730,7 +1730,7 @@ Dim UseRelCol As Boolean
 
        End If
 
-       If UseAbsCol And testscanres.TabDefName <> "" Then
+       If UseAbsCol And Len(testscanres.TabDefName) <> 0 Then
             AddError1 "DE188", testscanres.DBDefName  'DBdefinition  (%1) TCOLID may only be used when there is no TabDef
        End If
 End Function
@@ -1740,7 +1740,7 @@ Private Sub addAreaName(an As String)
 Dim Aname As Variant
 
     On Error Resume Next    ' don't mind dublicates, just skip
-    Aname = UCase(an)
+    Aname = UCase$(an)
     Areanames.Add Aname, Aname
 
 End Sub
@@ -1755,57 +1755,59 @@ Private Function TestDateFormat(data As String, format As String) As Boolean
   Select Case format
       Case "#FYyy":
           If Len(data) <> 4 Then Exit Function
-          If Mid(data, 1, 2) <> "FY" Then Exit Function
-          If Not TestNumeric(Mid(data, 3, 2)) Then Exit Function
+          If Mid$(data, 1, 2) <> "FY" Then Exit Function
+          If Not TestNumeric(Mid$(data, 3, 2)) Then Exit Function
       Case "#CYyy":
           If Len(data) <> 4 Then Exit Function
-          If Mid(data, 1, 2) <> "CY" Then Exit Function
-          If Not TestNumeric(Mid(data, 3, 2)) Then Exit Function
+          If Mid$(data, 1, 2) <> "CY" Then Exit Function
+          If Not TestNumeric(Mid$(data, 3, 2)) Then Exit Function
     Case "#yyyy":
           If Len(data) <> 4 Then Exit Function
           If Not TestNumeric(data) Then Exit Function
     Case "#Fyyyy":
           If Len(data) <> 5 Then Exit Function
-          If Mid(data, 1, 1) <> "F" Then Exit Function
-          If Not TestNumeric(Mid(data, 2, 4)) Then Exit Function
+          If Mid$(data, 1, 1) <> "F" Then Exit Function
+          If Not TestNumeric(Mid$(data, 2, 4)) Then Exit Function
     Case "#Cyyyy":
           If Len(data) <> 5 Then Exit Function
-          If Mid(data, 1, 1) <> "C" Then Exit Function
-          If Not TestNumeric(Mid(data, 2, 4)) Then Exit Function
+          If Mid$(data, 1, 1) <> "C" Then Exit Function
+          If Not TestNumeric(Mid$(data, 2, 4)) Then Exit Function
     Case "#yyyyQq":
           If Len(data) <> 6 Then Exit Function
-          If Not TestNumeric(Mid(data, 1, 4)) Then Exit Function
-          If Mid(data, 5, 1) <> "Q" Then Exit Function
-          If Not TestNumeric(Mid(data, 6, 1)) Then Exit Function
+          If Not TestNumeric(Mid$(data, 1, 4)) Then Exit Function
+          If Mid$(data, 5, 1) <> "Q" Then Exit Function
+          If Not TestNumeric(Mid$(data, 6, 1)) Then Exit Function
     Case "#FyyyyQq":
           If Len(data) <> 7 Then Exit Function
-          If Mid(data, 1, 1) <> "F" Then Exit Function
-          If Not TestNumeric(Mid(data, 2, 4)) Then Exit Function
-          If Mid(data, 6, 1) <> "Q" Then Exit Function
-          If Not TestNumeric(Mid(data, 7, 1)) Then Exit Function
+          If Mid$(data, 1, 1) <> "F" Then Exit Function
+          If Not TestNumeric(Mid$(data, 2, 4)) Then Exit Function
+          If Mid$(data, 6, 1) <> "Q" Then Exit Function
+          If Not TestNumeric(Mid$(data, 7, 1)) Then Exit Function
     Case "#CyyyyQq":
           If Len(data) <> 7 Then Exit Function
-          If Mid(data, 1, 1) <> "C" Then Exit Function
-          If Not TestNumeric(Mid(data, 2, 4)) Then Exit Function
-          If Mid(data, 6, 1) <> "Q" Then Exit Function
-          If Not TestNumeric(Mid(data, 7, 1)) Then Exit Function
+          If Mid$(data, 1, 1) <> "C" Then Exit Function
+          If Not TestNumeric(Mid$(data, 2, 4)) Then Exit Function
+          If Mid$(data, 6, 1) <> "Q" Then Exit Function
+          If Not TestNumeric(Mid$(data, 7, 1)) Then Exit Function
     Case "#yyyyMmm":
           If Len(data) <> 7 Then Exit Function
-          If Not TestNumeric(Mid(data, 1, 4)) Then Exit Function
-          If Mid(data, 5, 1) <> "M" Then Exit Function
-          If Not TestNumeric(Mid(data, 6, 2)) Then Exit Function
+          If Not TestNumeric(Mid$(data, 1, 4)) Then Exit Function
+          If Mid$(data, 5, 1) <> "M" Then Exit Function
+          If Not TestNumeric(Mid$(data, 6, 2)) Then Exit Function
     Case "#FyyyyMmm":
           If Len(data) <> 8 Then Exit Function
-          If Mid(data, 1, 1) <> "F" Then Exit Function
-          If Not TestNumeric(Mid(data, 2, 4)) Then Exit Function
-          If Mid(data, 6, 1) <> "M" Then Exit Function
-          If Not TestNumeric(Mid(data, 7, 2)) Then Exit Function
+          If Mid$(data, 1, 1) <> "F" Then Exit Function
+          If Not TestNumeric(Mid$(data, 2, 4)) Then Exit Function
+          If Mid$(data, 6, 1) <> "M" Then Exit Function
+          If Not TestNumeric(Mid$(data, 7, 2)) Then Exit Function
     Case "#CyyyyMmm":
           If Len(data) <> 8 Then Exit Function
-          If Mid(data, 1, 1) <> "C" Then Exit Function
-          If Not TestNumeric(Mid(data, 2, 4)) Then Exit Function
-          If Mid(data, 6, 1) <> "M" Then Exit Function
-          If Not TestNumeric(Mid(data, 7, 2)) Then Exit Function
+          If Mid$(data, 1, 1) <> "C" Then Exit Function
+          If Not TestNumeric(Mid$(data, 2, 4)) Then Exit Function
+          If Mid$(data, 6, 1) <> "M" Then Exit Function
+          If Not TestNumeric(Mid$(data, 7, 2)) Then Exit Function
+    Case Else
+          Exit Function
   End Select
   TestDateFormat = True
 End Function
@@ -1832,9 +1834,9 @@ Dim i As Integer
 Dim s As String
         TestPeriodData = False
         If Len(data) <> 9 Then Exit Function
-        If Not TestNumeric(Mid(data, 1, 4)) Then Exit Function
-        If Mid(data, 5, 1) <> "-" Then Exit Function
-        If Not TestNumeric(Mid(data, 6, 4)) Then Exit Function
+        If Not TestNumeric(Mid$(data, 1, 4)) Then Exit Function
+        If Mid$(data, 5, 1) <> "-" Then Exit Function
+        If Not TestNumeric(Mid$(data, 6, 4)) Then Exit Function
 
         TestPeriodData = True
 End Function
@@ -1847,7 +1849,7 @@ Dim s As String
     TestNumeric = False
     l = Len(data)
     For i = 1 To l
-        s = Mid(data, i, 1)
+        s = Mid$(data, i, 1)
         If s < "0" Or s > "9" Then Exit Function
     Next i
     TestNumeric = True
@@ -1907,7 +1909,7 @@ End Sub
 
    Private Sub DoAddError(ErrorCode As String, Newerror As String)
 Dim emsg As ClsErrormessage
-   If ErrorHeader <> "" Then
+   If Len(ErrorHeader) <> 0 Then
    Set emsg = New ClsErrormessage
       emsg.ecode = ""
       emsg.ErrorText = ErrorHeader
