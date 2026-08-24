@@ -52,9 +52,7 @@ class BaseFolderRepairTests(unittest.TestCase):
             database_source, "Public Sub LoadWorkbookInfo", "End Sub"
         )
 
-        self.assertIn(
-            'WBinfo.RelPath = CStr(GetColumnNull("Path"))', load_workbooks
-        )
+        self.assertIn('WBinfo.RelPath = CStr(GetColumnNull("Path"))', load_workbooks)
         self.assertNotIn('WBinfo.RelPath = GetColumn("Path")', load_workbooks)
 
     def test_all_workbook_paths_are_checked_and_repairs_are_stored_by_id(self):
