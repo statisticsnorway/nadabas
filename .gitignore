@@ -277,3 +277,4 @@ rsconnect/
 # Dynaconf secret and local files
 *.secrets.*
 *.local.*
+*.docx
