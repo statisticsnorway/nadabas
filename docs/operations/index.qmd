@@ -58,6 +58,11 @@ Publish a non-draft, non-prerelease GitHub release in
 `InterfaceVersionUpdate.CURRENT_VERSION`, for example `v6.01.003`. A Git tag
 without a published GitHub release is not returned by the latest-release API.
 
+When a pull request from a branch whose name starts with `release_` is merged
+into `main`, the release workflow creates a draft release for the version in
+`InterfaceVersionUpdate.CURRENT_VERSION`. The workflow pins the draft to the
+merged commit, but it does not build, attach, sign, or publish release files.
+
 Attach only reviewed and signed release artifacts. The GitHub release supplies
 the public version number, while the user-facing download link remains on
 nadabas.net. A maintainer must update and test `CURRENT_VERSION` for every new
