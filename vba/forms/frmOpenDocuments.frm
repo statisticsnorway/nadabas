@@ -91,7 +91,8 @@ Dim CurrentGroup As String
     Else
 
         n = 1
-        CreateCursor "Select name, path from documents where level = 3 and workbook = " & InQ(GetWorkBookName(awb))
+        CreateCursor "Select name, path from documents where level = 3 and WorkbookID = " & _
+                     CStr(GetOrCreateWorkbookID(GetWorkBookName(awb)))
 
 
         TabStrip1.Tabs("T1").Visible = Not CursorEoF

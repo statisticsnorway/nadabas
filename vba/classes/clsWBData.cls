@@ -77,7 +77,7 @@ Public Sub GetDataFromWbInfo(WBinfo As clsWorkBookInfo)
     If WBinfo.Status = "Exported" Then
        Exported = True
     End If
-    ReadOnly = Not TestPermissionForUser(WBinfo.WorkBookName)
+    ReadOnly = Not TestPermissionForUser(WBinfo.WorkbookName)
         If Not ReadOnly Then
         FileIsReadOnly = fsFileIsReadOnly(WBName)
         ReadOnly = FileIsReadOnly

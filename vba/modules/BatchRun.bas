@@ -122,7 +122,7 @@ restartbatch:
         StartBetterTimer3
         Set SI = CurrentDB.WorkBooks(EB.ElementName)
         If BatchRunData.ConsolidationSilent Then
-            SplashBatchInProgress.Text.Caption = SplashBatchInProgress.lblProcessing.Caption & " " & SI.WorkBookName
+            SplashBatchInProgress.Text.Caption = SplashBatchInProgress.lblProcessing.Caption & " " & SI.WorkbookName
             SplashBatchInProgress.TextProcess.Caption = SplashBatchInProgress.lblOpenFile.Caption
             DoEvents
         End If
@@ -139,7 +139,7 @@ restartbatch:
     '
 
         Set xwb = Nothing
-      ' xwb = Application.WorkBooks(SI.WorkBookName)
+      ' xwb = Application.WorkBooks(SI.WorkbookName)
 
         stage = "Open"
         Openreturncode = DoOpenWorkbook(SI, 0)
@@ -288,5 +288,5 @@ ErrorDuringBatch:
      BatchRunData.ConsolidationSilent = False
      BatchRunData.BatchIgnoreFormulas = False
 
-     MsgBox GetMsg("M014") & vbCrLf & SI.WorkBookName & vbCrLf & stage & vbCrLf & savererrdescr, vbInformation
+     MsgBox GetMsg("M014") & vbCrLf & SI.WorkbookName & vbCrLf & stage & vbCrLf & savererrdescr, vbInformation
 End Sub

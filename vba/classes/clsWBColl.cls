@@ -35,9 +35,12 @@ Dim wbo As clsWB
       wbo.bPut = True
       CursorMoveNext
    Loop
-   CloseCursor
-   If DBTableExists("Datalinks") Then
-      CreateCursor "Select Distinct TargetWB from DataLinks where KeyFamily = " & InQ(Keyname)
+    CloseCursor
+    If DBTableExists("Datalinks") Then
+       CreateCursor "SELECT DISTINCT WorkbookIdentities.WorkbookName AS TargetWB " & _
+                    "FROM DataLinks INNER JOIN WorkbookIdentities " & _
+                    "ON DataLinks.TargetWorkbookID = WorkbookIdentities.WorkbookID " & _
+                    "WHERE DataLinks.KeyFamily = " & InQ(Keyname)
      Do While Not CursorEoF
          Set wbo = AddWBSorted(GetColumn("TargetWB"))
          wbo.bGet = True

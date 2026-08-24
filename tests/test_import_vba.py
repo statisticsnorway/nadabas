@@ -122,7 +122,7 @@ Attribute VB_Name = \"Dialog\"
             code_module.lines, ["Option Explicit", "Sub Run()", "End Sub", ""]
         )
 
-    def test_code_replacement_reports_all_excel_changes(self) -> None:
+    def test_code_replacement_accepts_excel_identifier_case_changes(self) -> None:
         class FakeCodeModule:
             def __init__(self) -> None:
                 self.lines = ["old"]
@@ -142,8 +142,53 @@ Attribute VB_Name = \"Dialog\"
 
         component = SimpleNamespace(Name="Example", CodeModule=FakeCodeModule())
 
+        _replace_component_code(component, "Option Explicit\nSub Run()\nEnd Sub\n")
+
+    def test_code_replacement_reports_substantive_excel_changes(self) -> None:
+        class FakeCodeModule:
+            def __init__(self) -> None:
+                self.lines = ["old"]
+
+            @property
+            def CountOfLines(self) -> int:
+                return len(self.lines)
+
+            def DeleteLines(self, start: int, count: int) -> None:
+                del self.lines[start - 1 : start - 1 + count]
+
+            def AddFromString(self, code: str) -> None:
+                self.lines = ["Option Explicit", "Sub Other()", "End Function"]
+
+            def Lines(self, start: int, count: int) -> str:
+                return "\r\n".join(self.lines[start - 1 : start - 1 + count])
+
+        component = SimpleNamespace(Name="Example", CodeModule=FakeCodeModule())
+
         with self.assertRaisesRegex(VbaImportError, r"line 2:.*line 3:"):
             _replace_component_code(component, "Option Explicit\nSub Run()\nEnd Sub\n")
+
+    def test_code_replacement_does_not_ignore_string_or_comment_case(self) -> None:
+        class FakeCodeModule:
+            def __init__(self) -> None:
+                self.lines = ["old"]
+
+            @property
+            def CountOfLines(self) -> int:
+                return len(self.lines)
+
+            def DeleteLines(self, start: int, count: int) -> None:
+                del self.lines[start - 1 : start - 1 + count]
+
+            def AddFromString(self, code: str) -> None:
+                self.lines = ['MsgBox "HELLO"', "' CHANGED"]
+
+            def Lines(self, start: int, count: int) -> str:
+                return "\r\n".join(self.lines[start - 1 : start - 1 + count])
+
+        component = SimpleNamespace(Name="Example", CodeModule=FakeCodeModule())
+
+        with self.assertRaisesRegex(VbaImportError, r"line 1:.*line 2:"):
+            _replace_component_code(component, 'MsgBox "hello"\n\' changed\n')
 
     def test_obsolete_broken_dao_reference_is_removed(self) -> None:
         dao_reference = SimpleNamespace(

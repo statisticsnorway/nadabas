@@ -12,6 +12,46 @@ Private Function WithTrailingBackslash(ByVal folderPath As String) As String
     End If
 End Function
 
+Private Function IsNadabasAddInFileName(ByVal filename As String) As Boolean
+    Dim upperName As String
+
+    upperName = UCase$(filename)
+    IsNadabasAddInFileName = upperName = NADABAS_ADDIN_NAME Or _
+        (Left$(upperName, 8) = "NADABAS." And Right$(upperName, 5) = ".XLAM")
+End Function
+
+Private Function FindSourceNadabasAddIn(ByVal installationFolder As String) As String
+    Dim candidateName As String
+    Dim exactPath As String
+    Dim foundPath As String
+
+    installationFolder = WithTrailingBackslash(installationFolder)
+    exactPath = installationFolder & NADABAS_ADDIN_NAME
+
+    ' Prefer the canonical companion file used by release packages.
+    If Len(Dir$(exactPath, vbNormal Or vbReadOnly Or vbHidden Or vbSystem)) > 0 Then
+        FindSourceNadabasAddIn = exactPath
+        Exit Function
+    End If
+
+    ' Older packages may contain a versioned NADABAS.<version>.xlam file.
+    candidateName = Dir$(installationFolder & "NADABAS*.xlam", _
+                         vbNormal Or vbReadOnly Or vbHidden Or vbSystem)
+
+    Do While Len(candidateName) > 0
+        If IsNadabasAddInFileName(candidateName) Then
+            If Len(foundPath) > 0 Then
+                err.Raise vbObjectError + 6102, "InstallMeAsAddin", _
+                    "More than one NADABAS add-in was found in the installation folder."
+            End If
+            foundPath = installationFolder & candidateName
+        End If
+        candidateName = Dir$()
+    Loop
+
+    FindSourceNadabasAddIn = foundPath
+End Function
+
 Private Function IsSafeNadabasAddInPath( _
     ByVal candidatePath As String, _
     ByVal addInFolder As String _
@@ -19,7 +59,6 @@ Private Function IsSafeNadabasAddInPath( _
     Dim normalisedCandidate As String
     Dim normalisedFolder As String
     Dim filename As String
-    Dim upperName As String
 
     normalisedCandidate = Replace(candidatePath, "/", "\")
     normalisedFolder = WithTrailingBackslash(Replace(addInFolder, "/", "\"))
@@ -34,9 +73,7 @@ Private Function IsSafeNadabasAddInPath( _
     filename = Mid$(normalisedCandidate, Len(normalisedFolder) + 1)
     If InStr(filename, "\") > 0 Then Exit Function
 
-    upperName = UCase$(filename)
-    IsSafeNadabasAddInPath = upperName = NADABAS_ADDIN_NAME Or _
-        (Left$(upperName, 8) = "NADABAS." And Right$(upperName, 5) = ".XLAM")
+    IsSafeNadabasAddInPath = IsNadabasAddInFileName(filename)
 End Function
 
 Private Sub DeleteInstalledNadabasAddIn( _
@@ -72,11 +109,11 @@ Sub DoInstallAsAddIn()
         ThisWorkbook.Save
     End If
 
-    sSourceXlam = ThisWorkbook.path & "\NADABAS.xlam"
+    sSourceXlam = FindSourceNadabasAddIn(ThisWorkbook.path)
     sFullName = WithTrailingBackslash(Application.UserLibraryPath) & NADABAS_ADDIN_NAME
 
-    If Dir$(sSourceXlam) = "" Then
-        MsgBox "Error: NADABAS.xlam not found in installation folder.", vbCritical
+    If Len(sSourceXlam) = 0 Then
+        MsgBox "Error: no NADABAS add-in was found in the installation folder.", vbCritical
         Exit Sub
     End If
 

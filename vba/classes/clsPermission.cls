@@ -7,11 +7,12 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-Public WorkBookName As String
+Public WorkbookID As Long
+Public WorkbookName As String
 Public user As String
 
 Public Property Get key() As String
-      key = WorkBookName & "_" & user
+      key = CStr(WorkbookID) & "_" & user
 End Property
 Public Sub SaveToDB()
     OpenDb
@@ -22,7 +23,11 @@ Public Sub SaveToDB()
     CreateCursor "Select * from Permissions where 1 <> 1"
 
     CursorAddNew
-    PutColumn "Workbookname", DropFileType(WorkBookName)
+    If WorkbookID = 0 Then
+        WorkbookID = GetOrCreateWorkbookID(WorkBookName)
+    End If
+    PutColumn "WorkbookID", WorkbookID
+    PutColumn "Workbookname", WorkBookName
     PutColumn "User", user
     CursorUpdate
     CloseCursor
@@ -31,8 +36,11 @@ End Sub
 
 Public Sub DeleteFromDB()
     OpenDb
-    DbExecute "Delete from Permissions where workbookname = " & _
-            InQ(WorkBookName) & "and [user] = " & _
+    If WorkbookID = 0 Then
+        WorkbookID = GetWorkbookID(WorkBookName)
+    End If
+    DbExecute "Delete from Permissions where WorkbookID = " & _
+            CStr(WorkbookID) & " and [user] = " & _
             InQ(user)
     CloseDB
 End Sub

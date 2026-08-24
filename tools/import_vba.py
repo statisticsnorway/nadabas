@@ -95,6 +95,62 @@ def _normalise_newlines(text: str) -> str:
     return text.replace("\r\r\n", "\n").replace("\r\n", "\n").replace("\r", "\n")
 
 
+def _normalise_vba_identifier_case(text: str) -> str:
+    """Case-fold VBA identifiers without changing strings or comments."""
+
+    normalised: list[str] = []
+    index = 0
+    in_string = False
+    while index < len(text):
+        character = text[index]
+
+        if in_string:
+            normalised.append(character)
+            if character == '"':
+                if index + 1 < len(text) and text[index + 1] == '"':
+                    normalised.append(text[index + 1])
+                    index += 1
+                else:
+                    in_string = False
+            index += 1
+            continue
+
+        if character == '"':
+            in_string = True
+            normalised.append(character)
+            index += 1
+            continue
+
+        if character == "'":
+            line_end = text.find("\n", index)
+            if line_end == -1:
+                normalised.append(text[index:])
+                break
+            normalised.append(text[index:line_end])
+            normalised.append("\n")
+            index = line_end + 1
+            continue
+
+        if character.isascii() and (character.isalpha() or character == "_"):
+            token_end = index + 1
+            while token_end < len(text):
+                token_character = text[token_end]
+                if not (
+                    token_character.isascii()
+                    and (token_character.isalnum() or token_character == "_")
+                ):
+                    break
+                token_end += 1
+            normalised.append(text[index:token_end].casefold())
+            index = token_end
+            continue
+
+        normalised.append(character)
+        index += 1
+
+    return "".join(normalised)
+
+
 def _read_vba_text(path: Path) -> str:
     data = path.read_bytes()
     for encoding in ("utf-8-sig", "cp1252", "latin-1"):
@@ -371,7 +427,9 @@ def _replace_component_code(component: Any, code: str) -> None:
                 break
         actual = current_text()
 
-    if actual != expected:
+    if actual != expected and _normalise_vba_identifier_case(
+        actual
+    ) != _normalise_vba_identifier_case(expected):
         expected_lines = expected.splitlines()
         actual_lines = actual.splitlines()
         differences: list[str] = []

@@ -31,10 +31,18 @@ class VbaVersionUpdateTests(unittest.TestCase):
             REPOSITORY_ROOT / "vba" / "modules" / "DbCreateTables.bas"
         ).read_text(encoding="utf-8-sig")
 
-    def test_release_source_is_version_6_01_003_without_test_override(self):
+    def test_release_source_is_version_6_02_001_without_test_override(self):
         self.assertIn(
-            'Private Const CURRENT_VERSION As String = "6.01.003"',
+            'Private Const CURRENT_VERSION As String = "6.02.001"',
             self.update_source,
+        )
+        self.assertIn(
+            "Public Function InstalledVersion() As String", self.update_source
+        )
+        self.assertIn("InstalledVersion = CURRENT_VERSION", self.update_source)
+        self.assertIn(
+            "Me.VersionNumber.Caption = InterfaceVersionUpdate.InstalledVersion",
+            self.about_source,
         )
         self.assertNotIn("TEST_LATEST_VERSION", self.update_source)
 
@@ -102,9 +110,10 @@ class VbaVersionUpdateTests(unittest.TestCase):
         self.assertNotIn("ADODB.Stream", self.update_source)
         self.assertNotIn('request.Open "POST"', self.update_source)
 
-    def test_about_dialog_is_not_used_as_an_update_control(self):
+    def test_about_dialog_shows_version_but_is_not_an_update_control(self):
         self.assertIn("Translateform Me", self.about_source)
-        self.assertNotIn("InterfaceVersionUpdate", self.about_source)
+        self.assertIn("InterfaceVersionUpdate.InstalledVersion", self.about_source)
+        self.assertNotIn("CheckLatestVersionClick", self.about_source)
         self.assertNotIn("WithEvents releaseButton", self.about_source)
 
     def test_only_administrator_can_change_database_wide_setting(self):

@@ -147,7 +147,7 @@ Dim newfname As String
      Set namesheet = awb.Worksheets.Add(, Worksheets(Worksheets.count))   'ADD AS LAST
      namesheet.name = "NADABASExportInfo"
      namesheet.Cells(1, 1).value = WBinfo.RelPath
-     namesheet.Cells(1, 2).value = WBinfo.WorkBookName
+     namesheet.Cells(1, 2).value = WBinfo.WorkbookName
      namesheet.Visible = xlSheetVeryHidden
 
      cmdShowHide.ShowOrHide xlSheetVeryHidden, awb
@@ -224,7 +224,7 @@ Dim sync As Boolean
      Set namesheet = awb.Worksheets.Add(, Worksheets(Worksheets.count))   'ADD AS LAST
      namesheet.name = "NADABASTransferInfo"
      namesheet.Cells(1, 1).value = WBinfo.RelPath
-     namesheet.Cells(1, 2).value = WBinfo.WorkBookName
+     namesheet.Cells(1, 2).value = WBinfo.WorkbookName
      namesheet.Visible = xlSheetVeryHidden
 
      cmdShowHide.ShowOrHide xlSheetVeryHidden, awb
@@ -316,7 +316,7 @@ Dim SaveasName As String
         DontCopy = True
     Else
         If WBinfo.Status <> "Exported" Then
-            MsgBox GetMsg1("M181", WBinfo.WorkBookName) & vbCrLf & GetMsg("M180"), vbInformation '%1 has been freed in base system /Workbook will not be imported
+            MsgBox GetMsg1("M181", WBinfo.WorkbookName) & vbCrLf & GetMsg("M180"), vbInformation '%1 has been freed in base system /Workbook will not be imported
             DontCopy = True
         End If
     End If
@@ -332,12 +332,12 @@ Dim SaveasName As String
     If namesheet Is Nothing Then
         original = False
     Else
-        If namesheet.Cells(1, 2).value <> WBinfo.WorkBookName Then
+        If namesheet.Cells(1, 2).value <> WBinfo.WorkbookName Then
             original = False
         End If
     End If
     If Not original Then
-        MsgBox GetMsg1("M182", WBinfo.WorkBookName) & vbCrLf & GetMsg("M180")  ' is not the original workwook / Workbook will not be imported
+        MsgBox GetMsg1("M182", WBinfo.WorkbookName) & vbCrLf & GetMsg("M180")  ' is not the original workwook / Workbook will not be imported
     Else
         namesheet.Visible = xlSheetHidden      ' to allow delete
         Application.DisplayAlerts = False      ' no message please
@@ -414,13 +414,13 @@ Dim sync As Boolean
      '
      For Each WBinfo In WBs
         WBinfo.DontCopy = False
-        Set BaseWBInfo = BaseDb.GetNamedWBInfo(WBinfo.WorkBookName)
+        Set BaseWBInfo = BaseDb.GetNamedWBInfo(WBinfo.WorkbookName)
         If BaseWBInfo Is Nothing Then
-            MsgBox GetMsg1("M179", WBinfo.WorkBookName) & vbCrLf & GetMsg("M180"), vbInformation '%1 has been removed from base system / Workbook will not be imported
+            MsgBox GetMsg1("M179", WBinfo.WorkbookName) & vbCrLf & GetMsg("M180"), vbInformation '%1 has been removed from base system / Workbook will not be imported
             WBinfo.DontCopy = True
         Else
           If BaseWBInfo.Status <> "Transferred" Then
-            MsgBox GetMsg1("M181", WBinfo.WorkBookName) & vbCrLf & GetMsg("M180"), vbInformation '%1 has been freed in base system /Workbook will not be imported
+            MsgBox GetMsg1("M181", WBinfo.WorkbookName) & vbCrLf & GetMsg("M180"), vbInformation '%1 has been freed in base system /Workbook will not be imported
             WBinfo.DontCopy = True
           End If
         End If
@@ -435,7 +435,7 @@ Dim sync As Boolean
     For Each WBinfo In WBs
         If WBinfo.DontCopy = False Then
              Set CurrentDB = SatelliteDB
-             WBName = GetFullWorkbookName(WBinfo.path & "\" & WBinfo.WorkBookName)
+             WBName = GetFullWorkbookName(WBinfo.path & "\" & WBinfo.WorkbookName)
              Set awb = WorkBooks.Open(filename:=WBName, Password:="Gonsalves", UpdateLinks:=False)
               If Usersettings.PasswordOnWB Then
                  awb.Password = "Gonsalves"
@@ -449,12 +449,12 @@ Dim sync As Boolean
             If namesheet Is Nothing Then
                original = False
             Else
-                If namesheet.Cells(1, 2).value <> WBinfo.WorkBookName Then
+                If namesheet.Cells(1, 2).value <> WBinfo.WorkbookName Then
                     original = False
                 End If
             End If
             If Not original Then
-               MsgBox WBinfo.WorkBookName & " is not the original workwook" & vbCrLf & "Workbook will not be transferred", vbInformation
+               MsgBox WBinfo.WorkbookName & " is not the original workwook" & vbCrLf & "Workbook will not be transferred", vbInformation
             Else
                 namesheet.Visible = xlSheetHidden      ' to allow delete
                 Application.DisplayAlerts = False      ' no message please
@@ -478,7 +478,7 @@ Dim sync As Boolean
                 awb.SaveAs filename:=SaveasName
                 Application.DisplayAlerts = True
                 awb.Close
-                ImportedFiles = ImportedFiles & WBinfo.WorkBookName & vbCrLf
+                ImportedFiles = ImportedFiles & WBinfo.WorkbookName & vbCrLf
             End If
        End If
     Next WBinfo
@@ -534,7 +534,7 @@ Dim CopiedWorkbooks As String
 '
     For Each WBinfo In WBs
         WBinfo.DontCopy = False
-        Set TargetWBInfo = SatelliteDB.GetNamedWBInfo(WBinfo.WorkBookName)
+        Set TargetWBInfo = SatelliteDB.GetNamedWBInfo(WBinfo.WorkbookName)
         If Not TargetWBInfo Is Nothing Then
             If TargetWBInfo.Status = "Transferred" Then
                 WBinfo.DontCopy = True
@@ -550,7 +550,7 @@ Dim CopiedWorkbooks As String
 
 '  now get the fileinfo from BASEDB
             Set CurrentDB = BaseDb
-            WBName = GetFullWorkbookName(WBinfo.path & "\" & WBinfo.WorkBookName)
+            WBName = GetFullWorkbookName(WBinfo.path & "\" & WBinfo.WorkbookName)
             Set awb = WorkBooks.Open(filename:=WBName, Password:="Gonsalves", UpdateLinks:=False)
 
             Set WBD = GetWbData(awb.fullname)   ' also mark in the WBD
@@ -579,9 +579,9 @@ Dim CopiedWorkbooks As String
             Application.DisplayAlerts = True
             awb.Close
             Set CurrentDB = BaseDb
-             CopiedWorkbooks = CopiedWorkbooks & vbCrLf & WBinfo.WorkBookName
+             CopiedWorkbooks = CopiedWorkbooks & vbCrLf & WBinfo.WorkbookName
         Else
-              CopiedWorkbooks = CopiedWorkbooks & vbCrLf & WBinfo.WorkBookName & "not copied (Exported)"
+              CopiedWorkbooks = CopiedWorkbooks & vbCrLf & WBinfo.WorkbookName & "not copied (Exported)"
         End If
     Next WBinfo
 

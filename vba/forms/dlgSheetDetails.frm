@@ -17,7 +17,7 @@ Option Explicit
 
 Public Sub LoadData(SI As clsWorkBookInfo)
 
-    txtName.Text = SI.WorkBookName
+    txtName.Text = SI.WorkbookName
     txtPath.Text = SI.path
     txtLastRead = SI.LastGet
     txtLastWrite = SI.LastPut

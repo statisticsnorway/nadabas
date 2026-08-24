@@ -30,6 +30,10 @@ Dim BE As clsBatchListEntry
         CursorAddNew
         PutColumn "Listname", name
         PutColumn "ItemNo", BE.Itemno
+        If BE.WorkbookID = 0 Then
+            BE.WorkbookID = GetOrCreateWorkbookID(BE.ElementName)
+        End If
+        PutColumn "WorkbookID", BE.WorkbookID
         PutColumn "WorkbookName", BE.ElementName
         CursorUpdate
     Next BE

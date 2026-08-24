@@ -35,6 +35,11 @@
 # See https://adr.ssb.no/0020-lagringsformat-for-jupyter-notebooks/
 *.ipynb
 
+# Local/generated NADABAS and Codex working artifacts
+[Nn][Bb]_[Pp][Rr][Aa][Cc][Tt][Ii][Cc][Ee]*
+**/.codex_tmp/
+*[Tt][Mm][Pp]*
+
 
 # The section below is from the GitHub .gitignore template for Python:
 # https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore

@@ -686,8 +686,8 @@ Dim CWB As clsWorkBookInfo
     tid = Now()
     Set CWB = CurrentDB.GetCurrentWbInfo(awb)
     If CWB Is Nothing Then Exit Sub
-    CreateCursor "select *  from workbooks where Workbookname = " & _
-            InQ(CWB.WorkBookName)
+    CreateCursor "select * from workbooks where WorkbookID = " & _
+            CStr(CWB.WorkbookID)
     If Not CursorEoF Then
        CursorEdit
        PutColumn "LastPut", tid
@@ -699,10 +699,15 @@ End Sub
 
 Private Sub MarkDirty(awb As Workbook)
 
+    Dim WorkbookID As Long
+
     On Error Resume Next
     OpenDb
-    DbExecute "update workbooks set isdirty = 1 where Workbookname = " & _
-           InQ(GetWorkBookName(awb))
+    WorkbookID = GetWorkbookID(GetWorkBookName(awb))
+    If WorkbookID <> 0 Then
+        DbExecute "update workbooks set isdirty = 1 where WorkbookID = " & _
+                  CStr(WorkbookID)
+    End If
     CloseDB
 
 End Sub
@@ -710,6 +715,7 @@ End Sub
 Private Sub MarkNotDirty(awb As Workbook)
 '
 Dim wbdata As clsWBData
+Dim WorkbookID As Long
 
     Set wbdata = RibbonUI.GetWbData(awb.fullname)
     If Not wbdata Is Nothing Then
@@ -718,8 +724,11 @@ Dim wbdata As clsWBData
 
     On Error Resume Next
     OpenDb
-    DbExecute "update workbooks set isdirty = 0 where Workbookname = " & _
-           InQ(GetWorkBookName(awb))
+    WorkbookID = GetWorkbookID(GetWorkBookName(awb))
+    If WorkbookID <> 0 Then
+        DbExecute "update workbooks set isdirty = 0 where WorkbookID = " & _
+                  CStr(WorkbookID)
+    End If
     CloseDB
 End Sub
 

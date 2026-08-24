@@ -54,7 +54,7 @@ Dim fullname As String
     For Each SI In CurrentDB.WorkBooks
        lbSheets.AddItem
        lbSheets.Column(0, n) = SI.GroupName
-       lbSheets.Column(1, n) = SI.WorkBookName
+       lbSheets.Column(1, n) = SI.WorkbookName
        lbSheets.Column(2, n) = SI.LastPut
        lbSheets.Column(3, n) = SI.LastGet
 
@@ -68,7 +68,7 @@ Dim fullname As String
        End If
 
        subPath = Replace(SI.path, getBasepath, "!", 1, 1, vbTextCompare)
-       fullname = GetFullWorkbookName(SI.path & "\" & SI.WorkBookName)
+       fullname = GetFullWorkbookName(SI.path & "\" & SI.WorkbookName)
        If MultipleFiles Then
           lbSheets.Column(8, n) = subPath & " " & Me.lblMultiple.Caption
        Else

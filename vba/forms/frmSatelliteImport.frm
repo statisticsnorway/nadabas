@@ -46,7 +46,7 @@ Dim maxfilenameLen As Integer
      For Each WBinfo In WBs
             With ListBox1
                 .AddItem
-                .List(.ListCount - 1, 0) = WBinfo.WorkBookName
+                .List(.ListCount - 1, 0) = WBinfo.WorkbookName
                 .List(.ListCount - 1, 1) = WBinfo.Title
             End With
             tags.Add WBinfo

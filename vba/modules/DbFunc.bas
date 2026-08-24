@@ -55,14 +55,14 @@ End Sub
 
 Public Function InQ(s As String) As String
 '
-'   return the string in Double Quotes
+'   return an escaped SQL string literal
 '
 
     Select Case CurrentDB.DBType
       Case Sqlexpress
-        InQ = "'" & s & "'"
-      Case accdb
-       InQ = """" & s & """"
+        InQ = "'" & Replace(s, "'", "''") & "'"
+      Case accdb, mdb
+        InQ = "'" & Replace(s, "'", "''") & "'"
     End Select
 
 
@@ -94,7 +94,7 @@ Public Function NowFunction() As String
     Select Case CurrentDB.DBType
       Case Sqlexpress
         NowFunction = "getdate()"
-      Case accdb
+      Case accdb, mdb
        NowFunction = "now()"
     End Select
 

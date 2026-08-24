@@ -63,12 +63,12 @@ Dim wbdata As New clsWBData
 
    On Error GoTo nofile:
 
-    LastOpenFullName = GetFullWorkbookName(WBtoOpen.path & "\" & WBtoOpen.WorkBookName)
+    LastOpenFullName = GetFullWorkbookName(WBtoOpen.path & "\" & WBtoOpen.WorkbookName)
     If LastOpenFullName = "" Then GoTo nofile:
 
     If MultipleFiles Then
         Load dlgSelectExcelFile
-        dlgSelectExcelFile.Initialize GetPath(LastOpenFullName), WBtoOpen.WorkBookName
+        dlgSelectExcelFile.Initialize GetPath(LastOpenFullName), WBtoOpen.WorkbookName
         dlgSelectExcelFile.Show vbModal
 
         If dlgSelectExcelFile.cancel Then
@@ -170,7 +170,7 @@ Dim wbdata As New clsWBData
    Exit Function
 
 nofile:
-    MsgBox GetMsg1("M117", vbCrLf & WBtoOpen.path & "\" & WBtoOpen.WorkBookName), vbOKOnly 'Cannot locate file
+    MsgBox GetMsg1("M117", vbCrLf & WBtoOpen.path & "\" & WBtoOpen.WorkbookName), vbOKOnly 'Cannot locate file
     DoOpenWorkbook = 2
     Exit Function
 OpenError:

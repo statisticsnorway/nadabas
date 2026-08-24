@@ -30,7 +30,7 @@ Dim n As Long
   For Each MWB In CurrentDB.WorkBooks
      lbSheets.AddItem
      lbSheets.Column(0, n) = MWB.GroupName
-     lbSheets.Column(1, n) = MWB.WorkBookName
+     lbSheets.Column(1, n) = MWB.WorkbookName
      lbSheets.Column(2, n) = MWB.Title
      n = n + 1
   Next MWB
@@ -56,7 +56,8 @@ Dim test As clsPermission
         Exit Sub
     End If
     Set Perm = New clsPermission
-    Perm.WorkBookName = Currentbook
+    Perm.WorkbookName = Currentbook
+    Perm.WorkbookID = CurrentDB.WorkBooks(Currentbook).WorkbookID
     Perm.user = txtNew.Text
     If CurrentDB.PermissionTest(Perm) Then
        MsgBox GetMsg("M020"), vbCritical 'Permission already given
@@ -78,7 +79,8 @@ Dim Perm As clsPermission
     If lbSheets.ListIndex < 0 Then Exit Sub
     If lbUsers.ListIndex < 0 Then Exit Sub
     Set Perm = New clsPermission
-    Perm.WorkBookName = lbSheets.Column(1, lbSheets.ListIndex)
+    Perm.WorkbookName = lbSheets.Column(1, lbSheets.ListIndex)
+    Perm.WorkbookID = CurrentDB.WorkBooks(Perm.WorkbookName).WorkbookID
     Perm.user = lbUsers.Text
     Perm.DeleteFromDB
     CurrentDB.Permissions.Remove Perm.key
@@ -96,7 +98,7 @@ Dim Currentbook As String
     If lbSheets.ListIndex < 0 Then Exit Sub
     Currentbook = lbSheets.Column(1, lbSheets.ListIndex)
     For Each Perm In CurrentDB.Permissions
-       If Perm.WorkBookName = Currentbook Then
+       If Perm.WorkbookName = Currentbook Then
           lbUsers.AddItem Perm.user
        End If
     Next Perm

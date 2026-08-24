@@ -51,7 +51,7 @@ Dim WBinfo As clsWorkBookInfo
             shortname = DropFileType(GetFilename(wbdata.WBName))    ' to get name without path and extension
             path = GetPath2(wbdata.WBName)
             For Each WBinfo In CurrentDB.WorkBooks
-                If shortname = WBinfo.WorkBookName And path = WBinfo.path Then
+                If shortname = WBinfo.WorkbookName And path = WBinfo.path Then
                    wbdata.Registered = True
                 End If
             Next WBinfo

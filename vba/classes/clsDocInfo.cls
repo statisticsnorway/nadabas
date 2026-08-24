@@ -11,6 +11,7 @@ Public name As String
 Public path As String
 Public Level As String
 Public DGroup As String
+Public WorkbookID As Long
 Public Workbook As String
 
 
@@ -24,6 +25,10 @@ Public Sub AddToDB()
     PutColumn "path", path
     PutColumn "Level", Level
     PutColumn "DGroup", DGroup
+    If WorkbookID = 0 And Len(Workbook) <> 0 Then
+        WorkbookID = GetOrCreateWorkbookID(Workbook)
+    End If
+    PutColumnNull "WorkbookID", IIf(WorkbookID = 0, "", WorkbookID)
     PutColumn "Workbook", Workbook
     CursorUpdate
     CloseCursor
