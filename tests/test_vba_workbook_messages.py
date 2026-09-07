@@ -65,9 +65,7 @@ class VbaWorkbookMessageTests(unittest.TestCase):
 
     def test_new_messages_have_all_supported_translations(self):
         messages = {
-            row["key"]: row
-            for row in self.resources
-            if row["sheet"] == "Messages"
+            row["key"]: row for row in self.resources if row["sheet"] == "Messages"
         }
 
         self.assertEqual(
