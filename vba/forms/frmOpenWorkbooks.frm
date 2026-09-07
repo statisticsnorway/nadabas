@@ -122,16 +122,16 @@ Dim v As Variant
 
     For Each MWB In CurrentDB.WorkBooks
           If MWB.GroupName = CurrentGroup Then
-             s = MWB.WorkBookName
+             s = MWB.WorkbookName
              If CurrentDB.DbIsSatellite Then
                 If MWB.Status <> "Transferred" Then
-                  s = "*" & MWB.WorkBookName
+                  s = "*" & MWB.WorkbookName
                 End If
              End If
              ListBox1.AddItem s
              ListBox1.ListIndex = ListBox1.ListCount - 1
              ListBox1.Column(1) = MWB.Title
-             v = MWB.WorkBookName
+             v = MWB.WorkbookName
              tags.Add v
           End If
     Next MWB

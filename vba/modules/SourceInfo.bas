@@ -12,6 +12,7 @@ Option Private Module
 '
 Dim collSourceInfo As Collection
 Dim currentline As Long
+Dim TargetWBID As Long
 Dim TargetWB As String
 Dim Targetarea As String
 Dim KeyFam As String
@@ -24,6 +25,7 @@ End Sub
 Public Sub InitSourceInfo(awb As Workbook, scanres As clsScanTableDefResults)
 
     TargetWB = GetWorkBookName(awb)
+    TargetWBID = GetOrCreateWorkbookID(TargetWB)
     Targetarea = scanres.DataAreaName
     KeyFam = scanres.TableName
 End Sub
@@ -31,8 +33,13 @@ End Sub
 Public Sub AddSourceInfo(DataOrigin As clsDataOrigin)
 
 Dim newKey As String
-    newKey = TargetWB & Targetarea & DataOrigin.SourceWorkBook & DataOrigin.SourceDataArea
+    If DataOrigin.SourceWorkbookID = 0 Then
+        DataOrigin.SourceWorkbookID = GetOrCreateWorkbookID(DataOrigin.SourceWorkBook)
+    End If
+    newKey = CStr(TargetWBID) & "|" & Targetarea & "|" & _
+             CStr(DataOrigin.SourceWorkbookID) & "|" & DataOrigin.SourceDataArea
     DataOrigin.KeyFamily = KeyFam
+    DataOrigin.TargetWorkbookID = TargetWBID
     DataOrigin.TargetWorkbook = TargetWB
     DataOrigin.TargetDataArea = Targetarea
     On Error Resume Next                ' don't mind duplicates
@@ -70,7 +77,8 @@ Dim DBLinksRange As Range
     End If
 
 
-    ssql = "Delete  from DataLinks where TargetWB = " & InQ(GetWorkBookName(awb))
+    ssql = "Delete from DataLinks where TargetWorkbookID = " & _
+           CStr(GetOrCreateWorkbookID(GetWorkBookName(awb)))
     DbExecute ssql
 
 
@@ -79,8 +87,10 @@ Dim DBLinksRange As Range
     For Each DataOrigin In collSourceInfo
        CursorAddNew
        PutColumn "KeyFamily", DataOrigin.KeyFamily
+       PutColumn "TargetWorkbookID", DataOrigin.TargetWorkbookID
        PutColumn "TargetWB", DataOrigin.TargetWorkbook
        PutColumn "TargetDataArea", DataOrigin.TargetDataArea
+       PutColumn "SourceWorkbookID", DataOrigin.SourceWorkbookID
        PutColumn "SourceWB", DataOrigin.SourceWorkBook
        PutColumn "SourceDataArea", DataOrigin.SourceDataArea
        CursorUpdate

@@ -38,8 +38,8 @@ Dim ReadOnly As Boolean
     Application.Visible = False
 
     For Each WBinfo In CurrentDB.WorkBooks
-        ufConvertXLS.AddText GetMsg1("M186", WBinfo.path & "\" & WBinfo.WorkBookName)
-        fullname = GetFullWorkbookName(AppendBasePath(WBinfo.path) & "\" & WBinfo.WorkBookName)
+        ufConvertXLS.AddText GetMsg1("M186", WBinfo.path & "\" & WBinfo.WorkbookName)
+        fullname = GetFullWorkbookName(AppendBasePath(WBinfo.path) & "\" & WBinfo.WorkbookName)
 
         If fullname = "" Then
            ufConvertXLS.AddText GetMsg("M187") 'File not found
@@ -59,10 +59,10 @@ Dim ReadOnly As Boolean
 
 
         backupname = AppendBasePath(WBinfo.path) & _
-                     "\Backup_" & WBinfo.WorkBookName & "." & FileExt
+                     "\Backup_" & WBinfo.WorkbookName & "." & FileExt
 
         NewName = AppendBasePath(WBinfo.path) & _
-                     "\" & WBinfo.WorkBookName & ".xlsb"
+                     "\" & WBinfo.WorkbookName & ".xlsb"
 
         sBackupName = DropBasePath(backupname)
         sFullName = DropBasePath(fullname)

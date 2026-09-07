@@ -94,11 +94,11 @@ Dim MWB As New clsWorkBookInfo
     CloseDB
     For Each MWB In CurrentDB.WorkBooks
         p = AppendBasePath(MWB.path)
-        SourceFile = p & "\" & MWB.WorkBookName
+        SourceFile = p & "\" & MWB.WorkbookName
         p = Mid(DropBasePath(p), 3)
         Targetfolder = BackupFolder & "\" & p
         CreateFolder Targetfolder
-        TargetFile = Targetfolder & "\" & MWB.WorkBookName
+        TargetFile = Targetfolder & "\" & MWB.WorkbookName
 
 ' find extension
         If fsFileExists(SourceFile & ".xls") Then
@@ -239,7 +239,7 @@ Public Sub DoRestore()
 
     For Each MWB In CurrentDB.WorkBooks
         p = AppendBasePath(MWB.path)
-        TargetFile = p & "\" & MWB.WorkBookName
+        TargetFile = p & "\" & MWB.WorkbookName
         p = Mid(DropBasePath(p), 3)
         SourceFolder = BackupFolder & "\" & p
         Debug.Print "SourceFolder: " & SourceFolder
@@ -247,7 +247,7 @@ Public Sub DoRestore()
         ' Try each possible extension
         Dim ext As Variant
         For Each ext In Array(".xls", ".xlsx", ".xlsm", ".xlsb")
-            SourceFile = SourceFolder & "\" & MWB.WorkBookName & ext
+            SourceFile = SourceFolder & "\" & MWB.WorkbookName & ext
             TargetFile = Replace(TargetFile, ".xlsb", "") & ext  ' ensure correct extension
 
             Debug.Print "Checking: " & SourceFile

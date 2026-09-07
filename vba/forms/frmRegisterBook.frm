@@ -32,12 +32,12 @@ Dim v As Variant
     cbGroupname.SetFocus
     If Mode = 0 Then
        Me.Caption = "Register workbook    " & CurrentDB.DbDisplayNameIf
-       Me.txtWorkbook = MWB.WorkBookName
+       Me.txtWorkbook = MWB.WorkbookName
        Me.cbGroupname.Text = ""
        Me.txtTitle.Text = ""
     Else
        Me.Caption = "Edit workbook    " & CurrentDB.DbDisplayNameIf
-       Me.txtWorkbook = MWB.WorkBookName
+       Me.txtWorkbook = MWB.WorkbookName
        Me.cbGroupname.Text = MWB.GroupName
        Me.txtTitle.Text = MWB.Title
     End If

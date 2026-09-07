@@ -42,7 +42,7 @@ Dim gname As String
                   With lbSheets
                     .AddItem
                     .List(.ListCount - 1, 0) = gname
-                    .List(.ListCount - 1, 1) = WBinfo.WorkBookName
+                    .List(.ListCount - 1, 1) = WBinfo.WorkbookName
                     .List(.ListCount - 1, 2) = WBinfo.Title
                    End With
                 tags.Add WBinfo

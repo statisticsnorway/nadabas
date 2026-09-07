@@ -25,6 +25,36 @@ Private Function StripBrackets(ByVal s As String) As String
 
 End Function
 
+Public Sub DropIndexIfExists(TableName As String, IndexName As String)
+
+    If Not IndexExists(TableName, IndexName) Then Exit Sub
+
+    DbExecute "DROP INDEX " & SqlBracket(IndexName) & _
+              " ON " & SqlBracket(TableName)
+
+End Sub
+
+Public Sub RecreateUniqueIndex(IndexName As String, TableName As String, _
+                               ParamArray ColumnNames() As Variant)
+
+    Dim ColumnName As Variant
+
+    DropIndexIfExists TableName, IndexName
+    Prepareindex IndexName, TableName
+
+    For Each ColumnName In ColumnNames
+        IndexCol CStr(ColumnName)
+    Next ColumnName
+
+    AttachIndex
+
+    If Not IndexExists(TableName, IndexName) Then
+        err.Raise vbObjectError + 6101, "RecreateUniqueIndex", _
+                  "Unable to create index " & TableName & "." & IndexName
+    End If
+
+End Sub
+
 Private Function SqlBracket(ByVal s As String) As String
 
     s = StripBrackets(s)
@@ -304,6 +334,9 @@ Private Function IndexExists(TableName As String, IndexName As String) As Boolea
 
         Case accdb, mdb
 
+            CurrentDB.DBCat.Tables.Refresh
+            CurrentDB.DBCat.Tables(TableName).Indexes.Refresh
+
             For Each ix In CurrentDB.DBCat.Tables(TableName).Indexes
 
                 If UCase$(Trim$(ix.name)) = UCase$(Trim$(IndexName)) Then
@@ -467,12 +500,54 @@ Public Sub CreateBaseTables()
 
 
  End Sub
+
+Public Sub CreateTableWorkbookIdentities()
+
+    If DBTableExists("WorkbookIdentities") Then Exit Sub
+
+    Select Case CurrentDB.DBType
+        Case Sqlexpress
+            DbExecute "CREATE TABLE [WorkbookIdentities] (" & _
+                      "[WorkbookID] INT IDENTITY(1,1) NOT NULL, " & _
+                      "[WorkbookName] NVARCHAR(" & WORKBOOK_NAME_MAX_LENGTH & ") NOT NULL)"
+        Case accdb, mdb
+            DbExecute "CREATE TABLE [WorkbookIdentities] (" & _
+                      "[WorkbookID] AUTOINCREMENT, " & _
+                      "[WorkbookName] TEXT(" & WORKBOOK_NAME_MAX_LENGTH & ") NOT NULL)"
+    End Select
+
+    Prepareindex "PrimaryIndex", "WorkbookIdentities"
+    IndexCol "WorkbookID"
+    AttachIndex
+
+    Prepareindex "WorkbookNameIndex", "WorkbookIdentities"
+    IndexCol "WorkbookName"
+    AttachIndex
+
+End Sub
+
+Public Sub CreateTableSchemaMigrations()
+
+    If DBTableExists("NADABASSchemaMigrations") Then Exit Sub
+
+    PrepareTable "NADABASSchemaMigrations"
+    AddStrCol "MigrationName", 100, False
+    AddDateCol "AppliedAt", False
+    AttachTable
+
+    Prepareindex "PrimaryIndex", "NADABASSchemaMigrations"
+    IndexCol "MigrationName"
+    AttachIndex
+
+End Sub
+
 Public Sub CreateWorkbookTable()
       DropTable "Workbooks"
 
-
+      CreateTableWorkbookIdentities
       PrepareTable "Workbooks"
-      AddStrCol "WorkBookName", 100, False
+      AddLongCol "WorkbookID", False
+      AddStrCol "WorkBookName", WORKBOOK_NAME_MAX_LENGTH, False
       AddStrCol "Title", 100, True
       AddStrCol "GroupName", 50, True
       AddStrCol "Path", 255, True
@@ -486,6 +561,10 @@ Public Sub CreateWorkbookTable()
       AttachTable
 
       Prepareindex "PrimaryIndex", "Workbooks"
+      IndexCol "WorkbookID"
+      AttachIndex
+
+      Prepareindex "WorkbookNameIndex", "Workbooks"
       IndexCol "WorkBookName"
       AttachIndex
 
@@ -494,7 +573,8 @@ End Sub
 Public Sub CreateTablePermissions()
 
       PrepareTable "Permissions"
-      AddStrCol "WorkBookName", 100, False
+      AddLongCol "WorkbookID", False
+      AddStrCol "WorkBookName", WORKBOOK_NAME_MAX_LENGTH, False
       AddStrCol "User", 100, True
       AttachTable
 
@@ -532,7 +612,8 @@ Public Sub CreateTableDocuments()
       AddStrCol "Path", 255, False
       AddLongCol "Level", True
       AddStrCol "DGroup", 50, True
-      AddStrCol "Workbook", 50, True
+      AddLongCol "WorkbookID", True
+      AddStrCol "Workbook", WORKBOOK_NAME_MAX_LENGTH, True
       AttachTable
 
 End Sub
@@ -679,7 +760,8 @@ Public Sub CreateTableBatchList()
       PrepareTable "BatchList"
       AddStrCol "Listname", 50, False
       AddLongCol "ItemNo", False
-      AddStrCol "Workbookname", 50, False
+      AddLongCol "WorkbookID", False
+      AddStrCol "Workbookname", WORKBOOK_NAME_MAX_LENGTH, False
       AttachTable
 
      Prepareindex "PrimaryIndex", "BatchList"
@@ -732,7 +814,8 @@ End Sub
 Public Sub CreateTableDescriptions()
 
       PrepareTable "Descriptions"
-      AddStrCol "WorkbookName", 50, False
+      AddLongCol "WorkbookID", False
+      AddStrCol "WorkbookName", WORKBOOK_NAME_MAX_LENGTH, False
       AddStrCol "DataAreaName", 50, False
       AddStrCol "TableName", 50, False
       AddStrCol "GetPut", 10, False
@@ -740,13 +823,14 @@ Public Sub CreateTableDescriptions()
       AttachTable
 
      Prepareindex "PrimaryIndex", "Descriptions"
-     IndexCol "WorkbookName"
+     IndexCol "WorkbookID"
      IndexCol "DataAreaName"
      AttachIndex
  End Sub
  Public Sub CreateTableDescriptionsDimensions()
      PrepareTable "DescriptionDimensions"
-     AddStrCol "WorkbookName", 50, False
+     AddLongCol "WorkbookID", False
+     AddStrCol "WorkbookName", WORKBOOK_NAME_MAX_LENGTH, False
      AddStrCol "DataAreaName", 50, False
      AddLongCol "DimensionNumber", False
      AddStrCol "DimensionName", 50, False
@@ -755,7 +839,7 @@ Public Sub CreateTableDescriptions()
      AttachTable
 
      Prepareindex "PrimaryIndex", "DescriptionDimensions"
-     IndexCol "WorkbookName"
+     IndexCol "WorkbookID"
      IndexCol "DataAreaName"
      IndexCol "DimensionNumber"
      AttachIndex
@@ -800,18 +884,20 @@ Public Sub CreateTableDataLinks()
 
     PrepareTable "DataLinks"
     AddStrCol "KeyFamily", 50, False
-    AddStrCol "TargetWB", 50, False
+    AddLongCol "TargetWorkbookID", False
+    AddStrCol "TargetWB", WORKBOOK_NAME_MAX_LENGTH, False
     AddStrCol "TargetDataArea", 50, False
-    AddStrCol "SourceWB", 50, False
+    AddLongCol "SourceWorkbookID", False
+    AddStrCol "SourceWB", WORKBOOK_NAME_MAX_LENGTH, False
     AddStrCol "SourceDataArea", 50, False
 
     AttachTable
 
     Prepareindex "PrimaryIndex", "DataLinks"
     IndexCol "KeyFamily"
-    IndexCol "TargetWB"
+    IndexCol "TargetWorkbookID"
     IndexCol "TargetDataArea"
-    IndexCol "SourceWB"
+    IndexCol "SourceWorkbookID"
     IndexCol "SourceDataArea"
     AttachIndex
 
@@ -858,6 +944,9 @@ Dim Keyname As clsKeyName
     DropTable "DescriptionDimensions"
     DropTable "DBGlobals"
     DropTable "ClassificationDescriptions"
+    DropTable "DataLinks"
+    DropTable "NADABASSchemaMigrations"
+    DropTable "WorkbookIdentities"
     CloseDB
 End Sub
 
@@ -867,7 +956,7 @@ Public Sub AlterFieldLen(sTable As String, Dimensionname As String, newlen As In
     Select Case CurrentDB.DBType
       Case Sqlexpress
             DbExecute "Alter TABLE " & InB(sTable) & " ALTER COLUMN " & InB(Dimensionname) & " nvarchar(" & newlen & ")"
-      Case accdb
+      Case accdb, mdb
             DbExecute "Alter TABLE " & InB(sTable) & " ALTER COLUMN " & InB(Dimensionname) & " TEXT(" & newlen & ")"
     End Select
 
@@ -879,7 +968,7 @@ Public Sub DropTable(sTable As String)
     Select Case CurrentDB.DBType
       Case Sqlexpress
         DbExecute "Drop Table " & sTable
-      Case accdb
+      Case accdb, mdb
         DbExecute "Drop Table [" & sTable & "]"
     End Select
 
@@ -918,6 +1007,7 @@ Public Function DBTableExists(sTablename As String) As Boolean
         Case accdb, mdb
 
             On Error Resume Next
+            CurrentDB.DBCat.Tables.Refresh
             Set ob = CurrentDB.DBCat.Tables(sTablename)
             DBTableExists = Not ob Is Nothing
             On Error GoTo 0
@@ -941,5 +1031,77 @@ ErrorHandler:
     Debug.Print "Error: " & err.Number & " - " & err.Description
 
     Resume CleanExit
+
+End Function
+
+Public Function DBColumnExists(TableName As String, ColumnName As String) As Boolean
+
+    Dim ob As Object
+    Dim rs As ADODB.Recordset
+    Dim sql As String
+
+    On Error GoTo CleanExit
+
+    TableName = StripBrackets(TableName)
+    ColumnName = StripBrackets(ColumnName)
+
+    Select Case CurrentDB.DBType
+        Case Sqlexpress
+            sql = "SELECT COUNT(*) AS n FROM INFORMATION_SCHEMA.COLUMNS " & _
+                  "WHERE TABLE_NAME = " & SqlString(TableName) & _
+                  " AND COLUMN_NAME = " & SqlString(ColumnName)
+            Set rs = CurrentDB.DBCnn.Execute(sql)
+            If Not rs.EOF Then
+                DBColumnExists = (CLng(rs.fields("n").value) > 0)
+            End If
+        Case accdb, mdb
+            On Error Resume Next
+            CurrentDB.DBCat.Tables.Refresh
+            CurrentDB.DBCat.Tables(TableName).Columns.Refresh
+            Set ob = CurrentDB.DBCat.Tables(TableName).Columns(ColumnName)
+            DBColumnExists = Not ob Is Nothing
+            On Error GoTo 0
+    End Select
+
+CleanExit:
+    On Error Resume Next
+    If Not rs Is Nothing Then rs.Close
+    Set rs = Nothing
+    Set ob = Nothing
+
+End Function
+
+Public Function DBColumnSize(TableName As String, ColumnName As String) As Long
+
+    Dim rs As ADODB.Recordset
+    Dim sql As String
+
+    On Error GoTo CleanExit
+
+    TableName = StripBrackets(TableName)
+    ColumnName = StripBrackets(ColumnName)
+
+    Select Case CurrentDB.DBType
+        Case Sqlexpress
+            sql = "SELECT CHARACTER_MAXIMUM_LENGTH AS n " & _
+                  "FROM INFORMATION_SCHEMA.COLUMNS " & _
+                  "WHERE TABLE_NAME = " & SqlString(TableName) & _
+                  " AND COLUMN_NAME = " & SqlString(ColumnName)
+            Set rs = CurrentDB.DBCnn.Execute(sql)
+            If Not rs.EOF Then
+                If Not IsNull(rs.fields("n").value) Then
+                    DBColumnSize = CLng(rs.fields("n").value)
+                End If
+            End If
+        Case accdb, mdb
+            CurrentDB.DBCat.Tables.Refresh
+            CurrentDB.DBCat.Tables(TableName).Columns.Refresh
+            DBColumnSize = CurrentDB.DBCat.Tables(TableName).Columns(ColumnName).DefinedSize
+    End Select
+
+CleanExit:
+    On Error Resume Next
+    If Not rs Is Nothing Then rs.Close
+    Set rs = Nothing
 
 End Function

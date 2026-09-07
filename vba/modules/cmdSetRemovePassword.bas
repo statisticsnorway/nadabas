@@ -27,7 +27,7 @@ Dim CurrentWB As Workbook
     CurrentDB.LoadWorkbookInfo
     SplashPWOnWorkBooks.Show vbModeless
     For Each wb In CurrentDB.WorkBooks
-         filefullname = GetFullWorkbookName(AppendBasePath(wb.path) & "\" & wb.WorkBookName)
+         filefullname = GetFullWorkbookName(AppendBasePath(wb.path) & "\" & wb.WorkbookName)
          If filefullname <> "" Then
             If Not MultipleFiles Then
               SplashPWOnWorkBooks.Label1 = filefullname

@@ -384,6 +384,11 @@ Dim OK As Boolean
 
        OK = TestDbOK
        If OK Then
+          If Not CurrentDB.DbIsExch Then
+              OK = EnsureWorkbookIdentitySchema
+          End If
+       End If
+       If OK Then
           If Not CurrentDB.DbIsExch And Not CurrentDB.DbIsSatellite Then
               CurrentDB.LoadAdministrators
               TestAdministrator

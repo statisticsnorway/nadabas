@@ -39,7 +39,7 @@ Dim WBinfo As clsWorkBookInfo
     End If
 
     Set WBinfo = New clsWorkBookInfo
-    WBinfo.WorkBookName = GetWorkBookName(awb)
+    WBinfo.WorkbookName = GetWorkBookName(awb)
     WBinfo.Title = ""
     WBinfo.GroupName = ""
     WBinfo.path = awb.path

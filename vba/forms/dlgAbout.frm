@@ -42,4 +42,5 @@ Private Sub UserForm_Initialize()
   DropClose Me               ' get rid of Close button on frame
 '
    Translateform Me    ' translate all labels etc.
+   Me.VersionNumber.Caption = InterfaceVersionUpdate.InstalledVersion
 End Sub

@@ -42,7 +42,7 @@ Dim auser As String
      thisuser = UCase(get_NTUserName)
      wbisprotected = False
      For Each Perm In CurrentDB.Permissions
-         If Perm.WorkBookName = WBName Then
+         If Perm.WorkbookName = WBName Then
             wbisprotected = True
             If UCase(Perm.user) = thisuser Then Exit Function
          End If

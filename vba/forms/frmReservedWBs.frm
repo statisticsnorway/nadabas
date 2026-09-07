@@ -49,7 +49,7 @@ Dim fullname As String
        If SI.ReservedBy <> "" Then
             lbSheets.AddItem
             lbSheets.Column(0, n) = SI.GroupName
-            lbSheets.Column(1, n) = SI.WorkBookName
+            lbSheets.Column(1, n) = SI.WorkbookName
             lbSheets.Column(2, n) = SI.Status
             lbSheets.Column(3, n) = SI.ReservedBy
             lbSheets.Column(4, n) = SI.ReservedDate

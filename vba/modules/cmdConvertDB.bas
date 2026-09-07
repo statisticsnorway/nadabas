@@ -269,6 +269,13 @@ Private Function TransferData() As Boolean
     DoEvents
 
     '
+    ' Upgrade the source before creating the target. This assigns stable workbook
+    ' IDs once, so the same values can be preserved by the conversion.
+    '
+    Set CurrentDB = BaseDb
+    If Not EnsureWorkbookIdentitySchema Then GoTo CleanExit
+
+    '
     ' Create basic NADABAS tables in SQL target.
     '
     Set CurrentDB = TargetDB
@@ -285,6 +292,7 @@ Private Function TransferData() As Boolean
     ' Copy required base tables.
     ' These should already have been created in target by CreateBaseTables/CreateWorkbookTable.
     '
+    If Not CopyTable("WorkbookIdentities") Then GoTo CleanExit
     If Not CopyTable("Workbooks") Then GoTo CleanExit
     If Not CopyTable("Keynames") Then GoTo CleanExit
     If Not CopyTable("Administrators") Then GoTo CleanExit
@@ -460,6 +468,12 @@ Private Function TransferData() As Boolean
         End If
 
     Next k
+
+    '
+    ' Verify the converted database and record the migration there as well.
+    '
+    Set CurrentDB = TargetDB
+    If Not EnsureWorkbookIdentitySchema Then GoTo CleanExit
 
     TransferData = True
 
@@ -682,6 +696,11 @@ Private Function CopyTable(sTable As String) As Boolean
 
     Debug.Print "CopyTable started: " & sTable
 
+    If UCase$(sTable) = "WORKBOOKIDENTITIES" Then
+        CopyTable = CopyWorkbookIdentityTable()
+        Exit Function
+    End If
+
     '
     ' Open source cursor
     '
@@ -768,6 +787,70 @@ ErrorHandler:
 
     Debug.Print "ERROR in CopyTable"
     Debug.Print "Table: " & sTable
+    Debug.Print "Error: " & err.Number & " - " & err.Description
+
+    Resume CleanExit
+
+End Function
+
+Private Function CopyWorkbookIdentityTable() As Boolean
+
+    Dim identityInsertEnabled As Boolean
+    Dim rsIdentities As ADODB.Recordset
+    Dim WorkbookID As Long
+    Dim WorkbookName As String
+
+    On Error GoTo ErrorHandler
+
+    CopyWorkbookIdentityTable = False
+
+    Set CurrentDB = BaseDb
+    Set rsIdentities = CurrentDB.DBCnn.Execute( _
+        "SELECT [WorkbookID], [WorkbookName] " & _
+        "FROM [WorkbookIdentities] ORDER BY [WorkbookID]")
+
+    Set CurrentDB = TargetDB
+
+    If CurrentDB.DBType = Sqlexpress Then
+        CurrentDB.DBCnn.Execute "SET IDENTITY_INSERT [WorkbookIdentities] ON"
+        identityInsertEnabled = True
+    End If
+
+    Do While Not rsIdentities.EOF
+        WorkbookID = CLng(rsIdentities.fields("WorkbookID").value)
+        WorkbookName = CStr(rsIdentities.fields("WorkbookName").value)
+
+        CurrentDB.DBCnn.Execute _
+            "INSERT INTO [WorkbookIdentities] ([WorkbookID], [WorkbookName]) " & _
+            "VALUES (" & CStr(WorkbookID) & ", " & InQ(WorkbookName) & ")"
+
+        rsIdentities.MoveNext
+        DoEvents
+    Loop
+
+    CopyWorkbookIdentityTable = True
+
+CleanExit:
+    On Error Resume Next
+
+    If Not rsIdentities Is Nothing Then rsIdentities.Close
+    Set rsIdentities = Nothing
+
+    Set CurrentDB = TargetDB
+    If identityInsertEnabled Then
+        CurrentDB.DBCnn.Execute "SET IDENTITY_INSERT [WorkbookIdentities] OFF"
+    End If
+
+    Set CurrentDB = BaseDb
+    Exit Function
+
+ErrorHandler:
+    MsgBox "Error while preserving workbook IDs during database conversion:" & _
+           vbCrLf & vbCrLf & _
+           "Error " & err.Number & ": " & err.Description, _
+           vbCritical, "NADABAS conversion"
+
+    Debug.Print "ERROR in CopyWorkbookIdentityTable"
     Debug.Print "Error: " & err.Number & " - " & err.Description
 
     Resume CleanExit

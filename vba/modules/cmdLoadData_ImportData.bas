@@ -805,8 +805,8 @@ Dim CWB As clsWorkBookInfo
     If CWB Is Nothing Then Exit Sub
     CWB.LastGet = tid
 
-    CreateCursor "select *  from workbooks where Workbookname = " & _
-           InQ(CWB.WorkBookName)
+    CreateCursor "select * from workbooks where WorkbookID = " & _
+           CStr(CWB.WorkbookID)
 
     If Not CursorEoF Then
        CursorEdit

@@ -15,7 +15,7 @@ Attribute VB_Exposed = False
 '   classifications, dimensions, correspondences, and other data structures.
 '
 ' Author: Jarle Kvile
-' Created by Søren Netterstrøm
+' Created by Soren Netterstrom
 ' Last Updated: [10.12.2024]
 '
 ' Properties:
@@ -708,13 +708,14 @@ Dim WBinfo As clsWorkBookInfo
     OpenDb
     Set WorkBooks = New Collection
 
-    CreateCursor "select WorkBookName,Title, GroupName, Path, Status, ReservedBy, ReservedDate, IsDirty, lastget, lastput  from workbooks order by GroupName,workbookname"
+    CreateCursor "select WorkbookID, WorkBookName,Title, GroupName, Path, Status, ReservedBy, ReservedDate, IsDirty, lastget, lastput  from workbooks order by GroupName,workbookname"
     Do While Not CursorEoF
         Set WBinfo = New clsWorkBookInfo
-        WBinfo.WorkBookName = GetColumn("WorkBookName")
+        WBinfo.WorkbookID = GetColumn("WorkbookID")
+        WBinfo.WorkbookName = GetColumn("WorkBookName")
         WBinfo.Title = GetColumn("Title")
         WBinfo.GroupName = GetColumn("GroupName")
-        WBinfo.RelPath = GetColumn("Path")
+        WBinfo.RelPath = CStr(GetColumnNull("Path"))
         WBinfo.path = AppendBasePath(WBinfo.RelPath)
         WBinfo.Status = GetColumnNull("Status")
         WBinfo.ReservedBy = GetColumnNull("ReservedBy")
@@ -722,7 +723,7 @@ Dim WBinfo As clsWorkBookInfo
         WBinfo.Isdirty = GetColumn("IsDirty")
         WBinfo.LastGet = GetColumnNull("LastGet")
         WBinfo.LastPut = GetColumnNull("LastPut")
-        WorkBooks.Add WBinfo, WBinfo.WorkBookName
+        WorkBooks.Add WBinfo, WBinfo.WorkbookName
         CursorMoveNext
     Loop
     CloseCursor
@@ -734,8 +735,8 @@ Dim WBinfo As clsWorkBookInfo
 
     MaxFileNameLength = 0
     For Each WBinfo In WorkBooks
-        If Len(WBinfo.WorkBookName) > MaxFileNameLength Then
-            MaxFileNameLength = Len(WBinfo.WorkBookName)
+        If Len(WBinfo.WorkbookName) > MaxFileNameLength Then
+            MaxFileNameLength = Len(WBinfo.WorkbookName)
         End If
     Next WBinfo
 
@@ -754,7 +755,7 @@ Dim Di As clsDocInfo
     Set Documents = New Collection
     OpenDb
 
-    CreateCursor "select [Name], [Path], [Level], [DGroup], [Workbook] from [documents] order by [level], [name]"
+    CreateCursor "select [Name], [Path], [Level], [DGroup], [WorkbookID], [Workbook] from [documents] order by [level], [name]"
     Do While Not CursorEoF
        Set Di = New clsDocInfo
        Di.name = GetColumn("Name")
@@ -762,6 +763,7 @@ Dim Di As clsDocInfo
        Di.Level = GetColumn("Level")
        On Error Resume Next           ' the next columns may not be there
        Di.DGroup = GetColumn("DGroup")
+       Di.WorkbookID = GetColumn("WorkbookID")
        Di.Workbook = GetColumn("Workbook")
        Documents.Add Di
        CursorMoveNext
@@ -794,7 +796,7 @@ Dim BDesc As clsBatchDescription
     End If
     OldListName = ""
     Set Batchlists = New Collection
-    CreateCursor "Select Listname, ItemNo, WorkbookName from BatchList order by Listname, Itemno "
+    CreateCursor "Select Listname, ItemNo, WorkbookID, WorkbookName from BatchList order by Listname, Itemno "
     Do While Not CursorEoF
        listname = GetColumn("Listname")
        If listname <> OldListName Then
@@ -805,6 +807,7 @@ Dim BDesc As clsBatchDescription
        OldListName = listname
        Set BEntry = New clsBatchListEntry
        BEntry.Itemno = GetColumn("ItemNo")
+       BEntry.WorkbookID = GetColumn("WorkbookID")
        WBName = GetColumn("WorkbookName")
        BEntry.ElementName = WBName
        blist.Entries.Add BEntry, WBName
@@ -989,7 +992,8 @@ Dim Perm As clsPermission
         CreateCursor "select * from Permissions order by workbookname, [user]"
         Do While Not CursorEoF
             Set Perm = New clsPermission
-            Perm.WorkBookName = GetColumn("Workbookname")
+            Perm.WorkbookID = GetColumn("WorkbookID")
+            Perm.WorkbookName = GetColumn("Workbookname")
             Perm.user = GetColumn("User")
             Permissions.Add Perm, Perm.key
             CursorMoveNext
@@ -1035,7 +1039,7 @@ Public Function GetCurrentGroup(WBName As String) As String
 Dim wbi As clsWorkBookInfo
     GetCurrentGroup = ""
     For Each wbi In WorkBooks
-        If wbi.WorkBookName = WBName Then
+        If wbi.WorkbookName = WBName Then
            GetCurrentGroup = wbi.GroupName
            Exit Function
         End If

@@ -1,3 +1,9 @@
 sheet,key,control,english,french,portuguese
 Ribbon,btnCheckNadabasVersion,,Check for updates,Rechercher des mises à jour,Verificar atualizações
 Ribbon,tglVersionCheck,,Check automatically for new NADABAS versions,Rechercher automatiquement les nouvelles versions de NADABAS,Verificar automaticamente novas versões do NADABAS
+Messages,M117,,The workbook could not be found:,Le classeur est introuvable :,Não foi possível localizar o livro:
+Messages,M117B,,Check whether the file has been moved or renamed.,Vérifiez si le fichier a été déplacé ou renommé.,Verifique se o ficheiro foi movido ou renomeado.
+Messages,M215A,,Replace %1 in NADABAS?,Remplacer %1 dans NADABAS ?,Substituir %1 no NADABAS?
+Messages,M215B,,The registered workbook and all data loaded from it will be removed from NADABAS before the replacement is registered.,Le classeur enregistré et toutes les données qui en ont été chargées seront supprimés de NADABAS avant l’enregistrement du classeur de remplacement.,O livro registado e todos os dados carregados a partir dele serão removidos do NADABAS antes de o livro de substituição ser registado.
+Messages,M215C,,The workbook file itself will not be deleted. Continue?,Le fichier du classeur lui-même ne sera pas supprimé. Continuer ?,O próprio ficheiro do livro não será eliminado. Continuar?
+Messages,M216,,The workbook has been replaced. Load the data from the new workbook into NADABAS again.,Le classeur a été remplacé. Rechargez dans NADABAS les données du nouveau classeur.,O livro foi substituído. Carregue novamente no NADABAS os dados do novo livro.

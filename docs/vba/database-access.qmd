@@ -70,6 +70,14 @@ applicable. This confirms the retained draft's three initial base tables, but
 only as source behaviour; it does not prove every deployed database began that
 way.
 
+After the required tables have been found or initialized, NADABAS runs an
+idempotent workbook-identity migration. The migration creates the identity
+catalog, adds numeric workbook-reference columns, backfills them from existing
+names, widens compatibility name columns, and rebuilds affected unique indexes.
+It records `WorkbookIdentityV1` in `NADABASSchemaMigrations` only after all steps
+succeed. The same check runs during Access/SQL conversion, where existing IDs are
+preserved.
+
 ## Shared ADO routines
 
 [`DBInterface.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/DBInterface.bas)
@@ -91,10 +99,10 @@ Excel cursor. The retained draft's simpler “open/close database” description
 therefore not an accurate connection-lifecycle contract.
 
 String-building helpers include `InQ`, `InB`, `InBTF`, and `NowFunction`.
-`InQ` surrounds text with engine-specific quote characters but does not escape
-embedded quote characters. Much of the application builds SQL by concatenating
-strings. Treat parameterization and injection resistance as unresolved security
-work, especially for workbook-, form-, file-, and registry-derived values.
+`InQ` escapes embedded apostrophes and surrounds text with a SQL string literal.
+Much of the application still builds SQL by concatenating strings. Treat full
+parameterization and injection resistance as unresolved security work,
+especially for workbook-, form-, file-, and registry-derived values.
 
 ## Source-defined system tables
 
@@ -107,33 +115,39 @@ builds one; it is not proof that an existing deployment has it.
 | `Administrators` | `UserName` | Unique index on `UserName`; administrator identity list. |
 | `BasePath` | `BasePath` | Single-path convention enforced by application logic. |
 | `BackupPath` | `BackupPath` | Backup folder/template path. |
-| `BatchList` | `Listname`, `ItemNo`, `Workbookname` | Unique index on list and item order. |
+| `BatchList` | `Listname`, `ItemNo`, `WorkbookID`, `Workbookname` | Unique index on list and item order; the name is retained for compatibility/display. |
 | `BatchDescription` | `Listname`, `Description` | Unique index on list name. |
 | `Batch2List` | `Listname`, `ItemNo`, `Batchname` | Ordered list of batch names; unique index on list and item. |
 | `Batch2Description` | `Listname`, `Description` | Unique index on list name. |
 | `Classifications` | `ClassName`, `Code`, `Title` | Unique index on class and code. |
 | `ClassificationDescriptions` | `ClassName`, `Description` | Unique index on class name. This table was omitted from the retained table inventory. |
 | `Correspondences` | `Fromclass`, `FromCode`, `Toclass`, `ToCode` | Maps source classification codes to target codes; unique index is created on the first three columns. |
-| `DataLinks` | `KeyFamily`, `TargetWB`, `TargetDataArea`, `SourceWB`, `SourceDataArea` | Unique index on all five provenance columns. |
-| `Descriptions` | `WorkbookName`, `DataAreaName`, `TableName`, `GetPut`, `Description` | Unique index on workbook and data-area name. |
-| `DescriptionDimensions` | `WorkbookName`, `DataAreaName`, `DimensionNumber`, `DimensionName`, `Classification`, `ConstantValue` | Unique index on workbook, data area, and dimension order. |
+| `DataLinks` | `KeyFamily`, `TargetWorkbookID`, `TargetWB`, `TargetDataArea`, `SourceWorkbookID`, `SourceWB`, `SourceDataArea` | Unique index uses key family, both numeric workbook IDs, and both data-area names. |
+| `Descriptions` | `WorkbookID`, `WorkbookName`, `DataAreaName`, `TableName`, `GetPut`, `Description` | Unique index on numeric workbook ID and data-area name. |
+| `DescriptionDimensions` | `WorkbookID`, `WorkbookName`, `DataAreaName`, `DimensionNumber`, `DimensionName`, `Classification`, `ConstantValue` | Unique index on numeric workbook ID, data area, and dimension order. |
 | `DimensionClass` | `DimensionName`, `ClassName` | Default dimension-to-classification association; no index is created here. |
 | `DBGlobals` | `IDNum`, `Name`, `Value` | Unique index on ordering identifier. |
-| `Documents` | `Name`, `Path`, `Level`, `DGroup`, `Workbook` | Global, group, or workbook document metadata. |
+| `Documents` | `Name`, `Path`, `Level`, `DGroup`, `WorkbookID`, `Workbook` | Global, group, or workbook document metadata; the ID is nullable for non-workbook documents. |
 | `KeyNames` | `KeyName` | Unique index; identifies user-defined key-family tables. |
 | `NADABASVersion` | `VersionNumber` | Version compatibility marker. |
-| `Permissions` | `WorkBookName`, `User` | Workbook/user permission rows; no index is created here. |
+| `NADABASSchemaMigrations` | `MigrationName`, `AppliedAt` | Records completed, idempotent schema migrations. |
+| `Permissions` | `WorkbookID`, `WorkBookName`, `User` | Workbook/user permission rows; no index is created here. |
 | `UserSettings` | Colour, font, password, workbook/document policy, load/save, Dropbox, satellite, and import/export fields | One settings row is assumed by application code; no index is created here. |
-| `Workbooks` | `WorkBookName`, `Title`, `GroupName`, `Path`, `ReservedBy`, `Status`, `ReservedDate`, `isdirty`, `LastGet`, `LastPut`, `Updateorder` | Unique index on workbook name. |
+| `WorkbookIdentities` | `WorkbookID`, `WorkbookName` | Generated numeric identity with unique indexes on both ID and current name. |
+| `Workbooks` | `WorkbookID`, `WorkBookName`, `Title`, `GroupName`, `Path`, `ReservedBy`, `Status`, `ReservedDate`, `isdirty`, `LastGet`, `LastPut`, `Updateorder` | Unique indexes on numeric ID and workbook name. |
 | `Year` | `Name`, `StartYear`, `EndYear`, `DefaultFormat` | Period-selection settings; no index is created here. |
+
+Numeric workbook IDs are the relational keys used by current read, write,
+rename, reporting, and source-link paths. Compatibility name columns remain so
+older reports and integrations continue to work, and are synchronized during a
+rename. These name columns are defined as text up to 255 characters; they are no
+longer part of the wide composite `DataLinks` index.
 
 The source does not create explicit foreign-key relationships in these routines.
 It does create unique indexes, so the retained draft statement “there are no
-constraints” is too broad. Whether a deployed database has primary keys,
-foreign keys, checks, defaults, triggers, or manually added constraints is
-**unknown** until its schema is inspected. The draft's performance and
-manageability rationale for omitting constraints is not carried forward as an
-approved design decision.
+constraints” is too broad. Whether a deployed database has additional primary
+keys, foreign keys, checks, defaults, triggers, or manually added constraints is
+**unknown** until its schema is inspected.
 
 ## Key-family data tables
 

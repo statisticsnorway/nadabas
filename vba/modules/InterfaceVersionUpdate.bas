@@ -6,7 +6,7 @@ Option Private Module
 ' It does not change or invalidate the Ribbon and uses only late-bound
 ' Windows components, so no additional VBA reference is required.
 
-Private Const CURRENT_VERSION As String = "6.01.003"
+Private Const CURRENT_VERSION As String = "6.02.001"
 Private Const RELEASE_API_URL As String = _
     "https://api.github.com/repos/statisticsnorway/nadabas/releases/latest"
 Private Const DOWNLOAD_URL As String = _
@@ -20,6 +20,10 @@ Private Const STARTUP_DELAY_SECONDS As Long = 5
 
 Private scheduledCheck As Date
 Private checkIsScheduled As Boolean
+
+Public Function InstalledVersion() As String
+    InstalledVersion = CURRENT_VERSION
+End Function
 
 Public Sub LoadStartupVersionCheckPreference()
     On Error GoTo DefaultEnabled

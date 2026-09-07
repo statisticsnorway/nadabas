@@ -62,7 +62,7 @@ Dim BE As clsBatchElement
     Set WBCandidates = New Collection
     For Each MWB In CurrentDB.WorkBooks
         Set BE = New clsBatchElement
-        BE.ElName = MWB.WorkBookName
+        BE.ElName = MWB.WorkbookName
         WBCandidates.Add BE, BE.ElName
     Next MWB
  End Sub
@@ -307,7 +307,7 @@ Dim MWB As clsWorkBookInfo
             Set BL = CurrentDB.Batchlists(cbSelectFrom.Text)
             For Each BEntry In BL.Entries
                Set MWB = CurrentDB.WorkBooks(BEntry.ElementName)
-               Set BE = Candidates(MWB.WorkBookName)
+               Set BE = Candidates(MWB.WorkbookName)
                If BE.InBatchlist = False Or cbCircular.value = True Then
                   lstBaseList.AddItem BE.ElName
                   BaseTags.Add BE

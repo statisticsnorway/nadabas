@@ -79,11 +79,11 @@ Dim v As Variant
 
     For Each MWB In CurrentDB.WorkBooks
           If MWB.GroupName = s Then
-             lbSheets.AddItem MWB.WorkBookName
+             lbSheets.AddItem MWB.WorkbookName
              lbSheets.ListIndex = lbSheets.ListCount - 1
              lbSheets.Column(1) = MWB.Title
              lbSheets.Column(2) = MWB.path
-             v = MWB.WorkBookName
+             v = MWB.WorkbookName
              tags.Add v
           End If
     Next MWB
@@ -108,8 +108,8 @@ Dim wbn As String
     Set MWB = CurrentDB.WorkBooks(wbn)
 
 
-    fullname = GetFullWorkbookName(MWB.path & "\" & MWB.WorkBookName)
-    If MsgBox(GetMsg1("M091A", MWB.WorkBookName) & vbCrLf & GetMsg("M091B"), vbYesNo) = vbYes Then   'Confirm to delete %1 from DB  %2File will not be deleted
+    fullname = GetFullWorkbookName(MWB.path & "\" & MWB.WorkbookName)
+    If MsgBox(GetMsg1("M091A", MWB.WorkbookName) & vbCrLf & GetMsg("M091B"), vbYesNo) = vbYes Then   'Confirm to delete %1 from DB  %2File will not be deleted
 
        RemoveWorkbook MWB
 
@@ -186,7 +186,7 @@ Dim wbn As String
 
 
    Load dlgRenameFile
-   dlgRenameFile.txtFromName = MWB.WorkBookName
+   dlgRenameFile.txtFromName = MWB.WorkbookName
    dlgRenameFile.txtToName = ""
    dlgRenameFile.Show vbModal
    If dlgRenameFile.cancel Then
@@ -195,8 +195,12 @@ Dim wbn As String
    End If
    NewName = dlgRenameFile.txtToName
    Unload dlgRenameFile
-   oldname = MWB.WorkBookName
+   oldname = MWB.WorkbookName
    If NewName = oldname Then Exit Sub
+   If GetWorkbookID(NewName) <> 0 And GetWorkbookID(NewName) <> MWB.WorkbookID Then
+      MsgBox "A workbook identity with this name already exists: " & NewName, vbExclamation
+      Exit Sub
+   End If
 
    oldfullname = GetFullWorkbookName(AppendBasePath(MWB.path) & "\" & oldname)
    If oldfullname = "" Then
@@ -215,11 +219,11 @@ Dim wbn As String
 '
 ' now renames anywhere in db as appropriate
 '
-       renameWorkBook oldname, NewName
+       renameWorkBook MWB.WorkbookID, oldname, NewName
 '
 ' now change in listbox
 '
-      MWB.WorkBookName = NewName
+      MWB.WorkbookName = NewName
 '      lbSheets.Column(0, lbSheets.ListIndex) = MWB.Workbookname
   '
 ' now rebuild tabs using menudata
@@ -252,15 +256,20 @@ Dim wbn As String
 Dim WBNew As clsWorkBookInfo
 Dim NewName As String   ' name without path and extension
 Dim newpath As String   ' path to new file
+Dim ReplacementCompleted As Boolean
 
 
     wbn = tags(lbSheets.ListIndex + 1)
     Set MWB = CurrentDB.WorkBooks(wbn)
 
-    If Not TestWorkbookNotOpen(MWB.WorkBookName) Then
+    If MsgBox(GetMsg1("M215A", MWB.WorkbookName) & vbCrLf & vbCrLf & _
+           GetMsg("M215B") & vbCrLf & _
+           GetMsg("M215C"), vbYesNo + vbExclamation + vbDefaultButton2, "Nadabas") <> vbYes Then Exit Sub
+
+    If Not TestWorkbookNotOpen(MWB.WorkbookName) Then
       If MsgBox(GetMsg("M094"), vbOKCancel) = vbCancel Then Exit Sub 'Workbook to be replaced will be closed
       For Each wb In Application.WorkBooks
-          If UCase(DropFileType(wb.name)) = UCase(MWB.WorkBookName) Then
+          If UCase(DropFileType(wb.name)) = UCase(MWB.WorkbookName) Then
              Set wbClose = wb
              Exit For
           End If
@@ -268,7 +277,7 @@ Dim newpath As String   ' path to new file
        wbClose.Close
    End If
 
-   oldfilename = GetFullWorkbookName(AppendBasePath(MWB.path) & "\" & MWB.WorkBookName)
+   oldfilename = GetFullWorkbookName(AppendBasePath(MWB.path) & "\" & MWB.WorkbookName)
    LastDir = AppendBasePath(MWB.path)
  '  ChDir LastDir
    NewFileName = FileOpenDialog(LastDir, "Select replacement", "Excell dfiles(*.xls;*.xlsb;*.xlsx;*.xlsm)", "*.xls;*.xlsb;*.xlsx;*.xlsm,All files (*.*),*.*", "Select")
@@ -287,8 +296,13 @@ Dim newpath As String   ' path to new file
 '
 ' if new workbook is already registered, this is an error
 '
-   NewName = DropFileType(GetFilename(NewFileName))
-   newpath = GetPath2(NewFileName)
+    NewName = DropFileType(GetFilename(NewFileName))
+    newpath = GetPath2(NewFileName)
+
+    If GetWorkbookID(NewName) <> 0 And GetWorkbookID(NewName) <> MWB.WorkbookID Then
+       MsgBox "A workbook identity with this name already exists: " & NewName, vbExclamation
+       Exit Sub
+    End If
 
    Set WBNew = CurrentDB.GetNamedWBInfo(NewName)
    If Not WBNew Is Nothing Then
@@ -313,8 +327,8 @@ Dim newpath As String   ' path to new file
 '
 ' ready to replace file with new file
 '
-  ReplaceFile MWB.WorkBookName, NewName, newpath
-  MWB.WorkBookName = NewName
+  ReplaceFile MWB.WorkbookName, NewName, newpath
+  MWB.WorkbookName = NewName
   MWB.path = newpath
   TabStrip1_Click (TabStrip1.value)
   CurrentDB.LoadWorkbookInfo
@@ -322,13 +336,17 @@ Dim newpath As String   ' path to new file
        awb.Password = "Gonsalves"
        awb.Save
   End If
+  ReplacementCompleted = True
 
 CloseTestBook:
     If Usersettings.PasswordOnWB Then
        awb.Password = "Gonsalves"
        awb.Save
     End If
-   awb.Close            ' close the new workbook
+    awb.Close            ' close the new workbook
+    If ReplacementCompleted Then
+       MsgBox GetMsg("M216"), vbInformation, "Nadabas"
+    End If
 
 End Sub
 
@@ -383,12 +401,18 @@ Public Sub ReplaceFile(oldname As String, NewName As String, newpath As String)
 ' filenames are without path and ext. new path is the full path (but no ext).
 '
 Dim Keyname As clsKeyName
+Dim WorkbookID As Long
+Dim WBinfo As clsWorkBookInfo
 
 
             OpenDb
 
+    Set WBinfo = CurrentDB.GetNamedWBInfo(oldname)
+    If Not WBinfo Is Nothing Then WorkbookID = WBinfo.WorkbookID
+
   If oldname <> NewName Then
-      ReplaceOrRename oldname, NewName
+       RenameWorkbookIdentity WorkbookID, NewName
+       ReplaceOrRename WorkbookID, oldname, NewName
    End If
 
 '
@@ -402,8 +426,8 @@ Dim Keyname As clsKeyName
 '
 ' finally update workbooks table
 '
-   DbExecute ("update workbooks set Path = " & InQ(DropBasePath(newpath)) & " where WorkBookName = " & InQ(oldname))
-   DbExecute ("update workbooks set WorkBookName = " & InQ(NewName) & " where WorkBookName = " & InQ(oldname))
+    DbExecute ("update workbooks set Path = " & InQ(DropBasePath(newpath)) & " where WorkbookID = " & CStr(WorkbookID))
+    DbExecute ("update workbooks set WorkBookName = " & InQ(NewName) & " where WorkbookID = " & CStr(WorkbookID))
 
 
    CloseDB
@@ -411,17 +435,18 @@ Dim Keyname As clsKeyName
 End Sub
 
 
-Private Sub renameWorkBook(oldname As String, NewName As String)
+Private Sub renameWorkBook(WorkbookID As Long, oldname As String, NewName As String)
 
 Dim Keyname As clsKeyName
 
 
     OpenDb
 
-    ReplaceOrRename oldname, NewName
+    RenameWorkbookIdentity WorkbookID, NewName
+    ReplaceOrRename WorkbookID, oldname, NewName
 
     DbExecute "Update workbooks set WorkBookName = " & InQ(NewName) & _
-           " where Workbookname = " & InQ(oldname)
+           " where WorkbookID = " & CStr(WorkbookID)
 
      For Each Keyname In CurrentDB.KeyNames
 
@@ -433,29 +458,39 @@ Dim Keyname As clsKeyName
 End Sub
 
 
-Private Sub ReplaceOrRename(oldname As String, NewName As String)
+Private Sub ReplaceOrRename(WorkbookID As Long, oldname As String, NewName As String)
 
     If DBTableExists("Permissions") Then
             DbExecute "Update Permissions set WorkBookName = " & InQ(NewName) & _
-           " where Workbookname = " & InQ(oldname)
+           " where WorkbookID = " & CStr(WorkbookID)
     End If
 
     If DBTableExists("BatchList") Then
        DbExecute "Update BatchList set WorkBookName = " & InQ(NewName) & _
-           " where Workbookname = " & InQ(oldname)
+           " where WorkbookID = " & CStr(WorkbookID)
     End If
 
         If DBTableExists("Documents") Then
         DbExecute "Update Documents set Workbook = " & InQ(NewName) & _
-           " where Workbook = " & InQ(oldname)
+           " where WorkbookID = " & CStr(WorkbookID)
+    End If
+
+    If DBTableExists("Descriptions") Then
+        DbExecute "Update Descriptions set WorkbookName = " & InQ(NewName) & _
+           " where WorkbookID = " & CStr(WorkbookID)
+    End If
+
+    If DBTableExists("DescriptionDimensions") Then
+        DbExecute "Update DescriptionDimensions set WorkbookName = " & InQ(NewName) & _
+           " where WorkbookID = " & CStr(WorkbookID)
     End If
 
 
     If DBTableExists("DataLinks") Then
         DbExecute "Update DataLinks set SourceWB = " & InQ(NewName) & _
-           " where SourceWB = " & InQ(oldname)
+           " where SourceWorkbookID = " & CStr(WorkbookID)
         DbExecute "Update DataLinks set TargetWB = " & InQ(NewName) & _
-           " where TargetWB = " & InQ(oldname)
+           " where TargetWorkbookID = " & CStr(WorkbookID)
     End If
 
 
@@ -474,7 +509,7 @@ Dim sKeyname As String
     References = 0
     For Each Keyname In CurrentDB.KeyNames
        CreateCursor "Select count(*) as antal  from " & Keyname.Keyname & _
-      " where ExcelFile = " & InQ(MWB.WorkBookName)
+      " where ExcelFile = " & InQ(MWB.WorkbookName)
       References = References & GetColumn("Antal")
       CloseCursor
       If References > 0 Then Exit For
@@ -488,17 +523,20 @@ Dim sKeyname As String
 
 
     MWB.DeleteFromDB
-    CurrentDB.WorkBooks.Remove MWB.WorkBookName
+    CurrentDB.WorkBooks.Remove MWB.WorkbookName
 
     On Error Resume Next  ' some tables may not be there. just ignore it
 
-    DbExecute "Delete   from Permissions where WorkBookName = " & InQ(MWB.WorkBookName)
+    DbExecute "Delete from Permissions where WorkbookID = " & CStr(MWB.WorkbookID)
 
-    DbExecute "Delete   from BatchList where WorkBookName = " & InQ(MWB.WorkBookName)
+    DbExecute "Delete from BatchList where WorkbookID = " & CStr(MWB.WorkbookID)
 
-    DoRemoveWorkBookData MWB.WorkBookName
+    DoRemoveWorkBookData MWB.WorkbookName
 
-    DbExecute "Delete  from Documents where  Workbook =" & InQ(MWB.WorkBookName)
+    DbExecute "Delete from Documents where WorkbookID = " & CStr(MWB.WorkbookID)
+
+    DbExecute "Delete from Descriptions where WorkbookID = " & CStr(MWB.WorkbookID)
+    DbExecute "Delete from DescriptionDimensions where WorkbookID = " & CStr(MWB.WorkbookID)
 '
 ' clean up if workbook was last workbook in a batch list and if batch list was
 '
@@ -506,8 +544,8 @@ Dim sKeyname As String
     DbExecute "Delete from Batch2Description where Listname not in (Select Listname from Batch2List)"
     DbExecute "Delete from BatchDescription where Listname not in (Select Listname from BatchList)"
 
-    DbExecute "Delete from DataLinks where SourceWB = " & InQ(MWB.WorkBookName)
-    DbExecute "Delete from DataLinks where TargetWB = " & InQ(MWB.WorkBookName)
+    DbExecute "Delete from DataLinks where SourceWorkbookID = " & CStr(MWB.WorkbookID)
+    DbExecute "Delete from DataLinks where TargetWorkbookID = " & CStr(MWB.WorkbookID)
 
 
     CloseDB

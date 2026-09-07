@@ -73,7 +73,7 @@ Dim sDBDefName As String
 Dim rDBDefRange As Range
 Dim DBLinksRange As Range
 '
-' All areas holding DataDefinitions or TableDefinións and DB links are marked with colored background
+' All areas holding DataDefinitions or TableDefinions and DB links are marked with colored background
 '
 '
     If Not TestDefinitions(ActiveWorkbook, True, True) Then Exit Sub
@@ -144,7 +144,7 @@ Dim rTabDefRange As Range
 Dim sDBDefName As String
 Dim rDBDefRange As Range
 '
-' for sheets holding DataDefinitions or TableDefinións all colors are removed
+' for sheets holding DataDefinitions or TableDefinions all colors are removed
 '
 
 Dim sheetname As String
@@ -319,6 +319,7 @@ Dim awb As Workbook
     Set Areanames = GetAreaNames(awb)
     If Areanames Is Nothing Then
        MsgBox GetMsg("M049"), vbInformation 'Errors in defnitions, correct and retry
+       Exit Sub
     End If
 
 

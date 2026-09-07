@@ -9,7 +9,8 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Public WorkBookName As String
+Public WorkbookID As Long
+Public WorkbookName As String
 Public Title As String
 Public GroupName As String
 Public LastGet As String
@@ -32,12 +33,17 @@ Public FileExists As Boolean    ' used by test all xls only (not from database
 Public Sub SaveInDB()
 
     OpenDb
-    CreateCursor "select * from workbooks where Workbookname = " & InQ(WorkBookName)
+    If WorkbookID = 0 Then
+        WorkbookID = GetOrCreateWorkbookID(WorkBookName)
+    End If
+
+    CreateCursor "select * from workbooks where WorkbookID = " & CStr(WorkbookID)
     If CursorEoF Then
        CursorAddNew
     Else
        CursorEdit
     End If
+    PutColumn "WorkbookID", WorkbookID
     PutColumn "Workbookname", WorkBookName
     PutColumn "Title", Title
     PutColumn "GroupName", GroupName
@@ -54,13 +60,13 @@ End Sub
 
 Public Sub DeleteFromDB()
    OpenDb
-   DbExecute "Delete from workbooks where WorkBookName = " & InQ(WorkBookName)
+   DbExecute "Delete from workbooks where WorkbookID = " & CStr(WorkbookID)
    CloseDB
 End Sub
 
 Public Sub FreeOrReserveinDB()
         OpenDb
-        CreateCursor "select * from workbooks where Workbookname = " & InQ(WorkBookName)
+        CreateCursor "select * from workbooks where WorkbookID = " & CStr(WorkbookID)
     If Not CursorEoF Then
         CursorEdit
         PutColumnNull "ReservedBy", ReservedBy
@@ -74,6 +80,7 @@ Public Sub FreeOrReserveinDB()
 End Sub
 
 Private Sub Class_Initialize()
+   WorkbookID = 0
    WorkBookName = ""
    Title = ""
    LastGet = ""

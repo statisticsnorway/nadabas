@@ -11,10 +11,25 @@ database behaviour is **environment-dependent** and requires Excel testing.
 
 ## Workbook identity and portable paths
 
-NADABAS registers a workbook by its file name without extension and stores its
-folder separately. The source searches supported legacy and current Excel
-extensions when opening a registered workbook. A path beginning with `!` is
-resolved relative to the configured base path.
+NADABAS gives each workbook name a generated numeric `WorkbookID`. The ID is the
+stable relational key; the user-facing file name remains ordinary metadata and
+can use the supported 255-character database field instead of being constrained
+by older 50- or 100-character reference columns. The actual file name is still
+subject to Excel and file-system rules.
+
+The workbook is displayed and located by its file name without extension, with
+its folder stored separately. The source searches supported legacy and current
+Excel extensions when opening a registered workbook. A path beginning with `!`
+is resolved relative to the configured base path.
+
+When an administrator uses **Set base folder**, NADABAS checks every registered
+workbook for a portable `!` or `!\subfolder` path. An absolute path already
+below the selected base folder is converted directly. For a null, empty, old,
+or otherwise non-portable path, NADABAS scans the selected base folder and its
+subfolders for supported Excel files and writes the relative `!` path when a
+workbook name occurs in exactly one folder. No match or matches in multiple
+folders are left unchanged and recorded in the SQL log, because NADABAS cannot
+choose a safe path automatically.
 
 [`FileNameFunctions.bas`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/FileNameFunctions.bas)
 provides the conversion helpers:
@@ -51,6 +66,9 @@ The opening flow:
 5. For ordinary opens, optionally test whether recorded source workbooks have
    newer saved data than the workbook's last-get timestamp.
 
+If no matching file exists at the registered location, NADABAS shows that
+location and asks the user to check whether the file was moved or renamed.
+
 Exact extension selection, file locking, external links, and concurrent-user
 behaviour require runtime tests on supported storage.
 
@@ -64,14 +82,18 @@ base-path policy, and persists workbook metadata.
 
 | Action | Source behaviour |
 |---|---|
-| Rename | Rename the file and update references in `Permissions`, `BatchList`, `Documents`, `DataLinks`, the `Workbooks` object, and key-family provenance columns. |
-| Replace | Select and validate a replacement workbook, update name/path references, and remove data attributed to the old workbook where the form requests that operation. |
+| Rename | Keep the numeric identity stable, rename the file, and synchronize compatibility names in `Permissions`, `BatchList`, `Documents`, descriptions, `DataLinks`, the `Workbooks` object, and key-family provenance columns. |
+| Replace | Warn that the registered workbook and its loaded data will be removed, select and validate a replacement workbook, update name/path references, remove data attributed to the old workbook, and remind the user to load data from the replacement. |
 | Delete | Remove the workbook and related permission, batch, document, data-link, and key-family provenance records. |
 | Edit metadata | Reuse `frmRegisterBook` to update title and group. |
 
 These are multi-object operations implemented as VBA-issued SQL statements.
 Atomicity and rollback are not established by static review; interrupted rename,
 replace, and delete operations need recovery tests.
+
+Existing databases are upgraded when opened. Workbook IDs are backfilled from
+the stored names without deleting workbook data, and Access/SQL conversion copies
+the identity catalog before dependent tables so references keep the same IDs.
 
 `ReserveWorkbook` writes current user, timestamp, and `Status = "Reserved"` to
 the workbook record. `FreeWorkbook` clears the reservation. Other users may be

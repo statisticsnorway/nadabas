@@ -360,7 +360,7 @@ Dim WBinfo As clsWorkBookInfo
          Cells(ActiveRow, 1).value = GroupName
          oldGroupName = GroupName
        End If
-       Cells(ActiveRow, 2).value = WBinfo.WorkBookName
+       Cells(ActiveRow, 2).value = WBinfo.WorkbookName
        Cells(ActiveRow, 3).value = WBinfo.Title
        Cells(ActiveRow, 4).value = WBinfo.LastGet
        Cells(ActiveRow, 5).value = WBinfo.LastPut
@@ -404,9 +404,9 @@ Dim ssql As String
 
     OpenDb
      nullstring = ""
-     ssql = "SELECT Workbooks.GroupName, Workbooks.WorkBookName, Workbooks.Title, Descriptions.DataAreaName, Descriptions.TableName, " & _
+     ssql = "SELECT Workbooks.GroupName, Workbooks.WorkbookName, Workbooks.Title, Descriptions.DataAreaName, Descriptions.TableName, " & _
               "Descriptions.GetPut, Descriptions.Description " & _
-              "FROM Workbooks LEFT JOIN Descriptions ON Workbooks.WorkBookName = Descriptions.WorkbookName "
+              "FROM Workbooks LEFT JOIN Descriptions ON Workbooks.WorkbookID = Descriptions.WorkbookID "
        If DocumentationPutOnly Or DocumentationOnlyWithDescriptions Then
           ssql = ssql & "WHERE "
           sand = ""
@@ -418,7 +418,7 @@ Dim ssql As String
              ssql = ssql & sand & " Descriptions.GetPut = " & InQ("PUTDB")
             End If
        End If
-       ssql = ssql & "ORDER BY Workbooks.GroupName, Workbooks.WorkBookName, Descriptions.GetPut, Descriptions.TableName, " & _
+       ssql = ssql & "ORDER BY Workbooks.GroupName, Workbooks.WorkbookName, Descriptions.GetPut, Descriptions.TableName, " & _
                   "Descriptions.DataAreaName"
      CreateCursor ssql
 
@@ -555,12 +555,12 @@ Dim nullstring As String
 
      OpenDb
      nullstring = ""
-     ssql = "SELECT Workbooks.GroupName, Workbooks.WorkBookName, Descriptions.DataAreaName, Descriptions.TableName, " & _
+     ssql = "SELECT Workbooks.GroupName, Workbooks.WorkbookName, Descriptions.DataAreaName, Descriptions.TableName, " & _
               "Descriptions.GetPut, Descriptions.Description, DescriptionDimensions.DimensionNumber, " & _
               "DescriptionDimensions.DimensionName, DescriptionDimensions.Classification, DescriptionDimensions.ConstantValue " & _
-             "FROM (Workbooks LEFT JOIN Descriptions ON Workbooks.WorkBookName = Descriptions.WorkbookName) " & _
+             "FROM (Workbooks LEFT JOIN Descriptions ON Workbooks.WorkbookID = Descriptions.WorkbookID) " & _
                   "LEFT JOIN DescriptionDimensions ON (Descriptions.DataAreaName = DescriptionDimensions.DataAreaName) " & _
-                  "AND (Descriptions.WorkbookName = DescriptionDimensions.WorkbookName) "
+                  "AND (Descriptions.WorkbookID = DescriptionDimensions.WorkbookID) "
        If DocumentationPutOnly Or DocumentationOnlyWithDescriptions Then
           ssql = ssql & "WHERE "
           sand = ""
@@ -572,7 +572,7 @@ Dim nullstring As String
              ssql = ssql & sand & " Descriptions.GetPut = " & InQ("PUTDB")
             End If
        End If
-       ssql = ssql & " ORDER BY Workbooks.GroupName, Workbooks.WorkBookName, Descriptions.TableName, Descriptions.GetPut," & _
+       ssql = ssql & " ORDER BY Workbooks.GroupName, Workbooks.WorkbookName, Descriptions.TableName, Descriptions.GetPut," & _
                   "Descriptions.DataAreaName, DescriptionDimensions.DimensionNumber"
 
     CreateCursor ssql
@@ -782,12 +782,12 @@ Dim nullstring As String
 
      OpenDb
      nullstring = ""
-     ssql = "SELECT Workbooks.GroupName, Workbooks.WorkBookName, Descriptions.DataAreaName, Descriptions.TableName, " & _
+     ssql = "SELECT Workbooks.GroupName, Workbooks.WorkbookName, Descriptions.DataAreaName, Descriptions.TableName, " & _
               "Descriptions.GetPut, Descriptions.Description, DescriptionDimensions.DimensionNumber, " & _
               "DescriptionDimensions.DimensionName, DescriptionDimensions.Classification, DescriptionDimensions.ConstantValue " & _
-             "FROM (Workbooks LEFT JOIN Descriptions ON Workbooks.WorkBookName = Descriptions.WorkbookName) " & _
+             "FROM (Workbooks LEFT JOIN Descriptions ON Workbooks.WorkbookID = Descriptions.WorkbookID) " & _
                   "LEFT JOIN DescriptionDimensions ON (Descriptions.DataAreaName = DescriptionDimensions.DataAreaName) " & _
-                  "AND (Descriptions.WorkbookName = DescriptionDimensions.WorkbookName) " & _
+                  "AND (Descriptions.WorkbookID = DescriptionDimensions.WorkbookID) " & _
                   " WHERE Descriptions.TableName is not NULL "
 
        If DocumentationPutOnly Or DocumentationOnlyWithDescriptions Then
@@ -801,7 +801,7 @@ Dim nullstring As String
              ssql = ssql & sand & " Descriptions.GetPut = " & InQ("PUTDB")
             End If
        End If
-       ssql = ssql & " ORDER BY Descriptions.TableName, Workbooks.GroupName, Workbooks.WorkBookName,  Descriptions.GetPut," & _
+       ssql = ssql & " ORDER BY Descriptions.TableName, Workbooks.GroupName, Workbooks.WorkbookName,  Descriptions.GetPut," & _
                   "Descriptions.DataAreaName, DescriptionDimensions.DimensionNumber"
 
     If Not CreateCursor(ssql) Then
