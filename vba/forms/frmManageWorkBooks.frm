@@ -256,10 +256,15 @@ Dim wbn As String
 Dim WBNew As clsWorkBookInfo
 Dim NewName As String   ' name without path and extension
 Dim newpath As String   ' path to new file
+Dim ReplacementCompleted As Boolean
 
 
     wbn = tags(lbSheets.ListIndex + 1)
     Set MWB = CurrentDB.WorkBooks(wbn)
+
+    If MsgBox(GetMsg1("M215A", MWB.WorkbookName) & vbCrLf & vbCrLf & _
+           GetMsg("M215B") & vbCrLf & _
+           GetMsg("M215C"), vbYesNo + vbExclamation + vbDefaultButton2, "Nadabas") <> vbYes Then Exit Sub
 
     If Not TestWorkbookNotOpen(MWB.WorkbookName) Then
       If MsgBox(GetMsg("M094"), vbOKCancel) = vbCancel Then Exit Sub 'Workbook to be replaced will be closed
@@ -331,13 +336,17 @@ Dim newpath As String   ' path to new file
        awb.Password = "Gonsalves"
        awb.Save
   End If
+  ReplacementCompleted = True
 
 CloseTestBook:
     If Usersettings.PasswordOnWB Then
        awb.Password = "Gonsalves"
        awb.Save
     End If
-   awb.Close            ' close the new workbook
+    awb.Close            ' close the new workbook
+    If ReplacementCompleted Then
+       MsgBox GetMsg("M216"), vbInformation, "Nadabas"
+    End If
 
 End Sub
 

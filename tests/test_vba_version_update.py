@@ -154,7 +154,7 @@ class VbaVersionUpdateTests(unittest.TestCase):
                 "NADABAS.RibbonUI.CommonGetLabel",
             )
 
-    def test_language_resource_rows_match_signed_release(self):
+    def test_language_resource_rows_are_complete_for_release(self):
         path = REPOSITORY_ROOT / "vba" / "resources" / "office-ui.csv"
         with path.open(encoding="utf-8-sig", newline="") as handle:
             rows = list(csv.DictReader(handle))
@@ -164,6 +164,12 @@ class VbaVersionUpdateTests(unittest.TestCase):
             {
                 ("Ribbon", "btnCheckNadabasVersion", ""),
                 ("Ribbon", "tglVersionCheck", ""),
+                ("Messages", "M117", ""),
+                ("Messages", "M117B", ""),
+                ("Messages", "M215A", ""),
+                ("Messages", "M215B", ""),
+                ("Messages", "M215C", ""),
+                ("Messages", "M216", ""),
             },
         )
         for row in rows:

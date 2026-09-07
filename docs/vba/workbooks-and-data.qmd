@@ -66,6 +66,9 @@ The opening flow:
 5. For ordinary opens, optionally test whether recorded source workbooks have
    newer saved data than the workbook's last-get timestamp.
 
+If no matching file exists at the registered location, NADABAS shows that
+location and asks the user to check whether the file was moved or renamed.
+
 Exact extension selection, file locking, external links, and concurrent-user
 behaviour require runtime tests on supported storage.
 
@@ -80,7 +83,7 @@ base-path policy, and persists workbook metadata.
 | Action | Source behaviour |
 |---|---|
 | Rename | Keep the numeric identity stable, rename the file, and synchronize compatibility names in `Permissions`, `BatchList`, `Documents`, descriptions, `DataLinks`, the `Workbooks` object, and key-family provenance columns. |
-| Replace | Select and validate a replacement workbook, update name/path references, and remove data attributed to the old workbook where the form requests that operation. |
+| Replace | Warn that the registered workbook and its loaded data will be removed, select and validate a replacement workbook, update name/path references, remove data attributed to the old workbook, and remind the user to load data from the replacement. |
 | Delete | Remove the workbook and related permission, batch, document, data-link, and key-family provenance records. |
 | Edit metadata | Reuse `frmRegisterBook` to update title and group. |
 

@@ -170,7 +170,9 @@ Dim wbdata As New clsWBData
    Exit Function
 
 nofile:
-    MsgBox GetMsg1("M117", vbCrLf & WBtoOpen.path & "\" & WBtoOpen.WorkbookName), vbOKOnly 'Cannot locate file
+    MsgBox GetMsg("M117") & vbCrLf & _
+           WBtoOpen.path & "\" & WBtoOpen.WorkbookName & vbCrLf & vbCrLf & _
+           GetMsg("M117B"), vbExclamation, "Nadabas"
     DoOpenWorkbook = 2
     Exit Function
 OpenError:
