@@ -4,29 +4,29 @@ title: Operations and administration
 
 ::: {.callout-important title="Release baseline"}
 The repository source is synchronized with the signed `NADABAS.xlam` supplied
-for release 6.01.003. The signed `.xlam` and `.xlsm` files remain release
+for release 6.02.002. The signed `.xlam` and `.xlsm` files remain release
 artifacts; they are not committed as editable source files.
 :::
 
 ## Installation package
 
-Release 6.01.003 is distributed as a ZIP archive containing two signed Office
+Release 6.02.002 is distributed as a ZIP archive containing two signed Office
 files:
 
-- `NADABAS.6.01.003.xlsm` is the versioned installer that the user opens;
+- `NADABAS.6.02.002.xlsm` is the versioned installer that the user opens;
 - `NADABAS.xlam` is the companion Excel add-in and contains the VBA project.
 
 Keep both files together after extraction. Verify the publisher and validity of
 both Office signatures before opening the installer. The complete release
 manifest, SHA-256 checksums, and installation checklist are recorded in the
-[6.01.003 release and installation record](release-6.01.003.qmd).
+[6.02.002 release and installation record](release-6.02.002.qmd).
 
 ## Automatic version check
 
 `InterfaceVersionUpdate` schedules a check five seconds after NADABAS starts.
 The check is enabled by default and runs at most once every seven days. It sends
 a synchronous, read-only HTTPS `GET` request to GitHub's latest-release API and
-compares the numeric release tag with `CURRENT_VERSION`, which is `6.01.003` in
+compares the numeric release tag with `CURRENT_VERSION`, which is `6.02.002` in
 this release. `Application.OnTime` delays the request until startup has
 completed; it does not make the HTTP request a background operation.
 
@@ -55,7 +55,7 @@ updates the local mirror.
 
 Publish a non-draft, non-prerelease GitHub release in
 `statisticsnorway/nadabas`. Its tag must contain the same numeric value as
-`InterfaceVersionUpdate.CURRENT_VERSION`, for example `v6.01.003`. A Git tag
+`InterfaceVersionUpdate.CURRENT_VERSION`, for example `v6.02.002`. A Git tag
 without a published GitHub release is not returned by the latest-release API.
 
 When a pull request from a branch whose name starts with `release_` is merged
@@ -73,11 +73,11 @@ release; do not add a test-only latest-version override to production source.
 If installation ends with run-time error 53 after a download, close Excel and
 locate the extracted `NADABAS.xlam` file. Right-click the file, select
 **Properties**, select **Unblock** on the **General** tab, and then select
-**Apply** or **OK**. Check the extracted `NADABAS.6.01.003.xlsm` file in the
+**Apply** or **OK**. Check the extracted `NADABAS.6.02.002.xlsm` file in the
 same way when Windows presents the option. Reopen the versioned installer and
 retry.
 
-Release 6.01.003 does not replace VBA's run-time error 53 with localized
+Release 6.02.002 does not replace VBA's run-time error 53 with localized
 unblock instructions, so this recovery procedure must remain available to
 users and support staff. Do not unblock a file unless it came from the official
 NADABAS download channel and both its Office signature and published checksum

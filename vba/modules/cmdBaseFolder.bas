@@ -180,6 +180,8 @@ Private Sub ScanFolderForMissingWorkbooks( _
                         FoundFolders(WorkbookName) = FolderPath
                     End If
                 End If
+            Case Else
+                ' Other file types cannot be NADABAS workbooks.
         End Select
     Next file
 

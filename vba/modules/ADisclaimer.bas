@@ -9,8 +9,10 @@ Attribute VB_Name = "ADisclaimer"
 ' The authors, Statistics Denmark and Statics Sweden take no responsibility
 ' for this product.
 
+' NADABAS is now developed by Jarle Kvile, Statistics Norway.
+
 ' If you have comments or suggestions, please contact the author
-' sne@viv.dk
+' jkv@ssb.no
 '
 ' Please keep reference to the original source if you modify the system
 '

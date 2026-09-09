@@ -69,7 +69,7 @@ offline use, proxy failures, and malformed responses remain silent during the
 automatic check. The last-attempt day, last observed public version, and local
 pre-database preference are cached in the current user's
 `NADABAS\VersionUpdate` registry settings. The About dialog is not part of the
-version-check interface in 6.01.003.
+version-check interface in 6.02.002.
 
 [`auto_close`](https://github.com/statisticsnorway/nadabas/blob/3b4c05386e5a44d05633136ecbcf5dd067f70435/vba/modules/AutoOpenClose.bas#L101)
 cancels a pending delayed release check so Excel does not call back into an

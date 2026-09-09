@@ -92,9 +92,7 @@ Public Function GetWorkbookID(WorkbookName As String) As Long
     End If
 
 CleanExit:
-    On Error Resume Next
-    If Not rs Is Nothing Then rs.Close
-    Set rs = Nothing
+    CloseRecordsetSafely rs
 
 End Function
 
@@ -129,9 +127,7 @@ Public Function GetOrCreateWorkbookID(WorkbookName As String) As Long
     End If
 
 CleanExit:
-    On Error Resume Next
-    If Not rs Is Nothing Then rs.Close
-    Set rs = Nothing
+    CloseRecordsetSafely rs
     Exit Function
 
 InsertFailed:
@@ -188,11 +184,18 @@ Private Function WorkbookIdentityMigrationApplied() As Boolean
     WorkbookIdentityMigrationApplied = Not rs.EOF
 
 CleanExit:
+    CloseRecordsetSafely rs
+
+End Function
+
+Private Sub CloseRecordsetSafely(ByRef rs As ADODB.Recordset)
+
     On Error Resume Next
+
     If Not rs Is Nothing Then rs.Close
     Set rs = Nothing
 
-End Function
+End Sub
 
 Private Sub EnsureWorkbookIDColumns()
 
@@ -219,6 +222,9 @@ Private Sub EnsureLongColumn(TableName As String, ColumnName As String)
         Case accdb, mdb
             DbExecute "ALTER TABLE " & InB(TableName) & " ADD COLUMN " & _
                       InB(ColumnName) & " LONG"
+        Case Else
+            err.Raise vbObjectError + 6103, "EnsureLongColumn", _
+                      "Unsupported database type: " & CStr(CurrentDB.DBType)
     End Select
 
 End Sub
@@ -246,6 +252,9 @@ Private Sub RequireLongColumn(TableName As String, ColumnName As String)
         Case accdb, mdb
             DbExecute "ALTER TABLE " & InB(TableName) & " ALTER COLUMN " & _
                       InB(ColumnName) & " LONG NOT NULL"
+        Case Else
+            err.Raise vbObjectError + 6104, "RequireLongColumn", _
+                      "Unsupported database type: " & CStr(CurrentDB.DBType)
     End Select
 
 End Sub

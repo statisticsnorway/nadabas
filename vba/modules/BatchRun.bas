@@ -278,7 +278,14 @@ Cleanup:
 ErrorDuringBatch:
 
      savererrdescr = err.Number & ":" & err.Description
+     HandleBatchError SI, stage, savererrdescr
+End Sub
+
+Private Sub HandleBatchError(SI As clsWorkBookInfo, stage As String, _
+                             ErrorDescription As String)
+
      On Error Resume Next
+
      Unload dlgRunBatch
      SplashBatchInProgress.Hide
      Unload SplashBatchInProgress
@@ -288,5 +295,7 @@ ErrorDuringBatch:
      BatchRunData.ConsolidationSilent = False
      BatchRunData.BatchIgnoreFormulas = False
 
-     MsgBox GetMsg("M014") & vbCrLf & SI.WorkbookName & vbCrLf & stage & vbCrLf & savererrdescr, vbInformation
+     MsgBox GetMsg("M014") & vbCrLf & SI.WorkbookName & vbCrLf & _
+            stage & vbCrLf & ErrorDescription, vbInformation
+
 End Sub

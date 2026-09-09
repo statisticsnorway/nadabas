@@ -63,6 +63,8 @@ Public Function InQ(s As String) As String
         InQ = "'" & Replace(s, "'", "''") & "'"
       Case accdb, mdb
         InQ = "'" & Replace(s, "'", "''") & "'"
+      Case Else
+        InQ = ""
     End Select
 
 
@@ -96,6 +98,8 @@ Public Function NowFunction() As String
         NowFunction = "getdate()"
       Case accdb, mdb
        NowFunction = "now()"
+      Case Else
+       NowFunction = ""
     End Select
 
 End Function

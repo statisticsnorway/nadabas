@@ -456,6 +456,16 @@ putcolerr:
 
 End Sub
 
+Public Sub PutColumnStrict(colname As String, newval As Variant)
+
+    '
+    ' Use when the caller owns error handling and must know that the write
+    ' failed. The general PutColumn routine keeps its legacy message handling.
+    '
+    rs.fields(colname).value = newval
+
+End Sub
+
 Public Sub PutColumnNull(colname As String, newval As Variant)
 
      On Error GoTo putcolerr

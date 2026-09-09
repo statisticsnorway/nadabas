@@ -120,9 +120,7 @@ ErrorHandler:
     Debug.Print "ERROR in DoSaveDataForLoadAndSave"
     Debug.Print "Error: " & err.Number & " - " & err.Description
 
-    On Error Resume Next
-    Set CurrentDB = BaseDb
-    CloseDB
+    CloseDatabaseSafely True
 
 End Sub
 
@@ -643,8 +641,7 @@ Dim IncludeCell As Boolean
                                    PutColumn scanres.OriginField, GetWorkBookName(awb)
                                    PutColumn scanres.DataAreaField, scanres.DataAreaName
                                    PutColumn scanres.TimeStampField, Now
-                                   On Error GoTo someerror
-                                   CursorUpdate
+                                   If Not TryCursorUpdate Then GoTo quit
                                    SaveStats.CellsPut = SaveStats.CellsPut + 1
                                  End If
                             End If
@@ -653,11 +650,22 @@ Dim IncludeCell As Boolean
                 Next j
             End If
          Next i
-someerror:
-    Debug.Print err.Description
 quit:
-    On Error GoTo 0
     CloseCursor
+
+End Function
+
+Private Function TryCursorUpdate() As Boolean
+
+    On Error GoTo ErrorHandler
+
+    CursorUpdate
+    TryCursorUpdate = True
+    Exit Function
+
+ErrorHandler:
+
+    Debug.Print err.Description
 
 End Function
 
@@ -779,7 +787,15 @@ ErrorHandler:
     Debug.Print "ERROR in DoSaveData"
     Debug.Print "Error: " & err.Number & " - " & err.Description
 
+    CloseDatabaseSafely
+
+End Sub
+
+Private Sub CloseDatabaseSafely(Optional RestoreBaseDatabase As Boolean = False)
+
     On Error Resume Next
+
+    If RestoreBaseDatabase Then Set CurrentDB = BaseDb
     CloseDB
 
 End Sub

@@ -149,6 +149,8 @@ Dim file As String
         End If
         path = DocumentPaths3(ListBox3.ListIndex + 1)
         file = ListBox3.Text
+       Case Else
+          Exit Sub
        End Select
 
       If path = "" Then Exit Sub
@@ -197,6 +199,8 @@ Public Sub SelectListbox(TabID As String)
       ListBox2.Visible = True
     Case "T3":
       ListBox3.Visible = True
+    Case Else:
+      Exit Sub
     End Select
 End Sub
 
