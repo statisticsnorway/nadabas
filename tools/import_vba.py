@@ -39,9 +39,13 @@ COMPONENT_NAME_RE = re.compile(r"[A-Za-z_]\w*\Z", re.ASCII)
 ATTRIBUTE_NAME_RE = re.compile(
     r'^\s*Attribute\s+VB_Name\s*=\s*"([^"]+)"\s*$', re.IGNORECASE | re.MULTILINE
 )
-MODULE_ATTRIBUTE_RE = re.compile(r"^\s*Attribute\s+VB_[A-Za-z0-9_]+\s*=", re.IGNORECASE)
+MODULE_ATTRIBUTE_RE = re.compile(r"^\s*Attribute\s+VB_[A-Z0-9_]+\s*=", re.IGNORECASE)
 ATTRIBUTE_LINE_RE = re.compile(r"^\s*Attribute\s+", re.IGNORECASE)
 FRX_REFERENCE_RE = re.compile(r'"([^"]+\.frx)"\s*:', re.IGNORECASE)
+VBA_TOKEN_RE = re.compile(
+    r'"(?:""|[^"\r\n])*(?:"|$)|\'[^\r\n]*|(?P<identifier>[A-Z_][A-Z0-9_]*)',
+    re.IGNORECASE | re.MULTILINE,
+)
 USERFORM_BEGIN_RE = re.compile(
     r"^\s*Begin\s+(?:VB\.UserForm\b|\{C62A69F0-16DC-11CE-9E98-00AA00574A4F\})(?=\s|$)",
     re.IGNORECASE | re.MULTILINE,
@@ -98,57 +102,11 @@ def _normalise_newlines(text: str) -> str:
 def _normalise_vba_identifier_case(text: str) -> str:
     """Case-fold VBA identifiers without changing strings or comments."""
 
-    normalised: list[str] = []
-    index = 0
-    in_string = False
-    while index < len(text):
-        character = text[index]
+    def normalise_token(match: re.Match[str]) -> str:
+        token = match.group(0)
+        return token.casefold() if match.group("identifier") else token
 
-        if in_string:
-            normalised.append(character)
-            if character == '"':
-                if index + 1 < len(text) and text[index + 1] == '"':
-                    normalised.append(text[index + 1])
-                    index += 1
-                else:
-                    in_string = False
-            index += 1
-            continue
-
-        if character == '"':
-            in_string = True
-            normalised.append(character)
-            index += 1
-            continue
-
-        if character == "'":
-            line_end = text.find("\n", index)
-            if line_end == -1:
-                normalised.append(text[index:])
-                break
-            normalised.append(text[index:line_end])
-            normalised.append("\n")
-            index = line_end + 1
-            continue
-
-        if character.isascii() and (character.isalpha() or character == "_"):
-            token_end = index + 1
-            while token_end < len(text):
-                token_character = text[token_end]
-                if not (
-                    token_character.isascii()
-                    and (token_character.isalnum() or token_character == "_")
-                ):
-                    break
-                token_end += 1
-            normalised.append(text[index:token_end].casefold())
-            index = token_end
-            continue
-
-        normalised.append(character)
-        index += 1
-
-    return "".join(normalised)
+    return VBA_TOKEN_RE.sub(normalise_token, text)
 
 
 def _read_vba_text(path: Path) -> str:
@@ -401,6 +359,52 @@ def _component_by_name(project: Any, name: str) -> Any:
     raise VbaImportError(f"VBA component disappeared during import: {name}")
 
 
+def _code_module_text(code_module: Any) -> str:
+    count = int(code_module.CountOfLines)
+    if not count:
+        return ""
+    return _normalise_newlines(str(code_module.Lines(1, count))).rstrip()
+
+
+def _remove_parentheses_artifact(code_module: Any, actual: str, expected: str) -> str:
+    # Excel can append a standalone "()" after inserting conditional Win32 API
+    # declarations through AddFromString.  Remove only that exact extra line.
+    if not actual.endswith("\n()"):
+        return actual
+    if actual.removesuffix("\n()").rstrip() != expected:
+        return actual
+
+    for line_number in range(int(code_module.CountOfLines), 0, -1):
+        if str(code_module.Lines(line_number, 1)).strip():
+            code_module.DeleteLines(line_number, 1)
+            break
+    return _code_module_text(code_module)
+
+
+def _code_differences(expected: str, actual: str) -> str:
+    expected_lines = expected.splitlines()
+    actual_lines = actual.splitlines()
+    differences: list[str] = []
+    for index in range(max(len(expected_lines), len(actual_lines))):
+        expected_line = (
+            expected_lines[index]
+            if index < len(expected_lines)
+            else "<end of component>"
+        )
+        actual_line = (
+            actual_lines[index] if index < len(actual_lines) else "<end of component>"
+        )
+        if expected_line != actual_line:
+            differences.append(
+                f"line {index + 1}: expected {expected_line!r}, got {actual_line!r}"
+            )
+
+    shown_differences = "; ".join(differences[:10])
+    if len(differences) > 10:
+        shown_differences += f"; and {len(differences) - 10} more"
+    return shown_differences
+
+
 def _replace_component_code(component: Any, code: str) -> None:
     code_module = component.CodeModule
     line_count = int(code_module.CountOfLines)
@@ -410,52 +414,19 @@ def _replace_component_code(component: Any, code: str) -> None:
         code_module.AddFromString(code)
 
     expected = _normalise_newlines(code).rstrip()
-
-    def current_text() -> str:
-        count = int(code_module.CountOfLines)
-        if not count:
-            return ""
-        return _normalise_newlines(str(code_module.Lines(1, count))).rstrip()
-
-    actual = current_text()
-    # Excel can append a standalone "()" after inserting conditional Win32 API
-    # declarations through AddFromString.  Remove only that exact extra line.
-    if actual.endswith("\n()") and actual.removesuffix("\n()").rstrip() == expected:
-        for line_number in range(int(code_module.CountOfLines), 0, -1):
-            if str(code_module.Lines(line_number, 1)).strip():
-                code_module.DeleteLines(line_number, 1)
-                break
-        actual = current_text()
-
-    if actual != expected and _normalise_vba_identifier_case(
+    actual = _remove_parentheses_artifact(
+        code_module, _code_module_text(code_module), expected
+    )
+    identifiers_match = _normalise_vba_identifier_case(
         actual
-    ) != _normalise_vba_identifier_case(expected):
-        expected_lines = expected.splitlines()
-        actual_lines = actual.splitlines()
-        differences: list[str] = []
-        for index in range(max(len(expected_lines), len(actual_lines))):
-            expected_line = (
-                expected_lines[index]
-                if index < len(expected_lines)
-                else "<end of component>"
-            )
-            actual_line = (
-                actual_lines[index]
-                if index < len(actual_lines)
-                else "<end of component>"
-            )
-            if expected_line != actual_line:
-                differences.append(
-                    f"line {index + 1}: expected {expected_line!r}, got {actual_line!r}"
-                )
+    ) == _normalise_vba_identifier_case(expected)
+    if actual == expected or identifiers_match:
+        return
 
-        shown_differences = "; ".join(differences[:10])
-        if len(differences) > 10:
-            shown_differences += f"; and {len(differences) - 10} more"
-        raise VbaImportError(
-            f"Excel changed code while updating component {component.Name!r}. "
-            f"Differences: {shown_differences}."
-        )
+    raise VbaImportError(
+        f"Excel changed code while updating component {component.Name!r}. "
+        f"Differences: {_code_differences(expected, actual)}."
+    )
 
 
 def _apply_actions(project: Any, actions: Sequence[ImportAction]) -> None:
@@ -512,42 +483,46 @@ def _get_unprotected_project(workbook: Any) -> Any:
     return project
 
 
+def _reference_is_broken(reference: Any) -> bool:
+    try:
+        return bool(reference.IsBroken)
+    except Exception:
+        return True
+
+
+def _reference_text(reference: Any, attribute: str, fallback: str) -> str:
+    try:
+        return str(getattr(reference, attribute))
+    except Exception:
+        return fallback
+
+
+def _remove_obsolete_dao_reference(references: Any) -> None:
+    for index in range(int(references.Count), 0, -1):
+        reference = references.Item(index)
+        guid = _reference_text(reference, "Guid", "").upper()
+        if _reference_is_broken(reference) and guid == LEGACY_DAO_36_GUID:
+            references.Remove(reference)
+
+
+def _broken_reference_descriptions(references: Any) -> list[str]:
+    broken_references: list[str] = []
+    for index in range(1, int(references.Count) + 1):
+        reference = references.Item(index)
+        if not _reference_is_broken(reference):
+            continue
+        name = _reference_text(reference, "Name", "<unavailable>")
+        guid = _reference_text(reference, "Guid", "<unavailable>")
+        broken_references.append(f"{name} ({guid})")
+    return broken_references
+
+
 def _repair_and_validate_references(project: Any) -> None:
     """Remove the obsolete DAO 3.6 reference and reject other broken references."""
 
     references = project.References
-    for index in range(int(references.Count), 0, -1):
-        reference = references.Item(index)
-        try:
-            is_broken = bool(reference.IsBroken)
-        except Exception:
-            is_broken = True
-        try:
-            guid = str(reference.Guid).upper()
-        except Exception:
-            guid = ""
-
-        if is_broken and guid == LEGACY_DAO_36_GUID:
-            references.Remove(reference)
-
-    broken_references: list[str] = []
-    for index in range(1, int(references.Count) + 1):
-        reference = references.Item(index)
-        try:
-            is_broken = bool(reference.IsBroken)
-        except Exception:
-            is_broken = True
-        if not is_broken:
-            continue
-        try:
-            name = str(reference.Name)
-        except Exception:
-            name = "<unavailable>"
-        try:
-            guid = str(reference.Guid)
-        except Exception:
-            guid = "<unavailable>"
-        broken_references.append(f"{name} ({guid})")
+    _remove_obsolete_dao_reference(references)
+    broken_references = _broken_reference_descriptions(references)
 
     if broken_references:
         raise VbaImportError(

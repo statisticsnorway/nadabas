@@ -169,6 +169,21 @@ provenance fields are used by conflict, ownership, cleanup, and source-tracking
 flows. They are not a substitute for a documented audit, retention, or
 transaction model.
 
+### Access-to-SQL conversion
+
+During Access-to-SQL conversion, `cmdConvertDB` identifies key-family
+dimensions by schema position: every field before `Value` is a dimension. A
+name such as `Status`, `Changed`, or `Locked` is therefore valid for a
+dimension and is not treated as metadata merely because of its name.
+
+Before copying the first row of any table, the converter verifies that the SQL
+target contains every source column. A mismatch reports the table and missing
+columns and stops that table before rows are copied. Column assignment errors
+are propagated to the conversion error handler instead of being reduced to a
+message that allows conversion to continue. A failed conversion may still
+leave tables copied earlier in the target database; discard or recreate that
+target before retrying. The Access source is not changed by the copy workflow.
+
 ## Schema and SQL review priorities
 
 1. Export schemas from representative non-production Access and SQL Server

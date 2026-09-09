@@ -31,9 +31,9 @@ class VbaVersionUpdateTests(unittest.TestCase):
             REPOSITORY_ROOT / "vba" / "modules" / "DbCreateTables.bas"
         ).read_text(encoding="utf-8-sig")
 
-    def test_release_source_is_version_6_02_001_without_test_override(self):
+    def test_release_source_is_version_6_02_002_without_test_override(self):
         self.assertIn(
-            'Private Const CURRENT_VERSION As String = "6.02.001"',
+            'Private Const CURRENT_VERSION As String = "6.02.002"',
             self.update_source,
         )
         self.assertIn(

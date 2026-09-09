@@ -27,10 +27,10 @@ reviewable source of truth.
 
 - Download and install NADABAS from the
   [documents and downloads page](https://nadabas.net/nadabas/documents-and-downloads).
-- For release 6.01.003, keep the two extracted, signed files together and start
-  the installation from `NADABAS.6.01.003.xlsm`. The companion
+- For release 6.02.002, keep the two extracted, signed files together and start
+  the installation from `NADABAS.6.02.002.xlsm`. The companion
   `NADABAS.xlam` is the add-in that contains the VBA project. See the
-  [6.01.003 release and installation record](docs/operations/release-6.01.003.qmd)
+  [6.02.002 release and installation record](docs/operations/release-6.02.002.qmd)
   for checksums, signature checks, and the clean-install procedure.
 - Read the [NADABAS overview](https://sites.google.com/nadabas.net/nadabas/overview).
 - Follow the [tutorials and training resources](https://sites.google.com/nadabas.net/nadabas/nadabas-resources)

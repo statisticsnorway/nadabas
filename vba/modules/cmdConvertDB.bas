@@ -196,6 +196,10 @@ Private Function DatabaseAlreadyRegistered(dbToFind As clsDB) As Boolean
 
                     End If
 
+                Case Else
+
+                    DatabaseAlreadyRegistered = False
+
             End Select
 
         End If
@@ -546,30 +550,37 @@ Private Function CreateAndCopyTable(Keyname As String) As Boolean
     ' Build list of dimension fields.
     '
     ' Important:
+    ' - NADABAS defines dimensions as every field before Value. This is also
+    '   the rule used by clsDB.LoadDimensions.
+    ' - A dimension may therefore have a name such as Status, Changed or
+    '   Locked. Its position, rather than its name, determines its role.
     ' - Value is stored separately because CreateNewKeyFam needs valuetype.
-    ' - Standard NADABAS data columns are skipped because CreateNewKeyFam
-    '   normally adds them itself.
-    ' - This avoids duplicate SQL columns such as Comment or DataArea.
+    ' - Fields after Value are data/metadata columns. CreateNewKeyFam adds the
+    '   supported standard columns itself.
     '
     For Each FN In keyf.TableDefinition
 
-        If UCase$(Trim$(FN.name)) = "VALUE" Then
+        If ValueFN Is Nothing Then
 
-            Set ValueFN = FN
-            Debug.Print "  Found Value field: " & FN.name
+            If UCase$(Trim$(FN.name)) = "VALUE" Then
 
-        ElseIf IsStandardDataColumn(FN.name) Then
+                Set ValueFN = FN
+                Debug.Print "  Found Value field: " & FN.name
 
-            Debug.Print "  Skipped standard data column: " & FN.name
+            ElseIf FieldAlreadyInCollection(xclsFieldNames, FN.name) Then
 
-        ElseIf FieldAlreadyInCollection(xclsFieldNames, FN.name) Then
+                Debug.Print "  Skipped duplicate dimension field: " & FN.name
 
-            Debug.Print "  Skipped duplicate dimension field: " & FN.name
+            Else
+
+                xclsFieldNames.Add FN
+                Debug.Print "  Added dimension field: " & FN.name
+
+            End If
 
         Else
 
-            xclsFieldNames.Add FN
-            Debug.Print "  Added dimension field: " & FN.name
+            Debug.Print "  Found data/metadata field after Value: " & FN.name
 
         End If
 
@@ -716,6 +727,13 @@ Private Function CopyTable(sTable As String) As Boolean
     CreateCursor "Select * from " & InB(sTable)
 
     '
+    ' Fail before copying the first row if the generated target table cannot
+    ' accept every source column. This prevents a partially copied table and
+    ' reports schema drift independently of whether the source contains rows.
+    '
+    If Not CopyCursorSchemasAreCompatible(sTable) Then GoTo CleanExit
+
+    '
     ' Copy rows
     '
     Set CurrentDB = BaseDb
@@ -731,7 +749,7 @@ Private Function CopyTable(sTable As String) As Boolean
         For Each f In qf
 
             On Error GoTo PutColumnError
-            PutColumn f.name, f.value
+            PutColumnStrict f.name, f.value
             On Error GoTo ErrorHandler
 
         Next f
@@ -790,6 +808,88 @@ ErrorHandler:
     Debug.Print "Error: " & err.Number & " - " & err.Description
 
     Resume CleanExit
+
+End Function
+
+Private Function CopyCursorSchemasAreCompatible(sTable As String) As Boolean
+
+    Dim sourceFields As Object
+    Dim targetFields As Object
+    Dim sourceField As Variant
+    Dim missingColumns As String
+
+    On Error GoTo ErrorHandler
+
+    CopyCursorSchemasAreCompatible = False
+
+    Set CurrentDB = BaseDb
+    Set sourceFields = GetAllColumnsGet
+
+    Set CurrentDB = TargetDB
+    Set targetFields = GetAllColumns
+
+    For Each sourceField In sourceFields
+
+        If Not RecordsetHasField(targetFields, CStr(sourceField.name)) Then
+
+            If missingColumns <> "" Then missingColumns = missingColumns & ", "
+            missingColumns = missingColumns & sourceField.name
+
+        End If
+
+    Next sourceField
+
+    If missingColumns <> "" Then
+
+        MsgBox "The SQL target table does not match the Access source table:" & vbCrLf & _
+               sTable & vbCrLf & vbCrLf & _
+               "Missing SQL column(s): " & missingColumns & vbCrLf & vbCrLf & _
+               "No rows were copied for this table. The Access database was not changed.", _
+               vbCritical, "NADABAS conversion"
+
+        Debug.Print "ERROR: Target table is missing source columns."
+        Debug.Print "Table: " & sTable
+        Debug.Print "Missing SQL columns: " & missingColumns
+
+        GoTo CleanExit
+
+    End If
+
+    CopyCursorSchemasAreCompatible = True
+
+CleanExit:
+
+    Set CurrentDB = BaseDb
+    Exit Function
+
+ErrorHandler:
+
+    MsgBox "Could not compare source and target columns for table:" & vbCrLf & _
+           sTable & vbCrLf & vbCrLf & _
+           "Error " & err.Number & ": " & err.Description, _
+           vbCritical, "NADABAS conversion"
+
+    Debug.Print "ERROR in CopyCursorSchemasAreCompatible"
+    Debug.Print "Table: " & sTable
+    Debug.Print "Error: " & err.Number & " - " & err.Description
+
+    Resume CleanExit
+
+End Function
+
+Private Function RecordsetHasField(recordsetFields As Object, fieldName As String) As Boolean
+
+    Dim recordsetField As Object
+
+    On Error GoTo FieldNotFound
+
+    Set recordsetField = recordsetFields(fieldName)
+    RecordsetHasField = True
+    Exit Function
+
+FieldNotFound:
+
+    RecordsetHasField = False
 
 End Function
 
@@ -873,31 +973,6 @@ Private Function NzForDebug(v As Variant) As String
 
 ErrorHandler:
     NzForDebug = "<Unable to convert value>"
-
-End Function
-
-Private Function IsStandardDataColumn(ColumnName As String) As Boolean
-
-    Select Case UCase$(Trim$(ColumnName))
-
-        Case "VALUE", _
-             "COMMENT", _
-             "FORMULA", _
-             "USERNAME", _
-             "EXCELFILE", _
-             "TIMESTAMP", _
-             "DATAAREA", _
-             "STATUS", _
-             "CHANGED", _
-             "LOCKED"
-
-            IsStandardDataColumn = True
-
-        Case Else
-
-            IsStandardDataColumn = False
-
-    End Select
 
 End Function
 
@@ -1038,8 +1113,15 @@ ErrorHandler:
     Debug.Print "ERROR in GetSourceBasePathForSqlCopy"
     Debug.Print "Error: " & err.Number & " - " & err.Description
 
+    GetSourceBasePathForSqlCopy = GetDatabaseFolderSafely
+
+End Function
+
+Private Function GetDatabaseFolderSafely() As String
+
     On Error Resume Next
-    GetSourceBasePathForSqlCopy = DropBackSlash(GetPath(BaseDb.DBFullName))
+
+    GetDatabaseFolderSafely = DropBackSlash(GetPath(BaseDb.DBFullName))
 
 End Function
 

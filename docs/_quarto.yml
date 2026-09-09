@@ -57,6 +57,7 @@ book:
     - part: "Operations"
       chapters:
         - operations/index.qmd
+        - operations/release-6.02.002.qmd
         - operations/release-6.01.003.qmd
     - part: "Architecture decisions"
       chapters:

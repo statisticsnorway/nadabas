@@ -1012,14 +1012,15 @@ Public Function DBTableExists(sTablename As String) As Boolean
             DBTableExists = Not ob Is Nothing
             On Error GoTo 0
 
+        Case Else
+
+            DBTableExists = False
+
     End Select
 
 CleanExit:
 
-    On Error Resume Next
-
-    If Not rs Is Nothing Then rs.Close
-    Set rs = Nothing
+    CloseRecordsetSafely rs
     Set ob = Nothing
 
     Exit Function
@@ -1061,12 +1062,12 @@ Public Function DBColumnExists(TableName As String, ColumnName As String) As Boo
             Set ob = CurrentDB.DBCat.Tables(TableName).Columns(ColumnName)
             DBColumnExists = Not ob Is Nothing
             On Error GoTo 0
+        Case Else
+            DBColumnExists = False
     End Select
 
 CleanExit:
-    On Error Resume Next
-    If Not rs Is Nothing Then rs.Close
-    Set rs = Nothing
+    CloseRecordsetSafely rs
     Set ob = Nothing
 
 End Function
@@ -1097,11 +1098,20 @@ Public Function DBColumnSize(TableName As String, ColumnName As String) As Long
             CurrentDB.DBCat.Tables.Refresh
             CurrentDB.DBCat.Tables(TableName).Columns.Refresh
             DBColumnSize = CurrentDB.DBCat.Tables(TableName).Columns(ColumnName).DefinedSize
+        Case Else
+            DBColumnSize = 0
     End Select
 
 CleanExit:
+    CloseRecordsetSafely rs
+
+End Function
+
+Private Sub CloseRecordsetSafely(ByRef rs As ADODB.Recordset)
+
     On Error Resume Next
+
     If Not rs Is Nothing Then rs.Close
     Set rs = Nothing
 
-End Function
+End Sub

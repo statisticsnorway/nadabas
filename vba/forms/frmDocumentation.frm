@@ -1002,9 +1002,11 @@ Dim wb As clsWB
               Cells(ActiveRow + 3, 2).value = "Valuetype:Text"
           Case ADOX.DataTypeEnum.adDouble:
               Cells(ActiveRow + 3, 2).value = "Valuetype:Double"
-          Case ADOX.DataTypeEnum.adSingle:
-            Cells(ActiveRow + 3, 2).value = "Valuetype:Single"
-     End Select
+           Case ADOX.DataTypeEnum.adSingle:
+             Cells(ActiveRow + 3, 2).value = "Valuetype:Single"
+          Case Else:
+             Cells(ActiveRow + 3, 2).value = "Valuetype:Unknown"
+      End Select
 
     Range(Cells(ActiveRow, 2), Cells(ActiveRow + 3, ActiveCol - 1)).Select
        With Selection

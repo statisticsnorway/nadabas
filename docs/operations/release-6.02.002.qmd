@@ -1,0 +1,84 @@
+---
+title: Release 6.02.002 installation and source record
+---
+
+::: {.callout-warning title="Release candidate"}
+The source and documentation are prepared for NADABAS 6.02.002. The final
+signed package, file sizes, and SHA-256 checksums must be inserted below and
+verified before this release is merged or published.
+:::
+
+## Release scope
+
+Release 6.02.002 is a corrective update to 6.02.001. It includes:
+
+- Access-to-SQL conversion of key families whose dimensions have names such as
+  `Status`, `Changed`, or `Locked`;
+- a source/target column check before table rows are copied;
+- propagation of field-assignment errors so conversion cannot report success
+  after a failed write;
+- updated About information and maintainer contact details; and
+- defensive error-handling and maintainability fixes included in the reviewed
+  source.
+
+The key-family rule is positional: every column before `Value` is a dimension.
+If a source column after `Value` is absent from the generated SQL table, the
+conversion stops before copying rows from that table and identifies the
+missing column. A failed or partially created SQL target must not be used.
+
+## Package manifest
+
+| File | Purpose | Size (bytes) | SHA-256 |
+|---|---|---:|---|
+| `NADABAS.6.02.002.zip` | User download containing both signed Office files | Pending final signing | Pending final signing |
+| `NADABAS.xlam` | Excel add-in and source of the release VBA project | Pending final signing | Pending final signing |
+| `NADABAS.6.02.002.xlsm` | Versioned installer opened by the user | Pending final signing | Pending final signing |
+
+The ZIP must store the two Office files at its root. A checksum proves byte
+identity with the reviewed artifact; it does not establish publisher identity.
+Excel must report a valid, trusted digital signature for both Office files.
+Signature validity must be checked again on the final uploaded release asset.
+
+## Required release checks
+
+1. Confirm that `InterfaceVersionUpdate.CURRENT_VERSION` is `6.02.002` and that
+   About displays the same version.
+2. Run the automated test suite, pre-commit checks, VBA security scan, and
+   Quarto documentation render.
+3. Convert a representative non-production Access database containing a
+   key-family dimension named `Status` whose values include `N1`.
+4. Confirm that the SQL table contains `Status`, that its values and row count
+   match Access, and that the unique dimension index is present.
+5. Exercise a deliberate source/target schema mismatch and confirm that the
+   converter stops before copying rows for that table.
+6. Perform a clean installation from `NADABAS.6.02.002.xlsm`, reopen Excel,
+   verify the NADABAS ribbon, and open About.
+7. Sign the final XLAM and XLSM, create the final ZIP, verify both signatures,
+   and replace the pending manifest values above.
+
+## Installation
+
+1. Close every Excel window.
+2. Download `NADABAS.6.02.002.zip` from the official NADABAS channel.
+3. Verify the ZIP checksum recorded above.
+4. Extract `NADABAS.xlam` and `NADABAS.6.02.002.xlsm` to the same folder.
+5. Verify the publisher and signature status of both extracted Office files.
+6. Open `NADABAS.6.02.002.xlsm` and follow its installation action.
+7. Close and reopen Excel, verify that the NADABAS ribbon loads, and confirm
+   that About displays version 6.02.002.
+
+If Windows marks the downloaded files as blocked, follow the recovery guidance
+in [Operations and administration](index.qmd#a-downloaded-add-in-is-blocked-by-windows)
+only after verifying the official source, signatures, and checksums.
+
+## Source and rollback
+
+The exported files below `vba/` are the source of truth. The signed binaries
+are release evidence and are not committed as editable source files. Editing a
+signed Office file invalidates its signature; rebuilds must be tested and
+signed again.
+
+Rollback consists of discarding the failed SQL target and reinstalling the
+previously verified 6.02.001 package. The Access source should be retained
+unchanged until the converted SQL database has passed schema, row-count, and
+application-level checks.

@@ -219,7 +219,7 @@ Dim wbn As String
 '
 ' now renames anywhere in db as appropriate
 '
-       renameWorkBook MWB.WorkbookID, oldname, NewName
+       RenameWorkbook MWB.WorkbookID, oldname, NewName
 '
 ' now change in listbox
 '
@@ -269,7 +269,7 @@ Dim ReplacementCompleted As Boolean
     If Not TestWorkbookNotOpen(MWB.WorkbookName) Then
       If MsgBox(GetMsg("M094"), vbOKCancel) = vbCancel Then Exit Sub 'Workbook to be replaced will be closed
       For Each wb In Application.WorkBooks
-          If UCase(DropFileType(wb.name)) = UCase(MWB.WorkbookName) Then
+          If UCase$(DropFileType(wb.name)) = UCase$(MWB.WorkbookName) Then
              Set wbClose = wb
              Exit For
           End If
@@ -435,7 +435,7 @@ Dim WBinfo As clsWorkBookInfo
 End Sub
 
 
-Private Sub renameWorkBook(WorkbookID As Long, oldname As String, NewName As String)
+Private Sub RenameWorkbook(WorkbookID As Long, oldname As String, NewName As String)
 
 Dim Keyname As clsKeyName
 
