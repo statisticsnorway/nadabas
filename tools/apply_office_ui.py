@@ -37,6 +37,7 @@ class ResourceRow:
     english: str
     french: str
     portuguese: str
+    indonesian: str
 
 
 def read_resource_rows(path: str | Path) -> tuple[ResourceRow, ...]:
@@ -53,6 +54,7 @@ def read_resource_rows(path: str | Path) -> tuple[ResourceRow, ...]:
             "english",
             "french",
             "portuguese",
+            "indonesian",
         }
         if set(reader.fieldnames or ()) != expected:
             raise OfficeUiError(
@@ -142,6 +144,7 @@ def _apply_language_resources(workbook_path: Path, rows: Sequence[ResourceRow]) 
             sheet.Cells(row_number, 3).Value2 = resource.english
             sheet.Cells(row_number, 4).Value2 = resource.french
             sheet.Cells(row_number, 5).Value2 = resource.portuguese
+            sheet.Cells(row_number, 6).Value2 = resource.indonesian
 
         workbook.Save()
         workbook.Close(SaveChanges=False)

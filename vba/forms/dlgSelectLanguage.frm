@@ -1,10 +1,10 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} dlgSelectLanguage
    Caption         =   "Select Language"
-   ClientHeight    =   3024
+   ClientHeight    =   2955
    ClientLeft      =   120
    ClientTop       =   465
-   ClientWidth     =   3390
+   ClientWidth     =   4215
    OleObjectBlob   =   "dlgSelectLanguage.frx":0000
    StartUpPosition =   1  'CenterOwner
 End
@@ -18,7 +18,6 @@ Dim lancode As Integer
 Private Sub OptionButton1_Click()
 lancode = 3
 End Sub
-
 Private Sub OptionButton2_Click()
   lancode = 4
 End Sub
@@ -27,6 +26,10 @@ Private Sub OptionButton3_Click()
     lancode = 5
 End Sub
 
+
+Private Sub OptionButton4_Click()
+    lancode = 6
+End Sub
 
 Private Sub UserForm_Initialize()
     DropClose Me               ' get rid of Close button on frame

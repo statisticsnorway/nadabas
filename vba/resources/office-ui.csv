@@ -1,9 +1,20 @@
-sheet,key,control,english,french,portuguese
-Ribbon,btnCheckNadabasVersion,,Check for updates,Rechercher des mises à jour,Verificar atualizações
-Ribbon,tglVersionCheck,,Check automatically for new NADABAS versions,Rechercher automatiquement les nouvelles versions de NADABAS,Verificar automaticamente novas versões do NADABAS
-Messages,M117,,The workbook could not be found:,Le classeur est introuvable :,Não foi possível localizar o livro:
-Messages,M117B,,Check whether the file has been moved or renamed.,Vérifiez si le fichier a été déplacé ou renommé.,Verifique se o ficheiro foi movido ou renomeado.
-Messages,M215A,,Replace %1 in NADABAS?,Remplacer %1 dans NADABAS ?,Substituir %1 no NADABAS?
-Messages,M215B,,The registered workbook and all data loaded from it will be removed from NADABAS before the replacement is registered.,Le classeur enregistré et toutes les données qui en ont été chargées seront supprimés de NADABAS avant l’enregistrement du classeur de remplacement.,O livro registado e todos os dados carregados a partir dele serão removidos do NADABAS antes de o livro de substituição ser registado.
-Messages,M215C,,The workbook file itself will not be deleted. Continue?,Le fichier du classeur lui-même ne sera pas supprimé. Continuer ?,O próprio ficheiro do livro não será eliminado. Continuar?
-Messages,M216,,The workbook has been replaced. Load the data from the new workbook into NADABAS again.,Le classeur a été remplacé. Rechargez dans NADABAS les données du nouveau classeur.,O livro foi substituído. Carregue novamente no NADABAS os dados do novo livro.
+sheet,key,control,english,french,portuguese,indonesian
+Ribbon,btnCheckNadabasVersion,,Check for updates,Rechercher des mises à jour,Verificar atualizações,Periksa Pembaruan
+Ribbon,tglVersionCheck,,Check automatically for new NADABAS versions,Rechercher automatiquement les nouvelles versions de NADABAS,Verificar automaticamente novas versões do NADABAS,Periksa Versi NADABAS Baru Secara Otomatis
+Forms,frmKeyFamily,cmdAddDimension,Add dimension,Ajouter une dimension,Adicionar dimensão,Tambah dimensi
+Forms,frmKeyFamily,cmdRemoveDimension,Remove dimension,Supprimer la dimension,Remover dimensão,Hapus dimensi
+Forms,frmKeyFamily,cmdRenameDimension,Rename dimension,Renommer la dimension,Renomear dimensão,Ganti nama dimensi
+Forms,frmKeyFamily,cmdChangeDimensionLength,Change length,Modifier la longueur,Alterar comprimento,Ubah panjang
+Forms,frmKeyFamily,cmdApplySchemaChanges,Apply DB changes,Appliquer les modifications DB,Aplicar alterações na BD,Terapkan perubahan DB
+Forms,frmKeyFamily,cmdPrepareWorkbookMigration,Prepare workbook,Préparer le classeur,Preparar livro,Siapkan workbook
+Forms,frmKeyFamily,cmdApplyWorkbookMigration,Activate DBDef draft,Activer le brouillon DBDef,Ativar rascunho DBDef,Aktifkan draf DBDef
+Forms,frmKeyFamily,lblKeyFamilySection,1. Select key family,1. Sélectionner la famille de clés,1. Selecionar família de chaves,1. Pilih keluarga kunci
+Forms,frmKeyFamily,lblDimensionsSection,2. Edit proposed dimensions,2. Modifier les dimensions proposées,2. Editar dimensões propostas,2. Ubah dimensi yang diusulkan
+Forms,frmKeyFamily,lblWorkbooksSection,3. Affected workbooks,3. Classeurs concernés,3. Livros afetados,3. Workbook yang terdampak
+Forms,frmKeyFamily,lblMaintenanceSection,Database maintenance,Maintenance de la base de données,Manutenção da base de dados,Pemeliharaan database
+Messages,M117,,The workbook could not be found:,Le classeur est introuvable :,Não foi possível localizar o livro:,Workbook tidak dapat ditemukan:
+Messages,M117B,,Check whether the file has been moved or renamed.,Vérifiez si le fichier a été déplacé ou renommé.,Verifique se o ficheiro foi movido ou renomeado.,Periksa apakah file telah dipindahkan atau diganti namanya.
+Messages,M215A,,Replace %1 in NADABAS?,Remplacer %1 dans NADABAS ?,Substituir %1 no NADABAS?,Ganti %1 di NADABAS?
+Messages,M215B,,The registered workbook and all data loaded from it will be removed from NADABAS before the replacement is registered.,Le classeur enregistré et toutes les données qui en ont été chargées seront supprimés de NADABAS avant l’enregistrement du classeur de remplacement.,O livro registado e todos os dados carregados a partir dele serão removidos do NADABAS antes de o livro de substituição ser registado.,Workbook yang terdaftar dan seluruh data yang dimuat darinya akan dihapus dari NADABAS sebelum penggantinya didaftarkan.
+Messages,M215C,,The workbook file itself will not be deleted. Continue?,Le fichier du classeur lui-même ne sera pas supprimé. Continuer ?,O próprio ficheiro do livro não será eliminado. Continuar?,File workbook itu sendiri tidak akan dihapus. Lanjutkan?
+Messages,M216,,The workbook has been replaced. Load the data from the new workbook into NADABAS again.,Le classeur a été remplacé. Rechargez dans NADABAS les données du nouveau classeur.,O livro foi substituído. Carregue novamente no NADABAS os dados do novo livro.,Workbook telah diganti. Muat kembali data dari workbook baru ke NADABAS.
