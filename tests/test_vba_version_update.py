@@ -118,9 +118,7 @@ class VbaVersionUpdateTests(unittest.TestCase):
         self.assertNotIn('request.Open "POST"', self.update_source)
 
     def test_indonesian_language_uses_resource_column_6(self):
-        self.assertIn(
-            "Private Sub OptionButton4_Click()", self.language_dialog_source
-        )
+        self.assertIn("Private Sub OptionButton4_Click()", self.language_dialog_source)
         self.assertIn("lancode = 6", self.language_dialog_source)
 
     def test_about_dialog_shows_version_but_is_not_an_update_control(self):

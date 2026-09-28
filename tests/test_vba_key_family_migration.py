@@ -8,9 +8,9 @@ MIGRATION = (ROOT / "vba" / "modules" / "KeyFamilyMigration.bas").read_text(
 KEY_FAMILY_FORM = (ROOT / "vba" / "forms" / "frmKeyFamily.frm").read_text(
     encoding="utf-8-sig"
 )
-BUTTON_CLASS = (
-    ROOT / "vba" / "classes" / "clsKeyFamilyMigrationButton.cls"
-).read_text(encoding="utf-8-sig")
+BUTTON_CLASS = (ROOT / "vba" / "classes" / "clsKeyFamilyMigrationButton.cls").read_text(
+    encoding="utf-8-sig"
+)
 DB_CREATE = (ROOT / "vba" / "modules" / "DbCreateTables.bas").read_text(
     encoding="utf-8-sig"
 )
@@ -102,7 +102,7 @@ def test_schema_buttons_edit_a_draft_not_the_database():
         assert "DropTable" not in draft_editor
 
     review = procedure(MIGRATION, "Public Sub ReviewSchemaDraft", "End Sub")
-    assert 'SELECT COUNT(*) AS RowCount FROM' in review
+    assert "SELECT COUNT(*) AS RowCount FROM" in review
     assert "WorkbooksUsingKeyFamily.GetWbForKey" in review
     assert "The database has not been changed." in review
 
@@ -123,9 +123,7 @@ def test_apply_schema_requires_confirmation_before_database_changes():
 
     confirmation = apply_schema.index('"Apply key-family schema"')
     create_replacement = apply_schema.index("CreateNewKeyFam(")
-    rename_original = apply_schema.index(
-        "KeyFamilyName, BackupTableName, ErrorMessage"
-    )
+    rename_original = apply_schema.index("KeyFamilyName, BackupTableName, ErrorMessage")
     promote_replacement = apply_schema.index(
         "TemporaryTableName, KeyFamilyName, ErrorMessage"
     )
@@ -162,9 +160,7 @@ def test_apply_schema_keeps_recovery_table_and_has_reverse_order_rollback():
     move_replacement_aside = rollback.index(
         "KeyFamilyName, TemporaryTableName, RollbackMessage"
     )
-    restore_original = rollback.index(
-        "BackupTableName, KeyFamilyName, RollbackMessage"
-    )
+    restore_original = rollback.index("BackupTableName, KeyFamilyName, RollbackMessage")
     assert move_replacement_aside < restore_original
     assert '"No table was deleted.' in apply_schema
 
@@ -178,11 +174,13 @@ def test_table_rename_supports_access_and_schema_qualified_sql_server():
 
     assert "Case Sqlexpress" in rename_table
     assert 'SqlString("dbo." & OldTableName)' in rename_table
-    assert 'SqlString(NewTableName)' in rename_table
-    assert '", N\'OBJECT\'"' in rename_table
+    assert "SqlString(NewTableName)" in rename_table
+    assert "\", N'OBJECT'\"" in rename_table
     assert "Case accdb, mdb" in rename_table
     assert "CurrentDB.DBCat.Tables(OldTableName).name = NewTableName" in rename_table
-    assert "DBTableExists(OldTableName) Or Not DBTableExists(NewTableName)" in rename_table
+    assert (
+        "DBTableExists(OldTableName) Or Not DBTableExists(NewTableName)" in rename_table
+    )
 
 
 def test_workbook_migration_prepares_copies_without_switching_dblinks():
@@ -227,12 +225,16 @@ def test_workbook_preflight_targets_the_first_draft_error_before_dblinks():
     assert '" still contains "' in preflight
     assert "Set FirstErrorCell = DefinitionRange.Cells(j, 2)" in preflight
     assert "Application.Goto FirstDraftError, True" in apply_workbook
-    before_confirmation = apply_workbook[: apply_workbook.index('"Activate DBDef draft"')]
+    before_confirmation = apply_workbook[
+        : apply_workbook.index('"Activate DBDef draft"')
+    ]
     assert "DBLinksRange.Cells(k, 3).value =" not in before_confirmation
 
 
 def test_key_family_form_uses_staged_three_column_layout():
-    layout = procedure(KEY_FAMILY_FORM, "Private Sub ConfigureKeyFamilyLayout", "End Sub")
+    layout = procedure(
+        KEY_FAMILY_FORM, "Private Sub ConfigureKeyFamilyLayout", "End Sub"
+    )
 
     for section in (
         "lblKeyFamilySection",
@@ -243,4 +245,4 @@ def test_key_family_form_uses_staged_three_column_layout():
         assert section in layout
     assert "cmdModify.Visible = False" in KEY_FAMILY_FORM
     assert "cmdDelete.BackColor" in layout
-    assert '.Merge' not in layout
+    assert ".Merge" not in layout
