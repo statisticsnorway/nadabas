@@ -24,6 +24,9 @@ class VbaVersionUpdateTests(unittest.TestCase):
         cls.about_source = (
             REPOSITORY_ROOT / "vba" / "forms" / "dlgAbout.frm"
         ).read_text(encoding="utf-8-sig")
+        cls.language_dialog_source = (
+            REPOSITORY_ROOT / "vba" / "forms" / "dlgSelectLanguage.frm"
+        ).read_text(encoding="utf-8-sig")
         cls.settings_source = (
             REPOSITORY_ROOT / "vba" / "classes" / "clsUserSettings.cls"
         ).read_text(encoding="utf-8-sig")
@@ -31,9 +34,9 @@ class VbaVersionUpdateTests(unittest.TestCase):
             REPOSITORY_ROOT / "vba" / "modules" / "DbCreateTables.bas"
         ).read_text(encoding="utf-8-sig")
 
-    def test_release_source_is_version_6_02_002_without_test_override(self):
+    def test_release_source_is_version_6_02_004_without_test_override(self):
         self.assertIn(
-            'Private Const CURRENT_VERSION As String = "6.02.002"',
+            'Private Const CURRENT_VERSION As String = "6.02.004"',
             self.update_source,
         )
         self.assertIn(
@@ -102,6 +105,10 @@ class VbaVersionUpdateTests(unittest.TestCase):
         self.assertIn("Private Sub ShowUpdateAvailable", self.update_source)
         self.assertIn("MsgBox(messageText, vbYesNo + vbInformation", self.update_source)
         self.assertIn("ThisWorkbook.FollowHyperlink", self.update_source)
+        self.assertIn("Case 6", self.update_source)
+        self.assertIn("Versi terpasang:", self.update_source)
+        self.assertIn("Address:=DOWNLOAD_URL", self.update_source)
+        self.assertNotIn("DOWNLOAD_PAGE_URL", self.update_source)
         self.assertIn(
             '"https://nadabas.net/nadabas/documents-and-downloads"',
             self.update_source,
@@ -109,6 +116,12 @@ class VbaVersionUpdateTests(unittest.TestCase):
         self.assertNotIn("URLDownloadToFile", self.update_source)
         self.assertNotIn("ADODB.Stream", self.update_source)
         self.assertNotIn('request.Open "POST"', self.update_source)
+
+    def test_indonesian_language_uses_resource_column_6(self):
+        self.assertIn(
+            "Private Sub OptionButton4_Click()", self.language_dialog_source
+        )
+        self.assertIn("lancode = 6", self.language_dialog_source)
 
     def test_about_dialog_shows_version_but_is_not_an_update_control(self):
         self.assertIn("Translateform Me", self.about_source)
@@ -164,6 +177,17 @@ class VbaVersionUpdateTests(unittest.TestCase):
             {
                 ("Ribbon", "btnCheckNadabasVersion", ""),
                 ("Ribbon", "tglVersionCheck", ""),
+                ("Forms", "frmKeyFamily", "cmdAddDimension"),
+                ("Forms", "frmKeyFamily", "cmdRemoveDimension"),
+                ("Forms", "frmKeyFamily", "cmdRenameDimension"),
+                ("Forms", "frmKeyFamily", "cmdChangeDimensionLength"),
+                ("Forms", "frmKeyFamily", "cmdApplySchemaChanges"),
+                ("Forms", "frmKeyFamily", "cmdPrepareWorkbookMigration"),
+                ("Forms", "frmKeyFamily", "cmdApplyWorkbookMigration"),
+                ("Forms", "frmKeyFamily", "lblKeyFamilySection"),
+                ("Forms", "frmKeyFamily", "lblDimensionsSection"),
+                ("Forms", "frmKeyFamily", "lblWorkbooksSection"),
+                ("Forms", "frmKeyFamily", "lblMaintenanceSection"),
                 ("Messages", "M117", ""),
                 ("Messages", "M117B", ""),
                 ("Messages", "M215A", ""),
@@ -173,7 +197,7 @@ class VbaVersionUpdateTests(unittest.TestCase):
             },
         )
         for row in rows:
-            for language in ("english", "french", "portuguese"):
+            for language in ("english", "french", "portuguese", "indonesian"):
                 self.assertTrue(row[language].strip())
 
 

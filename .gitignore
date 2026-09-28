@@ -278,3 +278,7 @@ rsconnect/
 *.secrets.*
 *.local.*
 *.docx
+/.codex-build
+/outputs
+/.codex-finalizer
+/output

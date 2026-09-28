@@ -16,6 +16,10 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
+Private SchemaChangeButtons As Collection
+Private SchemaChangesPending As Boolean
+Private CurrentValueTypeCode As Integer
+
 Private Sub cmdDelete_Click()
 Dim kn As Collection
 Dim keyf As clsKeyName
@@ -44,6 +48,183 @@ Private Sub cmdModify_Click()
 '
 
 End Sub
+
+Public Sub SchemaChangeButtonClick(ChangeType As String)
+Dim Keyname As String
+Dim Dimensionname As String
+
+   If lbKeyFamilies.ListIndex < 0 Then
+      MsgBox GetMsg("M087"), vbExclamation
+      Exit Sub
+   End If
+
+   Keyname = lbKeyFamilies.Column(0, lbKeyFamilies.ListIndex)
+   If lbDimensions.ListIndex >= 0 Then
+      Dimensionname = lbDimensions.Column(0, lbDimensions.ListIndex)
+   End If
+
+   Select Case UCase(ChangeType)
+   Case "ADD"
+      AddDimensionDraft
+   Case "REMOVE"
+      RemoveDimensionDraft
+   Case "RENAME"
+      RenameDimensionDraft
+   Case "LENGTH"
+      ChangeDimensionLengthDraft
+   Case "APPLY"
+      If Not SchemaChangesPending Then
+         MsgBox "There are no proposed schema changes to apply.", _
+                vbInformation, "NADABAS"
+         Exit Sub
+      End If
+      If KeyFamilyMigration.ApplySchemaDraft( _
+            Keyname, lbDimensions, CurrentValueTypeCode) Then
+         SchemaChangesPending = False
+         Initialize True
+      End If
+   Case "PREPAREWORKBOOK"
+      Me.Hide
+      KeyFamilyMigration.PrepareActiveWorkbookMigration Keyname
+      Me.Show vbModal
+   Case "APPLYWORKBOOK"
+      Me.Hide
+      KeyFamilyMigration.ApplyActiveWorkbookMigration
+      Me.Show vbModal
+   End Select
+End Sub
+
+Private Sub AddDimensionDraft()
+Dim Dimensionname As String
+Dim DimensionLength As String
+
+   Dimensionname = Trim(InputBox( _
+      "New dimension name:", "Add dimension"))
+   If Dimensionname = "" Then Exit Sub
+   If Not TestValidname(Dimensionname, Me.lblName.Caption) Then Exit Sub
+   If DimensionExistsInDraft(Dimensionname, -1) Then
+      MsgBox "Dimension " & Dimensionname & " already exists.", _
+             vbExclamation, "NADABAS"
+      Exit Sub
+   End If
+
+   DimensionLength = Trim(InputBox( _
+      "Dimension length (1-255):", "Add dimension"))
+   If DimensionLength = "" Then Exit Sub
+   If Not IsInteger(DimensionLength) Then
+      MsgBox GetMsg("M056"), vbExclamation, "NADABAS"
+      Exit Sub
+   End If
+   If CLng(DimensionLength) < 1 Or CLng(DimensionLength) > 255 Then
+      MsgBox "Dimension length must be between 1 and 255.", _
+             vbExclamation, "NADABAS"
+      Exit Sub
+   End If
+
+   lbDimensions.AddItem
+   lbDimensions.Column(0, lbDimensions.ListCount - 1) = Dimensionname
+   lbDimensions.Column(1, lbDimensions.ListCount - 1) = CLng(DimensionLength)
+   lbDimensions.ListIndex = lbDimensions.ListCount - 1
+   SchemaChangesPending = True
+End Sub
+
+Private Sub RemoveDimensionDraft()
+Dim Dimensionname As String
+
+   If lbDimensions.ListIndex < 0 Then
+      MsgBox GetMsg("M085"), vbExclamation
+      Exit Sub
+   End If
+   If lbDimensions.ListCount <= 2 Then
+      MsgBox GetMsg("M080"), vbExclamation
+      Exit Sub
+   End If
+
+   Dimensionname = lbDimensions.Column(0, lbDimensions.ListIndex)
+   If MsgBox("Remove dimension " & Dimensionname & _
+             " from the proposed schema?" & vbCrLf & vbCrLf & _
+             "The database is not changed until the proposal is applied.", _
+             vbYesNo + vbQuestion, "NADABAS") <> vbYes Then Exit Sub
+
+   lbDimensions.RemoveItem lbDimensions.ListIndex
+   SchemaChangesPending = True
+End Sub
+
+Private Sub RenameDimensionDraft()
+Dim SelectedIndex As Long
+Dim OldDimensionName As String
+Dim NewDimensionName As String
+
+   If lbDimensions.ListIndex < 0 Then
+      MsgBox GetMsg("M085"), vbExclamation
+      Exit Sub
+   End If
+
+   SelectedIndex = lbDimensions.ListIndex
+   OldDimensionName = lbDimensions.Column(0, SelectedIndex)
+   NewDimensionName = Trim(InputBox( _
+      "New name for dimension " & OldDimensionName & ":", _
+      "Rename dimension", OldDimensionName))
+   If NewDimensionName = "" Then Exit Sub
+   If StrComp(OldDimensionName, NewDimensionName, vbTextCompare) = 0 Then Exit Sub
+   If Not TestValidname(NewDimensionName, Me.lblName.Caption) Then Exit Sub
+   If DimensionExistsInDraft(NewDimensionName, SelectedIndex) Then
+      MsgBox "Dimension " & NewDimensionName & " already exists.", _
+             vbExclamation, "NADABAS"
+      Exit Sub
+   End If
+
+   lbDimensions.Column(0, SelectedIndex) = NewDimensionName
+   SchemaChangesPending = True
+End Sub
+
+Private Sub ChangeDimensionLengthDraft()
+Dim SelectedIndex As Long
+Dim DimensionName As String
+Dim NewLength As String
+
+   If lbDimensions.ListIndex < 0 Then
+      MsgBox GetMsg("M085"), vbExclamation
+      Exit Sub
+   End If
+
+   SelectedIndex = lbDimensions.ListIndex
+   DimensionName = lbDimensions.Column(0, SelectedIndex)
+   NewLength = Trim(InputBox( _
+      "New length for dimension " & DimensionName & " (1-255):", _
+      "Change dimension length", _
+      CStr(lbDimensions.Column(1, SelectedIndex))))
+   If NewLength = "" Then Exit Sub
+   If Not IsInteger(NewLength) Then
+      MsgBox GetMsg("M056"), vbExclamation, "NADABAS"
+      Exit Sub
+   End If
+   If CLng(NewLength) < 1 Or CLng(NewLength) > 255 Then
+      MsgBox "Dimension length must be between 1 and 255.", _
+             vbExclamation, "NADABAS"
+      Exit Sub
+   End If
+   If CLng(NewLength) = CLng(lbDimensions.Column(1, SelectedIndex)) Then Exit Sub
+
+   lbDimensions.Column(1, SelectedIndex) = CLng(NewLength)
+   SchemaChangesPending = True
+End Sub
+
+Private Function DimensionExistsInDraft(Dimensionname As String, _
+                                         IgnoreIndex As Long) As Boolean
+Dim i As Long
+
+   DimensionExistsInDraft = False
+   For i = 0 To lbDimensions.ListCount - 1
+      If i <> IgnoreIndex Then
+         If StrComp(Trim(CStr(lbDimensions.Column(0, i))), _
+                    Dimensionname, vbTextCompare) = 0 Then
+            DimensionExistsInDraft = True
+            Exit Function
+         End If
+      End If
+   Next i
+End Function
 
 Private Sub cmdRemoveData_Click()
 Dim Keyname As String
@@ -93,6 +274,10 @@ Dim where As String
 End Sub
 
 Private Sub cmdFinish_Click()
+  If SchemaChangesPending Then
+     If MsgBox("Discard the proposed schema changes?", _
+               vbYesNo + vbQuestion, "NADABAS") <> vbYes Then Exit Sub
+  End If
   Me.Hide
 End Sub
 
@@ -123,8 +308,15 @@ Dim Keyname As clsKeyName
    cmdDelete.Visible = doManage
    cmdRemoveData.Visible = doManage
    cmdRemoveWhere.Visible = doManage
-   cmdModify.Visible = doManage
+   cmdModify.Visible = False
    cmdPrint.Visible = doManage
+   Me.Controls("cmdAddDimension").Visible = doManage
+   Me.Controls("cmdRemoveDimension").Visible = doManage
+   Me.Controls("cmdRenameDimension").Visible = doManage
+   Me.Controls("cmdChangeDimensionLength").Visible = doManage
+   Me.Controls("cmdApplySchemaChanges").Visible = doManage
+   Me.Controls("cmdPrepareWorkbookMigration").Visible = doManage
+   Me.Controls("cmdApplyWorkbookMigration").Visible = doManage
    txtValueToRemove.Visible = False
    lblRemoveWhere.Visible = False
 
@@ -148,6 +340,7 @@ Dim valuetype As Integer
 Dim keyf As clsKeyName
 Dim Keyname As String
     Keyname = lbKeyFamilies.Column(0, lbKeyFamilies.ListIndex)
+    SchemaChangesPending = False
     KeyFamilyGetColumns Keyname, Names, varsize, valuetype
     lbDimensions.Clear
     lbDimensions.ColumnCount = 2
@@ -185,10 +378,15 @@ Dim Keyname As String
     Select Case valuetype
          Case ADOX.DataTypeEnum.adVarWChar:
          txtValueType.Text = "Text"
+         CurrentValueTypeCode = 3
      Case ADOX.DataTypeEnum.adDouble:
         txtValueType.Text = "Double"
+        CurrentValueTypeCode = 2
      Case ADOX.DataTypeEnum.adSingle:
         txtValueType.Text = "Single"
+        CurrentValueTypeCode = 1
+     Case Else
+        CurrentValueTypeCode = 0
      End Select
 End Sub
 
@@ -267,5 +465,140 @@ End Sub
 '***************************************************************************************
 
 Private Sub UserForm_Initialize()
+    ConfigureKeyFamilyLayout
+    Set SchemaChangeButtons = New Collection
+    AddSchemaChangeButton "cmdAddDimension", "Add", _
+                          "ADD", 174, 304, 72
+    AddSchemaChangeButton "cmdRenameDimension", "Rename", _
+                          "RENAME", 252, 304, 72
+    AddSchemaChangeButton "cmdRemoveDimension", "Remove", _
+                          "REMOVE", 174, 328, 72
+    AddSchemaChangeButton "cmdChangeDimensionLength", "Change length", _
+                          "LENGTH", 252, 328, 72
+    AddSchemaChangeButton "cmdApplySchemaChanges", "Apply DB changes", _
+                          "APPLY", 174, 356, 150
+    AddSchemaChangeButton "cmdPrepareWorkbookMigration", "Prepare workbook", _
+                          "PREPAREWORKBOOK", 336, 304, 156
+    AddSchemaChangeButton "cmdApplyWorkbookMigration", "Activate DBDef draft", _
+                          "APPLYWORKBOOK", 336, 328, 156
+
     Translateform Me    ' translate all labels etc.
+End Sub
+
+Private Sub ConfigureKeyFamilyLayout()
+    Me.Width = 516
+    Me.Height = 516
+
+    AddSectionLabel "lblKeyFamilySection", "1. Select key family", 18, 10, 144
+    AddSectionLabel "lblDimensionsSection", _
+                    "2. Edit proposed dimensions", 174, 10, 150
+    AddSectionLabel "lblWorkbooksSection", _
+                    "3. Affected workbooks", 336, 10, 156
+    AddSectionLabel "lblMaintenanceSection", _
+                    "Database maintenance", 18, 394, 474
+
+    With lbKeyFamilies
+       .Left = 18
+       .Top = 30
+       .Width = 144
+       .Height = 252
+    End With
+    With lbLabels
+       .Left = 174
+       .Top = 30
+       .Width = 150
+    End With
+    With lbDimensions
+       .Left = 174
+       .Top = 48
+       .Width = 150
+       .Height = 234
+    End With
+    With lbLabel2
+       .Left = 336
+       .Top = 30
+       .Width = 156
+    End With
+    With lbWorkBooks
+       .Left = 336
+       .Top = 48
+       .Width = 156
+       .Height = 234
+    End With
+
+    Label1.Left = 174
+    Label1.Top = 287
+    txtValueType.Left = 252
+    txtValueType.Top = 284
+
+    cmdPrint.Left = 18
+    cmdPrint.Top = 304
+    cmdPrint.Width = 144
+
+    cmdDelete.Left = 18
+    cmdDelete.Top = 414
+    cmdDelete.Width = 96
+    cmdRemoveData.Left = 120
+    cmdRemoveData.Top = 414
+    cmdRemoveData.Width = 102
+    cmdRemoveWhere.Left = 228
+    cmdRemoveWhere.Top = 414
+    cmdRemoveWhere.Width = 102
+    lblRemoveWhere.Left = 18
+    lblRemoveWhere.Top = 440
+    txtValueToRemove.Left = 126
+    txtValueToRemove.Top = 438
+    cmdFinish.Left = 396
+    cmdFinish.Top = 462
+    cmdFinish.Width = 96
+
+    cmdDelete.BackColor = RGB(255, 235, 235)
+    cmdRemoveData.BackColor = RGB(255, 235, 235)
+    cmdRemoveWhere.BackColor = RGB(255, 235, 235)
+
+    lblName.Visible = False
+    lblLength.Visible = False
+    lblWorkbook.Visible = False
+    lblFunction.Visible = False
+    lblCodesOrg.Visible = False
+    Label2.Visible = False
+    Label3.Visible = False
+End Sub
+
+Private Sub AddSectionLabel(ControlName As String, Caption As String, _
+                            Left As Single, Top As Single, Width As Single)
+Dim SectionLabel As MSForms.Label
+
+    Set SectionLabel = Me.Controls.Add("Forms.Label.1", ControlName, True)
+    With SectionLabel
+       .Caption = Caption
+       .Left = Left
+       .Top = Top
+       .Width = Width
+       .Height = 14
+       .Font.Bold = True
+    End With
+End Sub
+
+Private Sub AddSchemaChangeButton(ControlName As String, Caption As String, _
+                                  ChangeType As String, Left As Single, _
+                                  Top As Single, Width As Single)
+Dim Button As MSForms.CommandButton
+Dim ButtonHandler As clsKeyFamilyMigrationButton
+
+    Set Button = Me.Controls.Add( _
+       "Forms.CommandButton.1", ControlName, True)
+    With Button
+       .Caption = Caption
+       .Left = Left
+       .Top = Top
+       .Width = Width
+       .Height = 18
+    End With
+
+    If ChangeType = "APPLY" Then Button.Font.Bold = True
+
+    Set ButtonHandler = New clsKeyFamilyMigrationButton
+    ButtonHandler.Initialize Button, Me, ChangeType
+    SchemaChangeButtons.Add ButtonHandler
 End Sub

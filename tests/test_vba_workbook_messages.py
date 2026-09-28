@@ -77,7 +77,7 @@ class VbaWorkbookMessageTests(unittest.TestCase):
         self.assertIn("all data loaded", messages["M215B"]["english"])
         self.assertIn("Load the data", messages["M216"]["english"])
         for message in messages.values():
-            for language in ("english", "french", "portuguese"):
+            for language in ("english", "french", "portuguese", "indonesian"):
                 self.assertTrue(message[language].strip())
 
 

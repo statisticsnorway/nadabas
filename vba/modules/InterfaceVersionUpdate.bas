@@ -6,7 +6,7 @@ Option Private Module
 ' It does not change or invalidate the Ribbon and uses only late-bound
 ' Windows components, so no additional VBA reference is required.
 
-Private Const CURRENT_VERSION As String = "6.02.002"
+Private Const CURRENT_VERSION As String = "6.02.004"
 Private Const RELEASE_API_URL As String = _
     "https://api.github.com/repos/statisticsnorway/nadabas/releases/latest"
 Private Const DOWNLOAD_URL As String = _
@@ -300,6 +300,11 @@ Private Sub ShowNoNewerVersion(ByVal latestVersion As String)
             vbCrLf & vbCrLf & _
             "Versão instalada: " & CURRENT_VERSION & vbCrLf & _
             "Versão publicada mais recente: " & latestVersion
+    Case 6
+        messageText = "Tidak ditemukan versi NADABAS yang lebih baru." & _
+            vbCrLf & vbCrLf & _
+            "Versi terpasang: " & CURRENT_VERSION & vbCrLf & _
+            "Versi terbaru yang dipublikasikan: " & latestVersion
     Case Else
         messageText = "No newer NADABAS version was found." & vbCrLf & vbCrLf & _
             "Installed version: " & CURRENT_VERSION & vbCrLf & _
@@ -320,6 +325,9 @@ Private Sub ShowManualCheckFailed()
         messageText = "O NADABAS não conseguiu verificar se existem atualizações." & _
             vbCrLf & _
             "Verifique a ligação de rede e tente novamente mais tarde."
+    Case 6
+        messageText = "NADABAS tidak dapat memeriksa pembaruan." & vbCrLf & _
+            "Periksa koneksi jaringan dan coba lagi nanti."
     Case Else
         messageText = "NADABAS could not check for updates." & vbCrLf & _
             "Check the network connection and try again later."
@@ -343,6 +351,11 @@ Private Sub ShowUpdateAvailable(ByVal latestVersion As String)
             "Versão instalada: " & CURRENT_VERSION & vbCrLf & _
             "Versão publicada mais recente: " & latestVersion & vbCrLf & vbCrLf & _
             "Deseja abrir a página de transferências em nadabas.net?"
+    Case 6
+        messageText = "Versi NADABAS yang lebih baru tersedia." & vbCrLf & vbCrLf & _
+            "Versi terpasang: " & CURRENT_VERSION & vbCrLf & _
+            "Versi terbaru yang dipublikasikan: " & latestVersion & vbCrLf & vbCrLf & _
+            "Buka halaman unduhan di nadabas.net?"
     Case Else
         messageText = "A newer NADABAS version is available." & vbCrLf & vbCrLf & _
             "Installed version: " & CURRENT_VERSION & vbCrLf & _

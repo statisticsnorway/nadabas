@@ -974,6 +974,65 @@ Public Sub DropTable(sTable As String)
 
 End Sub
 
+Public Function RenameTableForKeyFamilyMigration(OldTableName As String, _
+                                                  NewTableName As String, _
+                                                  ByRef ErrorMessage As String) As Boolean
+Dim sql As String
+
+    RenameTableForKeyFamilyMigration = False
+    ErrorMessage = ""
+    OldTableName = StripBrackets(OldTableName)
+    NewTableName = StripBrackets(NewTableName)
+
+    On Error GoTo RenameFailed
+
+    If Not DBTableExists(OldTableName) Then
+       err.Raise vbObjectError + 6120, _
+                 "RenameTableForKeyFamilyMigration", _
+                 "Table " & OldTableName & " does not exist."
+    End If
+    If DBTableExists(NewTableName) Then
+       err.Raise vbObjectError + 6121, _
+                 "RenameTableForKeyFamilyMigration", _
+                 "Table " & NewTableName & " already exists."
+    End If
+
+    Select Case CurrentDB.DBType
+    Case Sqlexpress
+       ' Microsoft requires the old table name to include its schema and the
+       ' new name to be a one-part identifier.
+       sql = "EXEC sys.sp_rename " & _
+             SqlString("dbo." & OldTableName) & ", " & _
+             SqlString(NewTableName) & ", N'OBJECT'"
+       CurrentDB.DBCnn.Execute sql
+    Case accdb, mdb
+       CurrentDB.DBCat.Tables.Refresh
+       CurrentDB.DBCat.Tables(OldTableName).name = NewTableName
+       CurrentDB.DBCat.Tables.Refresh
+    Case Else
+       err.Raise vbObjectError + 6122, _
+                 "RenameTableForKeyFamilyMigration", _
+                 "Unsupported database type."
+    End Select
+
+    If DBTableExists(OldTableName) Or Not DBTableExists(NewTableName) Then
+       err.Raise vbObjectError + 6123, _
+                 "RenameTableForKeyFamilyMigration", _
+                 "The table rename could not be verified."
+    End If
+
+    RenameTableForKeyFamilyMigration = True
+    Exit Function
+
+RenameFailed:
+    ErrorMessage = "Unable to rename table " & OldTableName & _
+                   " to " & NewTableName & ": " & err.Description
+End Function
+
+Public Function DBIndexExists(TableName As String, IndexName As String) As Boolean
+    DBIndexExists = IndexExists(TableName, IndexName)
+End Function
+
 
 Public Function DBTableExists(sTablename As String) As Boolean
 
