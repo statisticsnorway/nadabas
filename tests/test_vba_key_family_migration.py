@@ -107,6 +107,16 @@ def test_schema_buttons_edit_a_draft_not_the_database():
     assert "The database has not been changed." in review
 
 
+def test_schema_button_dispatch_handles_unknown_actions():
+    dispatch = procedure(
+        KEY_FAMILY_FORM, "Public Sub SchemaChangeButtonClick", "End Sub"
+    )
+
+    assert "Select Case UCase$(ChangeType)" in dispatch
+    assert "Case Else" in dispatch
+    assert "Unsupported schema change action" in dispatch
+
+
 def test_menu_preview_is_non_destructive():
     preview = procedure(MIGRATION, "Public Sub PreviewSchemaChange", "End Sub")
 

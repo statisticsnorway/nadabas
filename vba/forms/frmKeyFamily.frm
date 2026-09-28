@@ -63,7 +63,7 @@ Dim Dimensionname As String
       Dimensionname = lbDimensions.Column(0, lbDimensions.ListIndex)
    End If
 
-   Select Case UCase(ChangeType)
+   Select Case UCase$(ChangeType)
    Case "ADD"
       AddDimensionDraft
    Case "REMOVE"
@@ -91,6 +91,9 @@ Dim Dimensionname As String
       Me.Hide
       KeyFamilyMigration.ApplyActiveWorkbookMigration
       Me.Show vbModal
+   Case Else
+      MsgBox "Unsupported schema change action: " & ChangeType, _
+             vbExclamation, "NADABAS"
    End Select
 End Sub
 
