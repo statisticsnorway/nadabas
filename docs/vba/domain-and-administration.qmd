@@ -60,6 +60,63 @@ classification, code inspection, and validation actions; those actions live in
 the form and related classes and should be tested before being treated as a
 stable administrative API.
 
+### Key-family schema migration foundation
+
+`cmdDesign.TryWriteKeyFamilyColumnNames` provides the column-name operation with
+an explicit target range, so administrative workflows do not have to manipulate
+`ActiveCell` or `Selection`. The interactive **Get column names** command uses
+the same entry point.
+
+`KeyFamilyMigration` contains the first preflight operations for a controlled
+key-family rebuild. It discovers the named `DBDef` ranges used by a key family
+through the workbook's `DBLinks` rows. A dimension rename can then be validated
+across all matching definitions before any cell is changed. Applying a validated
+rename changes only the database-field-name column; mappings such as `ROWID`,
+`COLID`, `CONSTANT`, and `WHERE` are retained.
+
+The module can now apply a proposed schema through a recoverable shadow-table
+swap. It creates and verifies a new empty table and its unique index, renames the
+current table to a timestamped `NDBBAK_...` recovery name, and only then promotes
+the replacement to the original key-family name. No table is dropped. If the
+second rename or final verification fails, the operation attempts the reverse
+rename sequence automatically and leaves all remaining tables available for DBA
+recovery.
+
+Administrators start the schema-change workflow
+inside **Administration > Manage content > Manage key families**. The
+**Add dimension**, **Remove dimension**, and **Rename dimension** buttons are
+placed in the bottom action area of the existing key-family form. They edit a
+draft dimension list directly in the form. **Apply changes** presents the old
+row count, proposed schema, known affected-workbook count, and recovery-table
+name before requiring explicit confirmation. The replacement key family is
+empty after a successful apply; the recovery table retains the old rows.
+
+This step deliberately does not rewrite workbook `DBDef` ranges or run producer
+batches automatically. **Prepare workbook** creates a separate migration sheet
+in the active workbook and copies every matching `DBDef`. Existing mappings are
+preserved. Missing dimensions are added in yellow; mappings that refer to fields
+which no longer exist are marked in red for manual removal or remapping. The
+original definitions and `DBLinks` remain unchanged during preparation.
+
+After the administrator reviews the draft, **Activate DBDef draft** temporarily
+preflights each named migration range before touching `DBLinks`. Missing mappings,
+duplicate/missing dimensions, invalid table rows, and retained renamed/removed
+fields are reported on the migration sheet, with the first offending cell
+selected. Rows merely typed below an existing coloured `DBDef` range are not part
+of that named definition and therefore do not satisfy this check.
+
+When the preflight passes, the action temporarily switches the relevant
+`DBLinks` rows and runs the normal whole-workbook NADABAS definition validation.
+Failed validation restores the original `DBLinks` values; successful validation
+retains both the new and original named `DBDef` ranges.
+The workbook must then be saved and its producer batch run separately.
+
+The key-family form follows the same staged workflow visually: key-family
+selection, proposed dimensions, affected workbooks, and database maintenance are
+separate sections. Dimension-length changes now use the same draft-and-apply
+path as add, remove, and rename. Destructive maintenance buttons are grouped and
+visually distinguished from schema editing.
+
 ## Batch processing
 
 `cmdBatchRun.BatchUpdate` loads workbook and batch metadata and opens

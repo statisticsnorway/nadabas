@@ -1,0 +1,75 @@
+---
+title: Release 6.02.004 installation and source record
+---
+
+::: {.callout-warning title="Release candidate"}
+The source and documentation are prepared for NADABAS 6.02.004. The final
+signed package, file sizes, and SHA-256 checksums must be inserted below and
+verified before this release is published.
+:::
+
+## Release scope
+
+Release 6.02.004 corrects the release identity and completes Indonesian
+language support introduced in the preceding development builds. It includes:
+
+- `InterfaceVersionUpdate.CURRENT_VERSION` set to `6.02.004`, which is also the
+  version displayed by About;
+- Indonesian language column 6 (`id`) for ribbon labels, forms, messages, and
+  error messages, with English retained as the fallback;
+- an Indonesian option in the language-selection form;
+- Indonesian text for automatic and manual version-check notifications; and
+- a corrected download-page reference using the declared `DOWNLOAD_URL`
+  constant, preventing the VBA compile error caused by `DOWNLOAD_PAGE_URL`.
+
+## Package manifest
+
+| File | Purpose | Size (bytes) | SHA-256 |
+|---|---|---:|---|
+| `NADABAS.6.02.004.zip` | User download containing both signed Office files | Pending final signing | Pending final signing |
+| `NADABAS.xlam` | Excel add-in and source of the release VBA project | Pending final signing | Pending final signing |
+| `NADABAS.6.02.004.xlsm` | Versioned installer opened by the user | Pending final signing | Pending final signing |
+
+The ZIP must contain the two Office files at its root. A checksum proves byte
+identity with the reviewed artifact; it does not establish publisher identity.
+Excel must report a valid, trusted digital signature for both Office files.
+
+## Required release checks
+
+1. Confirm that `InterfaceVersionUpdate.CURRENT_VERSION` is `6.02.004` and that
+   About displays the same version.
+2. Compile both VBA projects with **Debug > Compile VBAProject** and confirm
+   that no undefined variable or other compile error is reported.
+3. Run the automated test suite, pre-commit checks, VBA security scan, and
+   Quarto documentation render.
+4. Select each of the four languages and open representative ribbon controls,
+   forms, messages, and error messages. Confirm that Indonesian uses column 6
+   and that placeholders such as `%1` are preserved.
+5. Run the manual update check in Indonesian for current-version, newer-version,
+   and network-failure paths. Confirm that selecting Yes opens `DOWNLOAD_URL`.
+6. Perform a clean installation from `NADABAS.6.02.004.xlsm`, reopen Excel,
+   verify the NADABAS ribbon, and open About.
+7. Sign the final XLAM and XLSM, create the final ZIP, verify both signatures,
+   and replace the pending manifest values above.
+
+## Installation
+
+1. Close every Excel window.
+2. Download `NADABAS.6.02.004.zip` from the official NADABAS channel.
+3. Verify the ZIP checksum recorded above.
+4. Extract `NADABAS.xlam` and `NADABAS.6.02.004.xlsm` to the same folder.
+5. Verify the publisher and signature status of both extracted Office files.
+6. Open `NADABAS.6.02.004.xlsm` and follow its installation action.
+7. Close and reopen Excel, verify that the NADABAS ribbon loads, and confirm
+   that About displays version 6.02.004.
+
+## Source and rollback
+
+The exported files below `vba/` are the source of truth. The signed binaries
+are release evidence and are not committed as editable source files. Editing a
+signed Office file invalidates its signature; rebuilds must be tested and
+signed again.
+
+Rollback consists of reinstalling the previously verified release package.
+Keep the previous signed package and its checksums available until 6.02.004 has
+passed clean installation and representative application-level tests.
