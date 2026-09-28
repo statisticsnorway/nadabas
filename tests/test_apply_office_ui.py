@@ -16,9 +16,7 @@ class ApplyOfficeUiTests(unittest.TestCase):
             REPOSITORY_ROOT / "vba" / "resources" / "office-ui.csv"
         )
         self.assertEqual(len(rows), 19)
-        self.assertEqual(
-            {row.sheet for row in rows}, {"Forms", "Messages", "Ribbon"}
-        )
+        self.assertEqual({row.sheet for row in rows}, {"Forms", "Messages", "Ribbon"})
         self.assertTrue(all(row.indonesian.strip() for row in rows))
 
     def test_custom_ui_replacement_preserves_unrelated_package_parts(self):
