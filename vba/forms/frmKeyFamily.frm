@@ -1,9 +1,9 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmKeyFamily
    Caption         =   "Key families"
-   ClientHeight    =   9096.001
-   ClientLeft      =   45
-   ClientTop       =   450
+   ClientHeight    =   9100.001
+   ClientLeft      =   50
+   ClientTop       =   440
    ClientWidth     =   10200
    OleObjectBlob   =   "frmKeyFamily.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -13,8 +13,26 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
 Option Explicit
+
+Private Sub cmdEdit_Click()
+    Dim Keyname As String
+    If lbKeyFamilies.ListIndex < 0 Then
+        MsgBox GetMsg("M087"), vbExclamation
+        Exit Sub
+    End If
+    Keyname = lbKeyFamilies.Column(0, lbKeyFamilies.ListIndex)
+    Load dlgEditKeyFamily
+    dlgEditKeyFamily.Initialize Keyname
+    dlgEditKeyFamily.Show vbModal
+    Unload dlgEditKeyFamily
+    CurrentDB.KeynamesIsLoaded = False
+    CurrentDB.DimensionsIsLoaded = False
+    CurrentDB.DimensionClassesIsLoaded = False
+    CurrentDB.LoadKeyNames
+    CurrentDB.LoadDimensions
+    Initialize True
+End Sub
 
 Private Sub cmdDelete_Click()
 Dim kn As Collection
@@ -124,6 +142,7 @@ Dim Keyname As clsKeyName
    cmdRemoveData.Visible = doManage
    cmdRemoveWhere.Visible = doManage
    cmdModify.Visible = doManage
+   cmdEdit.Visible = doManage
    cmdPrint.Visible = doManage
    txtValueToRemove.Visible = False
    lblRemoveWhere.Visible = False

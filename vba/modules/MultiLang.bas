@@ -47,7 +47,7 @@ Public Sub LoadLanguage()
         If s = "" Then                              ' Fallback to English if translation is missing
             s = Trim(FilledRange.Cells(m, 3))
         End If
-        AllLabels.Add s, key
+        On Error Resume Next: AllLabels.Add s, key: On Error GoTo 0
     Next m
 
     ' Step 3: Load error messages from the "Errmsg" sheet
@@ -62,7 +62,7 @@ Public Sub LoadLanguage()
             If s = "" Then                          ' Fallback to English if translation is missing
                 s = Trim(FilledRange.Cells(m, 3))
             End If
-            AllErrMsg.Add s, key
+            On Error Resume Next: AllErrMsg.Add s, key: On Error GoTo 0
         End If
     Next m
 
@@ -78,7 +78,7 @@ Public Sub LoadLanguage()
             If s = "" Then                          ' Fallback to English if translation is missing
                 s = Trim(FilledRange.Cells(m, 3))
             End If
-            AllMessages.Add s, key
+            On Error Resume Next: AllMessages.Add s, key: On Error GoTo 0
         End If
     Next m
 
@@ -94,7 +94,7 @@ Public Sub LoadLanguage()
             If s = "" Then                          ' Fallback to English if translation is missing
                 s = Trim(FilledRange.Cells(m, 3))
             End If
-            RibbonTexts.Add s, key
+            On Error Resume Next: RibbonTexts.Add s, key: On Error GoTo 0
         End If
     Next m
 End Sub
