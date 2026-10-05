@@ -11,6 +11,18 @@ Dim PreparedTableName As String
 Dim PreparedIndexName As String
 Dim PreparedIndexTableName As String
 
+Public Sub AlterFieldName(sTable As String, OldDimName As String, newDimName As String)
+    Select Case CurrentDB.DBType
+        Case Sqlexpress
+            DbExecute "EXEC sp_rename " & InQ(sTable & "." & OldDimName) & ", " & InQ(newDimName) & ", 'COLUMN'"
+        Case accdb, mdb
+            On Error Resume Next
+            CurrentDB.DBCat.Tables.Refresh
+            CurrentDB.DBCat.Tables(sTable).Columns(OldDimName).name = newDimName
+            On Error GoTo 0
+    End Select
+End Sub
+
 '
 ' Common functions
 '
@@ -1012,15 +1024,14 @@ Public Function DBTableExists(sTablename As String) As Boolean
             DBTableExists = Not ob Is Nothing
             On Error GoTo 0
 
-        Case Else
-
-            DBTableExists = False
-
     End Select
 
 CleanExit:
 
-    CloseRecordsetSafely rs
+    On Error Resume Next
+
+    If Not rs Is Nothing Then rs.Close
+    Set rs = Nothing
     Set ob = Nothing
 
     Exit Function
@@ -1062,12 +1073,12 @@ Public Function DBColumnExists(TableName As String, ColumnName As String) As Boo
             Set ob = CurrentDB.DBCat.Tables(TableName).Columns(ColumnName)
             DBColumnExists = Not ob Is Nothing
             On Error GoTo 0
-        Case Else
-            DBColumnExists = False
     End Select
 
 CleanExit:
-    CloseRecordsetSafely rs
+    On Error Resume Next
+    If Not rs Is Nothing Then rs.Close
+    Set rs = Nothing
     Set ob = Nothing
 
 End Function
@@ -1098,20 +1109,11 @@ Public Function DBColumnSize(TableName As String, ColumnName As String) As Long
             CurrentDB.DBCat.Tables.Refresh
             CurrentDB.DBCat.Tables(TableName).Columns.Refresh
             DBColumnSize = CurrentDB.DBCat.Tables(TableName).Columns(ColumnName).DefinedSize
-        Case Else
-            DBColumnSize = 0
     End Select
 
 CleanExit:
-    CloseRecordsetSafely rs
-
-End Function
-
-Private Sub CloseRecordsetSafely(ByRef rs As ADODB.Recordset)
-
     On Error Resume Next
-
     If Not rs Is Nothing Then rs.Close
     Set rs = Nothing
 
-End Sub
+End Function

@@ -2,8 +2,8 @@ VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} frmCreateKeyFamily
    Caption         =   "Create Key Family"
    ClientHeight    =   8604.001
-   ClientLeft      =   45
-   ClientTop       =   450
+   ClientLeft      =   50
+   ClientTop       =   440
    ClientWidth     =   8760.001
    OleObjectBlob   =   "frmCreateKeyFamily.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -165,6 +165,20 @@ Dim Keyname As String
 
 
     Me.Hide
+
+    If MsgBox("Key Family '" & Keyname & "' was created successfully." & vbCrLf & vbCrLf & _
+              "Do you want to continue and assign classifications to the dimensions?", vbYesNo + vbQuestion, "NADABAS") = vbYes Then
+        CurrentDB.KeynamesIsLoaded = False
+        CurrentDB.LoadKeyNames
+        CurrentDB.DimensionClassesIsLoaded = False
+        CurrentDB.DimensionsIsLoaded = False
+        CurrentDB.LoadDimensions
+        CurrentDB.LoadDimensionClass
+        Load frmDimensions
+        frmDimensions.Initialize
+        frmDimensions.Show vbModal
+        Unload frmDimensions
+    End If
 
 End Sub
 

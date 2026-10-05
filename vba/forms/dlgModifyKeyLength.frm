@@ -1,9 +1,9 @@
 VERSION 5.00
 Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} dlgModifyKeyLength
-   Caption         =   "Modify Dimension Length"
+   Caption         =   "Modify Dimension"
    ClientHeight    =   6570
    ClientLeft      =   120
-   ClientTop       =   465
+   ClientTop       =   470
    ClientWidth     =   5760
    OleObjectBlob   =   "dlgModifyKeyLength.frx":0000
    StartUpPosition =   1  'CenterOwner
@@ -117,20 +117,49 @@ Dim codes As Collection
 
        End If
 
- '  Now ready to alter length of dimension in all keyfamilies
+        ' --- NEW RENAMING LOGIC ---
+        Dim newDimName As String
+        newDimName = Trim(txtDimensionName.Text)
 
-    OpenDb
-    For Each v In CurrentKeyfams
-       s = v
-       AlterFieldLen s, CurrentDimension, newlen
-   Next v
-   CloseDB
-   CurrentDB.DimensionsIsLoaded = False
+        If newDimName = "" Then
+            MsgBox "Dimension name cannot be empty.", vbExclamation, "NADABAS"
+            Exit Sub
+        End If
 
-   CurrentDB.LoadKeyNames
-   CurrentDB.LoadDimensions
-   MsgBox GetMsg("M059"), vbOK   'Dimension size changed
-   Me.Hide
+        OpenDb
+
+        ' 1. If name changed, rename the column in all affected tables
+        If UCase(newDimName) <> UCase(CurrentDimension) Then
+            For Each v In CurrentKeyfams
+                s = CStr(v)
+                AlterFieldName s, CurrentDimension, newDimName
+            Next v
+
+            ' Update NADABAS translation descriptions if they exist
+            If DBTableExists("Descriptions") Then
+                DbExecute "UPDATE [Descriptions] SET [ColumnName] = " & InQ(newDimName) & _
+                          " WHERE [ColumnName] = " & InQ(CurrentDimension)
+            End If
+
+            CurrentDimension = newDimName ' Update tracking variable for the length change below
+        End If
+
+        ' 2. Alter the length in all affected tables (Original Logic)
+        For Each v In CurrentKeyfams
+           s = CStr(v)
+           AlterFieldLen s, CurrentDimension, newlen
+        Next v
+
+        CloseDB
+
+        ' 3. Reload NADABAS memory cache
+        CurrentDB.DimensionsIsLoaded = False
+        CurrentDB.KeynamesIsLoaded = False
+        CurrentDB.LoadKeyNames
+        CurrentDB.LoadDimensions
+
+        MsgBox "Dimension successfully modified.", vbInformation, "NADABAS"
+        Me.Hide
 End Sub
 
 Private Sub UserForm_Initialize()

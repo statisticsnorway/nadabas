@@ -548,7 +548,7 @@ Dim fio As Object
                 x.Length = co.DefinedSize
                 x.SQLType = co.Type
                 x.Classification = ""
-                LoadFieldNames.Add x, x.name
+             On Error Resume Next: LoadFieldNames.Add x, x.name: On Error GoTo 0
              Next co
       Case accdb
  '
@@ -563,7 +563,7 @@ Dim fio As Object
              x.Length = fio.DefinedSize
              x.SQLType = fio.Type
              x.Classification = ""
-             LoadFieldNames.Add x, x.name
+             On Error Resume Next: LoadFieldNames.Add x, x.name: On Error GoTo 0
           Next fio
         RSFName.Close
     End Select
@@ -579,7 +579,7 @@ Public Sub LoadDimensionClass()
 '  DimensionClass
 '
 ' **********************************************************
-Dim DName As String
+Dim dName As String
 Dim DCItem As clsDimClass
 
     If Not ClassificationsExists Then Exit Sub
@@ -594,11 +594,11 @@ Dim DCItem As clsDimClass
         CreateCursor "select DimensionName,ClassName  from DimensionClass "
 
         Do While Not CursorEoF
-           DName = Trim(GetColumn("DimensionName"))
+           dName = Trim(GetColumn("DimensionName"))
            Set DCItem = New clsDimClass
-           DCItem.Dimensionname = DName
+           DCItem.Dimensionname = dName
            DCItem.classname = Trim(GetColumn("ClassName"))
-           DimensionClasses.Add DCItem, DName
+           On Error Resume Next: DimensionClasses.Add DCItem, dName: On Error GoTo 0
            CursorMoveNext
         Loop
         CloseCursor
@@ -666,7 +666,7 @@ Dim ssql As String
     Do While Not CursorEoF
     Set Keyname = New clsKeyName
        Keyname.Keyname = Trim(GetColumn("Keyname"))
-       KeyNames.Add Keyname, Keyname.Keyname
+       On Error Resume Next: KeyNames.Add Keyname, Keyname.Keyname: On Error GoTo 0
        CursorMoveNext
     Loop
 
@@ -712,7 +712,7 @@ Dim WBinfo As clsWorkBookInfo
     Do While Not CursorEoF
         Set WBinfo = New clsWorkBookInfo
         WBinfo.WorkbookID = GetColumn("WorkbookID")
-        WBinfo.WorkbookName = GetColumn("WorkBookName")
+        WBinfo.WorkBookName = GetColumn("WorkBookName")
         WBinfo.Title = GetColumn("Title")
         WBinfo.GroupName = GetColumn("GroupName")
         WBinfo.RelPath = CStr(GetColumnNull("Path"))
@@ -723,7 +723,7 @@ Dim WBinfo As clsWorkBookInfo
         WBinfo.Isdirty = GetColumn("IsDirty")
         WBinfo.LastGet = GetColumnNull("LastGet")
         WBinfo.LastPut = GetColumnNull("LastPut")
-        WorkBooks.Add WBinfo, WBinfo.WorkbookName
+        On Error Resume Next: WorkBooks.Add WBinfo, WBinfo.WorkBookName: On Error GoTo 0
         CursorMoveNext
     Loop
     CloseCursor
@@ -735,8 +735,8 @@ Dim WBinfo As clsWorkBookInfo
 
     MaxFileNameLength = 0
     For Each WBinfo In WorkBooks
-        If Len(WBinfo.WorkbookName) > MaxFileNameLength Then
-            MaxFileNameLength = Len(WBinfo.WorkbookName)
+        If Len(WBinfo.WorkBookName) > MaxFileNameLength Then
+            MaxFileNameLength = Len(WBinfo.WorkBookName)
         End If
     Next WBinfo
 
@@ -993,7 +993,7 @@ Dim Perm As clsPermission
         Do While Not CursorEoF
             Set Perm = New clsPermission
             Perm.WorkbookID = GetColumn("WorkbookID")
-            Perm.WorkbookName = GetColumn("Workbookname")
+            Perm.WorkBookName = GetColumn("Workbookname")
             Perm.user = GetColumn("User")
             Permissions.Add Perm, Perm.key
             CursorMoveNext
@@ -1039,7 +1039,7 @@ Public Function GetCurrentGroup(WBName As String) As String
 Dim wbi As clsWorkBookInfo
     GetCurrentGroup = ""
     For Each wbi In WorkBooks
-        If wbi.WorkbookName = WBName Then
+        If wbi.WorkBookName = WBName Then
            GetCurrentGroup = wbi.GroupName
            Exit Function
         End If
