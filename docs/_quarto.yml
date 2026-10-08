@@ -57,6 +57,8 @@ book:
     - part: "Operations"
       chapters:
         - operations/index.qmd
+        - operations/release-6.02.005.qmd
+        - operations/pr41-empty-key-family-integration.qmd
         - operations/release-6.02.004.qmd
         - operations/release-6.02.002.qmd
         - operations/release-6.01.003.qmd

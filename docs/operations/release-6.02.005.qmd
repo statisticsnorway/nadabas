@@ -1,0 +1,155 @@
+---
+title: Release 6.02.005 save conflicts and empty key families
+---
+
+::: {.callout-warning title="Development candidate"}
+This source builds on PR #38 at `4df4a194283fc37fc2bf5895cf961ef259aa4432`.
+The earlier save-conflict candidates passed native Excel VBA compilation.
+The updated candidates with the empty-key-family editor require a fresh manual
+compile and the final database integration checks before signing and release.
+:::
+
+## Save-conflict choices
+
+The **Save data conflict** dialog retains **Yes**, **No**, and **List details**
+and adds **Yes to all** and **No to all**. These choices are available only to
+administrators, as with the existing conflict override.
+
+| Choice | Effect |
+|---|---|
+| Yes | Accept this conflict prompt; later conflicts can prompt again. |
+| No | Stop the current workbook's remaining database save, as before. |
+| Yes to all | Accept this and later save conflicts in the current operation. |
+| No to all | Reject this conflict and later save conflicts in the current operation. |
+
+A standalone save or export starts with no remembered answer. A batch retains
+the answer across its workbooks and repeat passes, and clears it on completion,
+cancellation, or error. A new batch starts with no remembered answer. Read-only
+change checks do not replace the batch's answer.
+
+**No to all** does not cancel the entire batch: each later workbook can save
+until a conflict is encountered, at which point its remaining database save
+stops. Workbooks without conflicts continue normally. Neither **No** nor
+**No to all** rolls back data already written earlier in the operation.
+The existing workbook-file save and batch log behavior is retained.
+
+The extra buttons are created by the form code, so the existing binary form
+designer is preserved. Their captions use the existing English, French,
+Portuguese, and Indonesian resources. Escape, Enter, and the window-close
+fallback reject the current prompt by default.
+
+## Empty key-family structure editor and credit
+
+The editor is selectively adapted from **Karna Mandarawata (@karna-stats)**,
+[PR #41](https://github.com/statisticsnorway/nadabas/pull/41), pinned at
+`60e43df42425552771a3ae37411fef8d85677d69`. His original form designer and
+dimension reordering contribution are retained. Unrelated PR changes are not
+included; the earlier 6.02.005 improvements remain in place.
+
+Only administrators can edit the structure of a selected family with zero
+rows. Other families may contain data. Checks run at selection, dialog entry
+and Apply; failures deny the change. Access also requires exclusive database
+access during Apply to exclude concurrent asynchronous writes. Changes are
+staged and confirmed before application, with transactional rollback.
+
+See the [integration and attribution guide](pr41-empty-key-family-integration.qmd)
+for exact provenance, scope, reproduction steps and the final Excel checklist.
+
+## Current validation status
+
+- Automated source and tooling tests: **114 passed**.
+- Repository pre-commit checks: **passed**.
+- VBA security scanner: **0 errors**, with existing warnings retained.
+- Excel import preflight: **passed**, 189 components in each supplied template.
+- Native **Debug > Compile NADABAS**: **passed** for the earlier save-conflict
+  builds; **pending** for the updated editor builds. Windows automation could
+  not activate the Excel window (`failed to activate captured window`).
+- Isolated Excel form execution: **16 passed** (four choices in four languages).
+  The test exercised the actual exported candidate form and its button events.
+- Compact and expanded dialog layouts: visually checked. Escape returned
+  `LogYesNo=False`, `ApplyToAll=False`.
+- The supplied 6.02.004 XLSM and XLAM remain unchanged. Unsigned 6.02.005 test
+  baseline candidates are under `output/6.02.005/`; the updated editor candidates
+  are under `output/6.02.005-empty-key-family/`. The latest simplified-window
+  candidate is under `output/6.02.005-simple-key-families/`.
+- The actual VBA row-check function was exercised in scratch Excel against a
+  disposable ACE database: empty, populated/NULL Value, missing table, closed
+  connection and a later committed insert. Transaction rollback preserved the
+  inserted row and restored the original table.
+- Exclusive Access mode: verified that another process prevents acquisition,
+  and that a held exclusive connection blocks a new connection from another
+  process. The repeatable Windows/Excel test is
+  `tools/verify_empty_key_family_windows.py` and uses only disposable fixtures.
+- Full editor runtime, SQL Server integration and final end-to-end database
+  checks remain for manual verification. No production database was used.
+- No production database was connected or changed. The database/batch scenarios
+  in the checklist below still require a disposable database integration test.
+
+## Verification checklist
+
+1. Import the source into separate copies of both supplied 6.02.004 Office files
+   and apply `vba/resources/office-ui.csv`. Keep the originals unchanged.
+2. Compile each project using **Debug > Compile VBAProject** and verify About
+   displays `6.02.005`.
+3. In a disposable database, create conflicting saves across multiple columns,
+   DBLinks, and workbooks. Verify all four choices and **List details**.
+4. Check that No stops the current workbook and that No to all also suppresses
+   later batch conflict prompts, while conflict-free workbooks still save.
+5. Verify a new save, export, or batch prompts again after normal completion,
+   cancellation, and an induced batch error. Include a repeated batch.
+6. Verify a non-administrator still cannot override another workbook's data.
+7. Check both compact and expanded layouts and the four language captions.
+8. Sign and package `NADABAS.6.02.005.xlsm` with `NADABAS.xlam` only after
+   functional verification. Record final SHA-256 checksums after signing.
+
+## Review findings
+
+Large data areas are saved one column at a time, which explains repeated
+conflict prompts. The existing `SaveAll` flag forces value updates; it does not
+remember the user's dialog choice. The new answer is stored separately.
+
+The save loop writes incrementally. Its existing cancellation flag stops
+subsequent writes but does not implement a transaction rollback. This release
+preserves that behavior and makes the limitation explicit above.
+
+## Simplified Key families window
+
+The updated local candidate restores the original Key families window shown
+by the user. Its only new action is **Edit structure...**, beside the existing
+Create workbook with data button at the bottom, with the empty-family status
+below it. The inline draft, Prepare workbook and Activate DBDef draft controls
+are removed from this window. The existing Edit structure dialog, empty-only
+safeguards and save-conflict choices remain. No extra workbook migration step
+is part of this interaction.
+
+An isolated Excel layout check verified that all 22 original controls retain
+their geometry, with only the Edit structure button and status label added.
+
+## Access connection correction
+
+The latest local package is in `output/6.02.005-isam-fix/`. The reported
+"Could not find installable ISAM" error was reproduced using NADABAS's actual
+legacy connection string. Appending connection options after its bare
+`Jet OLEDB:Database;` token caused ACE to reject the string. Structure editing
+now preserves that working string and sets exclusive mode through the ADO
+Mode property. This was a connection error, not an administrator-permission
+failure. The existing admin access and empty-family checks remain in place.
+
+The isolated Excel/ACE regression test now uses the legacy NADABAS string and
+passes both exclusive-open and cross-process-lock checks. Errors before any
+schema work now explicitly say that the structure was not changed, without
+incorrectly attributing every connection error to another open connection.
+
+## Connection identity correction
+
+The latest local package is in `output/6.02.005-connection-fix/`. A follow-up
+error (3704, operation on a closed object) occurred when reopening replaced
+objects passed as class members. The caller could retain the old, closed
+connection. The helper now takes object references ByVal and reopens the same
+connection and catalogue instead of replacing them.
+
+The isolated Excel regression now exercises class-member arguments, begins a
+transaction on the caller's connection, creates and renames a disposable table,
+rolls back and restores the normal connection mode. These checks passed along
+with the existing empty-only, concurrent-connection and legacy-string tests.
+Full user workflow validation in Excel remains the final acceptance step.

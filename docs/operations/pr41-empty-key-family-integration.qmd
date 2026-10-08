@@ -1,0 +1,130 @@
+---
+title: Selective integration of PR 41
+---
+
+## Credit and provenance
+
+The **Edit key family structure** dialog is based on the contribution by
+**Karna Mandarawata ([karna-stats](https://github.com/karna-stats))** in
+[NADABAS PR #41](https://github.com/statisticsnorway/nadabas/pull/41), commit
+`60e43df42425552771a3ae37411fef8d85677d69`.
+
+The original binary dialog designer, `dlgEditKeyFamily.frx`, is retained
+unchanged. The dimension reordering code is adapted from that contribution.
+The dialog code has been adapted to stage changes and use the existing PR #38
+schema application workflow, with the empty-only safeguards described below.
+Credit is also recorded in the VBA source and the 6.02.005 release notes.
+
+Suggested release acknowledgement:
+
+> Thanks to Karna Mandarawata (@karna-stats) for the Edit key family structure
+> dialog in PR #41. Version 6.02.005 selectively adapts this contribution to
+> allow structure editing only for empty key families.
+
+For the integration commit, retain your own authorship and add this trailer
+(the name and address come from the original public commit):
+
+```text
+Co-authored-by: Karna Mandarawata <karna.mandarawata@asean.org>
+```
+
+## What was taken into 6.02.005
+
+| File | Integration |
+|---|---|
+| `vba/forms/dlgEditKeyFamily.frx` | Original PR #41 designer, unchanged. |
+| `vba/forms/dlgEditKeyFamily.frm` | Adapted dialog, staged dimension edits and reordering; attributed to Karna. |
+| `vba/forms/frmKeyFamily.frm` | Original Key families layout with only an Edit structure button and empty-only availability. |
+| `vba/modules/KeyFamilyEditPolicy.bas` | New live row check and exclusive Access connection helper. |
+| `vba/modules/KeyFamilyMigration.bas` | Existing schema workflow with backend checks, locking and rollback. |
+| `vba/resources/office-ui.csv` | Four-language caption for the manager's new button. |
+
+The new editor itself uses English captions. The existing translated controls
+and the earlier 6.02.005 save-conflict improvements remain in place.
+
+The PR's custom error dialog, post-creation prompt, unrelated class/module
+changes, whole-key-family rename, populated-table migration and shared
+dimension-length modifications have not been imported. The rename control
+edits a selected dimension in the local draft only.
+
+## How to reproduce the selective import
+
+These commands describe the **starting point on a clean integration branch**.
+Do not run the restore command over the already adapted 6.02.005 files, because
+that would replace the safeguards with the upstream dialog code.
+
+```powershell
+git fetch origin pull/41/head:refs/remotes/review/pr41
+git show --no-patch --format=fuller review/pr41
+git diff HEAD...review/pr41 -- vba/forms/dlgEditKeyFamily.frm
+git restore --source=60e43df42425552771a3ae37411fef8d85677d69 -- vba/forms/dlgEditKeyFamily.frm vba/forms/dlgEditKeyFamily.frx
+```
+
+Then apply the adaptations listed above, their regression tests, and the
+release documentation. Import both the `.frm` and its `.frx` when introducing
+the form into Excel; existing manager forms need their code updated while
+preserving their designers. Use this repository's VBA import tooling and
+apply the language resources to both the XLAM and XLSM.
+
+Do not cherry-pick the whole upstream commit: it combines this feature with
+other changes that are outside the requested scope. The current working tree
+already contains the adapted implementation; a reviewer can compare it with
+the pinned upstream commit without repeating the import.
+
+## Empty-only behavior
+
+An administrator can edit a selected key family only when a live query finds
+**zero rows**. A row with a NULL Value still counts as data. Other key families
+in the database may contain data. Missing tables, unsupported databases and
+query/connection failures disable editing.
+
+The manager checks availability, the dialog checks again on entry, and the
+backend checks again before applying. The main window preserves its original
+layout and maintenance buttons; the extra inline draft and workbook-migration
+buttons have been removed at the user's request. Editing the draft does not change the database;
+Apply requires confirmation. Cancel discards the draft.
+
+For Access (MDB/ACCDB), Apply temporarily reopens the connection with exclusive
+database access. Another open connection prevents the change. After acquiring
+exclusive access the row count is checked again. The normal connection mode
+is restored after success or failure; a restoration failure asks the operator
+to reopen the database. This is a short exclusive-access requirement, not a
+requirement that the entire database be empty.
+
+This stronger Access boundary was added after a disposable ACE test showed
+that a concurrent asynchronous insert could remain invisible even after a
+transactional rename. Jet/ACE buffering is why a SELECT-only check is not
+sufficient; Microsoft documents the related asynchronous commit and cache
+properties in its [Jet provider reference](https://learn.microsoft.com/en-us/office/client-developer/access/desktop-database-reference/microsoft-ole-db-provider-for-microsoft-jet).
+
+SQL Server uses `TABLOCKX, HOLDLOCK` in the transaction. Its runtime integration
+still needs verification on a disposable SQL Server database.
+
+The Access check uses plain `adModeShareExclusive` (12). In the installed ACE
+provider, combining this with the read/write flags reported mode 15 but retained
+shared access. The Windows regression script tests actual cross-process denial,
+not just the reported mode, and preserves its disposable fixture and results.
+
+The replacement and retained recovery table are handled in a transaction.
+A final check of the original table occurs after its rename and before commit.
+No existing rows are copied or deleted by this feature. Workbook definitions
+remain a separate explicit workflow, as in PR #38.
+
+## Final Excel checklist
+
+1. Compile each candidate using Debug > Compile NADABAS and confirm 6.02.005.
+2. As administrator, select an empty family in a database containing another
+   populated family: Edit structure should be available.
+3. Select a family with one row, including a NULL Value: Edit structure should
+   be disabled. Repeat as a non-administrator and with a failed connection.
+4. Test add, remove, rename, length and order changes; Cancel must leave the
+   schema unchanged. Apply must change only the selected empty family.
+5. Insert and commit a row from another connection after opening the dialog:
+   Apply must refuse to change the schema.
+6. For Access, keep another connection open: Apply must fail without schema
+   changes and restore ordinary use. Close the other connection and retry.
+7. Check that another populated family's schema and rows remain unchanged,
+   and verify the prior save-conflict choices.
+
+Use disposable database copies. The supplied 6.02.004 Office files have been
+preserved; the new candidates are unsigned test builds.

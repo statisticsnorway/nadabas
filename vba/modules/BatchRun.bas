@@ -22,6 +22,25 @@ Global BatchRunInProgress As Boolean       ' true to tell that batch processing 
 '                                        ' or if an error with DB links causes the user to select to cncel the operation
 
 Public Sub DoBatchUpdate()
+Dim ErrorNumber As Long
+Dim ErrorSource As String
+Dim ErrorDescription As String
+
+    On Error GoTo ConflictScopeError
+    BeginSaveConflictBatch
+    RunBatchUpdate
+    EndSaveConflictBatch
+    Exit Sub
+
+ConflictScopeError:
+    ErrorNumber = err.Number
+    ErrorSource = err.Source
+    ErrorDescription = err.Description
+    EndSaveConflictBatch
+    err.Raise ErrorNumber, ErrorSource, ErrorDescription
+End Sub
+
+Private Sub RunBatchUpdate()
 
 Dim EB As clsBatchListEntry
 Dim MaxRep As Long

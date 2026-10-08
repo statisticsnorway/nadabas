@@ -3,7 +3,8 @@ title: Operations and administration
 ---
 
 ::: {.callout-important title="Release baseline"}
-The repository source is prepared for NADABAS 6.02.004. The signed `.xlam` and
+The repository source targets the [6.02.005 development candidate](release-6.02.005.qmd),
+based on 6.02.004. The signed `.xlam` and
 `.xlsm` files remain release artifacts; they are not committed as editable
 source files.
 :::
@@ -26,7 +27,7 @@ manifest, SHA-256 checksums, and installation checklist are recorded in the
 `InterfaceVersionUpdate` schedules a check five seconds after NADABAS starts.
 The check is enabled by default and runs at most once every seven days. It sends
 a synchronous, read-only HTTPS `GET` request to GitHub's latest-release API and
-compares the numeric release tag with `CURRENT_VERSION`, which is `6.02.004` in
+compares the numeric release tag with `CURRENT_VERSION`, which is `6.02.005` in
 this release. `Application.OnTime` delays the request until startup has
 completed; it does not make the HTTP request a background operation.
 
