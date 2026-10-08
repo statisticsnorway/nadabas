@@ -15,7 +15,7 @@ class ApplyOfficeUiTests(unittest.TestCase):
         rows = read_resource_rows(
             REPOSITORY_ROOT / "vba" / "resources" / "office-ui.csv"
         )
-        self.assertEqual(len(rows), 19)
+        self.assertEqual(len(rows), 22)
         self.assertEqual({row.sheet for row in rows}, {"Forms", "Messages", "Ribbon"})
         self.assertTrue(all(row.indonesian.strip() for row in rows))
 

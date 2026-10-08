@@ -14,15 +14,29 @@ End Type
 
 Global SaveStats As SaveStatistics
 
+' Conflict answers are scoped to one save or one complete batch (including repeats).
+Private ConflictBatchActive As Boolean
+Private ConflictAnswer As VbMsgBoxResult
+
 Dim SaveAll As Boolean
 Dim UserName As String
 
 Dim PutLogBooks As Collection
 Dim PutLog As Collection
 Dim CancelSave As Boolean                  ' set to true if data has been saved by another workbook is detected in DoTestOrPutDataFromRange
-                                           ' in this case, the save operation is totally cancelled
+                                           ' remaining writes stop; earlier database writes are not rolled back
 '
 '
+
+Public Sub BeginSaveConflictBatch()
+    ConflictAnswer = 0
+    ConflictBatchActive = True
+End Sub
+
+Public Sub EndSaveConflictBatch()
+    ConflictAnswer = 0
+    ConflictBatchActive = False
+End Sub
 
 Public Sub ExportData()
 Dim awb As Workbook
@@ -249,6 +263,7 @@ Dim k As Long
 Dim scanres As clsScanTableDefResults
 Dim DBLinksRange As Range
 
+    If Not TestOnly And Not ConflictBatchActive Then ConflictAnswer = 0
     CancelSave = False
     SaveAll = False
     UserName = get_NTUserName
@@ -429,28 +444,43 @@ Dim IncludeCell As Boolean
 
           If Otherbook <> "" Then
              If isAdministrator Then
-                Load dlgPutLog
-                dlgPutLog.lstBoxBasic.Clear
-                dlgPutLog.lstBoxDetails.Clear
-                dlgPutLog.lstBoxBasic.AddItem "Some data being saved from the current workbook(" & GetWorkBookName(awb) & _
-                                              "), has already been saved from the following workbooks:"
-                 For Each v In PutLogBooks
-                   dlgPutLog.lstBoxBasic.AddItem CStr(v)
-                Next v
-                For Each v In PutLog
-                   dlgPutLog.lstBoxDetails.AddItem CStr(v)
-                Next v
-                dlgPutLog.lstBoxDetails.Visible = False
-                dlgPutLog.Height = 185
-                dlgPutLog.Show vbModal
-                If dlgPutLog.LogYesNo = False Then
-                   Unload dlgPutLog
+                If ConflictAnswer = vbNo Then
                    CancelSave = True
                    GoTo quit
                 End If
+                If ConflictAnswer <> vbYes Then
+                   Load dlgPutLog
+                   dlgPutLog.LogYesNo = False
+                   dlgPutLog.ApplyToAll = False
+                   dlgPutLog.lstBoxBasic.Clear
+                   dlgPutLog.lstBoxDetails.Clear
+                   dlgPutLog.lstBoxBasic.AddItem "Some data being saved from the current workbook(" & GetWorkBookName(awb) & _
+                                                 "), has already been saved from the following workbooks:"
+                    For Each v In PutLogBooks
+                      dlgPutLog.lstBoxBasic.AddItem CStr(v)
+                   Next v
+                   For Each v In PutLog
+                      dlgPutLog.lstBoxDetails.AddItem CStr(v)
+                   Next v
+                   dlgPutLog.lstBoxDetails.Visible = False
+                   dlgPutLog.Height = 225
+                   dlgPutLog.Show vbModal
+                   If dlgPutLog.ApplyToAll Then
+                      If dlgPutLog.LogYesNo Then
+                         ConflictAnswer = vbYes
+                      Else
+                         ConflictAnswer = vbNo
+                      End If
+                   End If
+                   If dlgPutLog.LogYesNo = False Then
+                      Unload dlgPutLog
+                      CancelSave = True
+                      GoTo quit
+                   End If
 
+                   Unload dlgPutLog
+                End If
                 SaveAll = True
-                Unload dlgPutLog
               Else
                    MsgBox GetMsg("M142A") & vbCrLf & _
                           Otherbook & "," & OtherArea & vbCrLf & _

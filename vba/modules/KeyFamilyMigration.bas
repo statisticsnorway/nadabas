@@ -2,15 +2,13 @@ Attribute VB_Name = "KeyFamilyMigration"
 Option Explicit
 Option Private Module
 
-' Safe building blocks for the key-family rebuild workflow.
-' Database DDL is deliberately kept out of this module until every affected
-' workbook definition has passed preflight validation.
+' Empty-only key-family schema editing. Existing workbook migration drafts remain separate.
+' The UI and this backend both enforce the live empty-table policy.
 
 Public Function ApplySchemaDraft(KeyFamilyName As String, _
                                   DimensionList As Object, _
                                   ValueTypeCode As Integer) As Boolean
 Dim Dimensions As Collection
-Dim WorkbooksUsingKeyFamily As clsWBColl
 Dim RowCount As Long
 Dim ProposedSchema As String
 Dim TemporaryTableName As String
@@ -21,8 +19,19 @@ Dim RollbackMessage As String
 Dim OriginalRenamed As Boolean
 Dim TemporaryPromoted As Boolean
 Dim rs As ADODB.Recordset
+Dim TransactionStarted As Boolean
+Dim DatabaseOpened As Boolean
+Dim SchemaCommitted As Boolean
+Dim RestoreConnection As Boolean
+Dim PreviousConnectionMode As Long
+Dim StructureChangesStarted As Boolean
 
     ApplySchemaDraft = False
+    If Not KeyFamilyEditPolicy.CanEditEmptyKeyFamily(KeyFamilyName, ErrorMessage) Then
+       MsgBox ErrorMessage, vbExclamation, "NADABAS"
+       Exit Function
+    End If
+    On Error GoTo ApplyFailed
 
     If ValueTypeCode < 1 Or ValueTypeCode > 3 Then
        MsgBox "The value type for this key family is not supported.", _
@@ -48,17 +57,10 @@ Dim rs As ADODB.Recordset
        Exit Function
     End If
 
-    On Error GoTo ApplyFailed
     OpenDb
-
-    Set rs = CurrentDB.DBCnn.Execute( _
-                "SELECT COUNT(*) AS RowCount FROM " & InB(KeyFamilyName))
-    If Not rs.EOF Then RowCount = CLng(rs.fields("RowCount").value)
-    rs.Close
-    Set rs = Nothing
-
-    Set WorkbooksUsingKeyFamily = New clsWBColl
-    WorkbooksUsingKeyFamily.GetWbForKey KeyFamilyName
+    DatabaseOpened = True
+    ' A live emptiness check has succeeded; no existing data will be migrated.
+    RowCount = 0
 
     TemporaryTableName = UniqueMigrationTableName("NDBTMP_", "")
     BackupTableName = UniqueMigrationTableName("NDBBAK_", KeyFamilyName)
@@ -67,18 +69,33 @@ Dim rs As ADODB.Recordset
               KeyFamilyName & "?" & vbCrLf & vbCrLf & _
               "New dimensions:" & vbCrLf & ProposedSchema & _
               vbCrLf & vbCrLf & _
-              "Rows moved to recovery table: " & CStr(RowCount) & vbCrLf & _
-              "Known affected workbooks: " & _
-              CStr(WorkbooksUsingKeyFamily.WBs.count) & vbCrLf & _
-              "Recovery table: " & BackupTableName & vbCrLf & vbCrLf & _
-              "The rebuilt key family will be empty. Workbooks and DB " & _
-              "definitions are not changed in this step.", _
+              "Only an empty key family can be changed." & vbCrLf & _
+              "The rebuilt key family will be empty.", _
               vbYesNo + vbExclamation + vbDefaultButton2, _
               "Apply key-family schema") <> vbYes Then
        CloseDB
        Exit Function
     End If
 
+    ' Access requires exclusive access for this short operation. Failure to
+    ' acquire it aborts before any DDL; restore the normal connection below.
+    If CurrentDB.DBType = accdb Or CurrentDB.DBType = mdb Then
+       PreviousConnectionMode = CurrentDB.DBCnn.Mode
+       RestoreConnection = True
+       KeyFamilyEditPolicy.ReopenStructureConnection CurrentDB.DBCnn, _
+           CurrentDB.DBCat, CurrentDB.DBConnectionString, _
+           adModeShareExclusive
+    End If
+    ' Recheck after confirmation and locking. SQL Server locks the table.
+    CurrentDB.DBCnn.BeginTrans
+    TransactionStarted = True
+    If Not KeyFamilyEditPolicy.TableIsEmptyForStructure( _
+              CurrentDB.DBCnn, KeyFamilyName, ErrorMessage, _
+              CurrentDB.DBType = Sqlexpress) Then
+       err.Raise vbObjectError + 6205, "ApplySchemaDraft", ErrorMessage
+    End If
+
+    StructureChangesStarted = True
     If Not CreateNewKeyFam(TemporaryTableName, Dimensions, ValueTypeCode) Then
        err.Raise vbObjectError + 6200, "ApplySchemaDraft", _
                  "The replacement table could not be created."
@@ -93,6 +110,10 @@ Dim rs As ADODB.Recordset
        err.Raise vbObjectError + 6202, "ApplySchemaDraft", ErrorMessage
     End If
     OriginalRenamed = True
+    If Not KeyFamilyEditPolicy.TableIsEmptyForStructure( _
+              CurrentDB.DBCnn, BackupTableName, ErrorMessage) Then
+       err.Raise vbObjectError + 6206, "ApplySchemaDraft", ErrorMessage
+    End If
 
     If Not RenameTableForKeyFamilyMigration( _
               TemporaryTableName, KeyFamilyName, ErrorMessage) Then
@@ -104,6 +125,17 @@ Dim rs As ADODB.Recordset
        err.Raise vbObjectError + 6204, "ApplySchemaDraft", ErrorMessage
     End If
 
+    CurrentDB.DBCnn.CommitTrans
+    TransactionStarted = False
+    SchemaCommitted = True
+    OriginalRenamed = False
+    TemporaryPromoted = False
+
+    If RestoreConnection Then
+       KeyFamilyEditPolicy.ReopenStructureConnection CurrentDB.DBCnn, _
+           CurrentDB.DBCat, CurrentDB.DBConnectionString, PreviousConnectionMode
+       RestoreConnection = False
+    End If
     CurrentDB.DimensionsIsLoaded = False
     CurrentDB.KeynamesIsLoaded = False
     CurrentDB.LoadKeyNames
@@ -111,13 +143,8 @@ Dim rs As ADODB.Recordset
     CloseDB
 
     ApplySchemaDraft = True
-    MsgBox "The key family was rebuilt successfully and is now empty." & _
-           vbCrLf & vbCrLf & _
-           "The previous table and its " & CStr(RowCount) & _
-           " row(s) were retained as:" & vbCrLf & BackupTableName & _
-           vbCrLf & vbCrLf & _
-           "Update affected workbook DB definitions before running " & _
-           "their producer batches.", vbInformation, "NADABAS"
+    MsgBox "The key-family structure has been updated. The key family is still empty.", _
+           vbInformation, "NADABAS"
     Exit Function
 
 ApplyFailed:
@@ -125,7 +152,23 @@ ApplyFailed:
     On Error Resume Next
     If Not rs Is Nothing Then rs.Close
     Set rs = Nothing
+    If TransactionStarted Then
+       err.Clear
+       CurrentDB.DBCnn.RollbackTrans
+       If err.Number = 0 Then
+          OriginalRenamed = False
+          TemporaryPromoted = False
+       Else
+          FailureMessage = FailureMessage & vbCrLf & "Transaction rollback failed: " & err.Description
+       End If
+    End If
     On Error GoTo 0
+    If SchemaCommitted Then
+       If DatabaseOpened Then CloseDB
+       MsgBox "The empty key-family structure was updated, but its metadata could not be refreshed. " & _
+              "Reopen the database before continuing." & vbCrLf & FailureMessage, vbExclamation, "NADABAS"
+       Exit Function
+    End If
 
     ' Roll back in reverse order. No table is dropped: if a rollback itself
     ' fails, both the recovery table and any replacement remain available to
@@ -152,11 +195,25 @@ ApplyFailed:
        End If
     End If
 
-    CloseDB
-    MsgBox "The key-family rebuild did not complete." & vbCrLf & vbCrLf & _
-           FailureMessage & vbCrLf & vbCrLf & _
-           "No table was deleted. Check the original, temporary and " & _
-           "recovery tables before trying again.", vbCritical, "NADABAS"
+    If RestoreConnection Then
+       On Error Resume Next
+       err.Clear
+       KeyFamilyEditPolicy.ReopenStructureConnection CurrentDB.DBCnn, _
+           CurrentDB.DBCat, CurrentDB.DBConnectionString, PreviousConnectionMode
+       If err.Number <> 0 Then FailureMessage = FailureMessage & vbCrLf & _
+           "The normal connection could not be restored. Reopen the database."
+       On Error GoTo 0
+    End If
+    If DatabaseOpened Then CloseDB
+    If Not StructureChangesStarted Then
+       MsgBox "Structure editing could not start. The key-family structure was not changed." & _
+              vbCrLf & vbCrLf & FailureMessage, vbExclamation, "NADABAS"
+    Else
+       MsgBox "The key-family rebuild did not complete." & vbCrLf & vbCrLf & _
+              FailureMessage & vbCrLf & vbCrLf & _
+              "No table was deleted. Check the original, temporary and " & _
+              "recovery tables before trying again.", vbCritical, "NADABAS"
+    End If
 End Function
 
 Private Function BuildDraftDimensions(DimensionList As Object, _
@@ -182,6 +239,10 @@ Dim i As Long
 
     For i = 0 To DimensionList.ListCount - 1
        DimensionName = Trim(CStr(DimensionList.Column(0, i)))
+       If Not TestValidname(DimensionName, "Dimension ") Then
+          ErrorMessage = "Invalid dimension name: " & DimensionName
+          Exit Function
+       End If
        DimensionLength = CLng(DimensionList.Column(1, i))
        If DimensionName = "" Then
           ErrorMessage = "Dimension names cannot be empty."

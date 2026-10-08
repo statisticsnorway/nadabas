@@ -71,50 +71,35 @@ def test_key_family_definitions_are_discovered_through_dblinks():
     assert "DBDefinitionUsesKeyFamily" in discovery
 
 
-def test_schema_change_buttons_are_in_the_existing_key_family_form():
-    for control_name, caption, change_type in (
-        ("cmdAddDimension", "Add dimension", "ADD"),
-        ("cmdRemoveDimension", "Remove dimension", "REMOVE"),
-        ("cmdRenameDimension", "Rename dimension", "RENAME"),
-        ("cmdChangeDimensionLength", "Change length", "LENGTH"),
-        ("cmdApplySchemaChanges", "Apply DB changes", "APPLY"),
-        ("cmdPrepareWorkbookMigration", "Prepare workbook", "PREPAREWORKBOOK"),
-        ("cmdApplyWorkbookMigration", "Activate DBDef draft", "APPLYWORKBOOK"),
+def test_structure_editor_is_the_only_new_action_in_the_manager():
+    assert 'AddSchemaChangeButton "cmdEditStructure"' in KEY_FAMILY_FORM
+    assert "Forms,frmKeyFamily,cmdEditStructure,Edit structure..." in OFFICE_UI
+    for removed in (
+        "cmdAddDimension",
+        "cmdRemoveDimension",
+        "cmdRenameDimension",
+        "cmdApplySchemaChanges",
+        "cmdPrepareWorkbookMigration",
+        "cmdApplyWorkbookMigration",
     ):
-        assert control_name in KEY_FAMILY_FORM
-        assert f'"{change_type}"' in KEY_FAMILY_FORM
-        assert f"Forms,frmKeyFamily,{control_name},{caption}" in OFFICE_UI
-
-    assert "Private WithEvents ActionButton As MSForms.CommandButton" in BUTTON_CLASS
+        assert removed not in KEY_FAMILY_FORM
     assert "Owner.SchemaChangeButtonClick ChangeType" in BUTTON_CLASS
-    assert "KeyFamilyMigration.ApplySchemaDraft(" in KEY_FAMILY_FORM
 
 
-def test_schema_buttons_edit_a_draft_not_the_database():
-    for declaration in (
-        "Private Sub AddDimensionDraft",
-        "Private Sub RemoveDimensionDraft",
-        "Private Sub RenameDimensionDraft",
-        "Private Sub ChangeDimensionLengthDraft",
-    ):
-        draft_editor = procedure(KEY_FAMILY_FORM, declaration, "End Sub")
-        assert "DbExecute" not in draft_editor
-        assert "DropTable" not in draft_editor
-
-    review = procedure(MIGRATION, "Public Sub ReviewSchemaDraft", "End Sub")
-    assert "SELECT COUNT(*) AS RowCount FROM" in review
-    assert "WorkbooksUsingKeyFamily.GetWbForKey" in review
-    assert "The database has not been changed." in review
+def test_structure_editor_opens_without_workbook_migration_steps():
+    assert "dlgEditKeyFamily.Initialize(Keyname)" in KEY_FAMILY_FORM
+    assert "PrepareActiveWorkbookMigration" not in KEY_FAMILY_FORM
+    assert "ApplyActiveWorkbookMigration" not in KEY_FAMILY_FORM
 
 
-def test_schema_button_dispatch_handles_unknown_actions():
+def test_structure_dispatch_rejects_old_actions_before_opening_editor():
     dispatch = procedure(
         KEY_FAMILY_FORM, "Public Sub SchemaChangeButtonClick", "End Sub"
     )
-
-    assert "Select Case UCase$(ChangeType)" in dispatch
-    assert "Case Else" in dispatch
-    assert "Unsupported schema change action" in dispatch
+    assert 'If UCase$(ChangeType) <> "EDIT" Then Exit Sub' in dispatch
+    assert dispatch.index("CanEditEmptyKeyFamily") < dispatch.index(
+        "Load dlgEditKeyFamily"
+    )
 
 
 def test_menu_preview_is_non_destructive():
@@ -241,18 +226,11 @@ def test_workbook_preflight_targets_the_first_draft_error_before_dblinks():
     assert "DBLinksRange.Cells(k, 3).value =" not in before_confirmation
 
 
-def test_key_family_form_uses_staged_three_column_layout():
-    layout = procedure(
-        KEY_FAMILY_FORM, "Private Sub ConfigureKeyFamilyLayout", "End Sub"
-    )
-
-    for section in (
-        "lblKeyFamilySection",
-        "lblDimensionsSection",
-        "lblWorkbooksSection",
-        "lblMaintenanceSection",
-    ):
-        assert section in layout
-    assert "cmdModify.Visible = False" in KEY_FAMILY_FORM
-    assert "cmdDelete.BackColor" in layout
-    assert ".Merge" not in layout
+def test_key_family_form_preserves_original_designer_layout():
+    assert "ConfigureKeyFamilyLayout" not in KEY_FAMILY_FORM
+    assert "cmdModify.Visible = doManage" in KEY_FAMILY_FORM
+    assert "cmdPrint.Left + cmdPrint.Width + 18" in KEY_FAMILY_FORM
+    assert 'Me.Controls("lblStructureStatus").Caption = Reason' in KEY_FAMILY_FORM
+    for control in ("lbKeyFamilies", "lbDimensions", "lbWorkBooks", "cmdFinish"):
+        assert f"With {control}" not in KEY_FAMILY_FORM
+        assert f"{control}.Left =" not in KEY_FAMILY_FORM
