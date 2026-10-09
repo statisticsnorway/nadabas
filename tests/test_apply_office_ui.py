@@ -15,8 +15,9 @@ class ApplyOfficeUiTests(unittest.TestCase):
         rows = read_resource_rows(
             REPOSITORY_ROOT / "vba" / "resources" / "office-ui.csv"
         )
-        self.assertEqual(len(rows), 8)
-        self.assertEqual({row.sheet for row in rows}, {"Messages", "Ribbon"})
+        self.assertEqual(len(rows), 22)
+        self.assertEqual({row.sheet for row in rows}, {"Forms", "Messages", "Ribbon"})
+        self.assertTrue(all(row.indonesian.strip() for row in rows))
 
     def test_custom_ui_replacement_preserves_unrelated_package_parts(self):
         TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
@@ -42,8 +43,8 @@ class ApplyOfficeUiTests(unittest.TestCase):
         TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
         path = TEST_TEMP_ROOT / "invalid-resources.csv"
         path.write_text(
-            "sheet,key,control,english,french,portuguese\n"
-            "Other,key,,English,French,Portuguese\n",
+            "sheet,key,control,english,french,portuguese,indonesian\n"
+            "Other,key,,English,French,Portuguese,Indonesian\n",
             encoding="utf-8",
         )
         with self.assertRaises(OfficeUiError):

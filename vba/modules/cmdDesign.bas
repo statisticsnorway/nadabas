@@ -200,12 +200,8 @@ Public Sub GetColNames()
 '   **************************************************************************************************
 '
 
-Dim fi As clsFieldNames
-Dim n As Long
-Dim KeyFam As clsKeyName
-Dim Dimension As clsDimClass
-Dim s As String
-Dim MaxOffset As Integer
+Dim ResultRange As Range
+Dim ErrorMessage As String
 ' Assume that current cell is a table name
 
     If ActiveCell.value = Empty Then
@@ -213,21 +209,56 @@ Dim MaxOffset As Integer
         Exit Sub
     End If
 
-    OpenDb
-    CurrentDB.LoadKeyNames
-    CurrentDB.LoadDimensions      'set dimensions, tabledefinitions in currentDB
-    CurrentDB.LoadDimensionClass     ' get dimensionclasses if any
-    CloseDB
-
-    Set KeyFam = CurrentDB.GetKeyName(ActiveCell.value)
-
-    If KeyFam Is Nothing Then
-       MsgBox GetMsg("M048"), vbCritical, "Nadabas" 'Table or Query not found
+    If Not TryWriteKeyFamilyColumnNames(ActiveCell, CStr(ActiveCell.value), _
+                                        ResultRange, ErrorMessage) Then
+       MsgBox ErrorMessage, vbCritical, "Nadabas"
        Exit Sub
     End If
 
+    ResultRange.Select
+
+End Sub
+
+Public Function TryWriteKeyFamilyColumnNames(TargetCell As Range, _
+                                              KeyFamilyName As String, _
+                                              ByRef ResultRange As Range, _
+                                              ByRef ErrorMessage As String) As Boolean
+' Write a DBDef skeleton without relying on ActiveCell or Selection.
+' This entry point is also used by key-family schema migration workflows.
+Dim fi As clsFieldNames
+Dim n As Long
+Dim KeyFam As clsKeyName
+Dim Dimension As clsDimClass
+Dim s As String
+Dim MaxOffset As Integer
+
+    TryWriteKeyFamilyColumnNames = False
+    ErrorMessage = ""
+    Set ResultRange = Nothing
+
+    If TargetCell Is Nothing Then
+       ErrorMessage = GetMsg("M047")
+       Exit Function
+    End If
+    If Trim(KeyFamilyName) = "" Then
+       ErrorMessage = GetMsg("M047")
+       Exit Function
+    End If
+
+    OpenDb
+    CurrentDB.LoadKeyNames
+    CurrentDB.LoadDimensions
+    CurrentDB.LoadDimensionClass
+    CloseDB
+
+    Set KeyFam = CurrentDB.GetKeyName(KeyFamilyName)
+    If KeyFam Is Nothing Then
+       ErrorMessage = GetMsg("M048")
+       Exit Function
+    End If
+
     If Not CurrentDB.DimensionClasses Is Nothing Then
-      For Each fi In KeyFam.TableDefinition
+       For Each fi In KeyFam.TableDefinition
           Set Dimension = CurrentDB.GetDimensionClass(fi.name)
           If Not Dimension Is Nothing Then
              fi.Classification = Dimension.classname
@@ -235,29 +266,29 @@ Dim MaxOffset As Integer
        Next fi
     End If
 
-    ActiveCell.offset(0, 1).value = "Table"
+    TargetCell.value = KeyFamilyName
+    TargetCell.offset(0, 1).value = "Table"
     n = 1
     MaxOffset = 1
-                   ' scan through the fields in the tabel/query
+
     For Each fi In KeyFam.TableDefinition
        s = UCase(fi.name)
        Select Case s
        Case "VALUE", "COMMENT", "FORMULA", "USERNAME", "EXCELFILE", "TIMESTAMP", "DATAAREA"
-'         ActiveCell.offset(n, 1).Value = Fi.Name
-'         here nothing is done from release 2 as this is defaults
-        Case Else
-             ActiveCell.offset(n, 0).value = fi.name              ' and place then in the sheet
-             If fi.Classification <> "" Then
-                ActiveCell.offset(n, 2).value = fi.Classification
-                MaxOffset = 2
-             End If
-             n = n + 1
+          ' These are implicit NADABAS fields, not dimensions in a DBDef skeleton.
+       Case Else
+          TargetCell.offset(n, 0).value = fi.name
+          If fi.Classification <> "" Then
+             TargetCell.offset(n, 2).value = fi.Classification
+             MaxOffset = 2
+          End If
+          n = n + 1
        End Select
     Next fi
 
-    Range(ActiveCell, ActiveCell.offset(n - 1, MaxOffset)).Select
-
-End Sub
+    Set ResultRange = TargetCell.Resize(n, MaxOffset + 1)
+    TryWriteKeyFamilyColumnNames = True
+End Function
 
 
 Private Sub ClearDB()

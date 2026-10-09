@@ -16,6 +16,9 @@ Attribute VB_Exposed = False
 
 Option Explicit
 
+Private SchemaChangeButtons As Collection
+Private ManageMode As Boolean
+
 Private Sub cmdDelete_Click()
 Dim kn As Collection
 Dim keyf As clsKeyName
@@ -45,6 +48,24 @@ Private Sub cmdModify_Click()
 
 End Sub
 
+Public Sub SchemaChangeButtonClick(ChangeType As String)
+Dim Keyname As String
+Dim Reason As String
+    If UCase$(ChangeType) <> "EDIT" Then Exit Sub
+    If Not ManageMode Then Exit Sub
+    If lbKeyFamilies.ListIndex < 0 Then Exit Sub
+    Keyname = CStr(lbKeyFamilies.Column(0, lbKeyFamilies.ListIndex))
+    If Not KeyFamilyEditPolicy.CanEditEmptyKeyFamily(Keyname, Reason) Then
+       UpdateStructureAvailability
+       MsgBox Reason, vbExclamation, "NADABAS"
+       Exit Sub
+    End If
+    Load dlgEditKeyFamily
+    If dlgEditKeyFamily.Initialize(Keyname) Then dlgEditKeyFamily.Show vbModal
+    Unload dlgEditKeyFamily
+    Initialize True
+End Sub
+
 Private Sub cmdRemoveData_Click()
 Dim Keyname As String
    If lbKeyFamilies.ListIndex < 0 Then
@@ -55,6 +76,7 @@ Dim Keyname As String
    If MsgBox(GetMsg1("M084", Keyname), vbYesNo, "Nadabas") = vbYes Then  'Do you want to permanently remove all data from '
       KeyFamilyRemoveData (Keyname)
       MsgBox GetMsg("M086"), vbInformation     'Data has been removed
+      UpdateStructureAvailability
    End If
 End Sub
 
@@ -88,17 +110,21 @@ Dim where As String
     End If
     n = KeyFamilyRemoveDataWhere(Keyname, where)
     MsgBox GetMsg1("M090", CStr(n)), vbOKOnly
+    UpdateStructureAvailability
     txtValueToRemove.Visible = False
     lblRemoveWhere.Visible = False
 End Sub
 
 Private Sub cmdFinish_Click()
-  Me.Hide
+    Me.Hide
 End Sub
 
 Public Sub Initialize(doManage As Boolean)
 Dim Keyname As clsKeyName
 
+   ManageMode = doManage
+   Me.Controls("cmdEditStructure").Visible = doManage
+   Me.Controls("cmdEditStructure").Enabled = False
    lbLabels.Clear
    lbLabels.ColumnCount = 2
    lbLabels.ColumnWidths = "104;72"
@@ -118,7 +144,10 @@ Dim Keyname As clsKeyName
       lbKeyFamilies.AddItem Keyname.Keyname
    Next Keyname
 
-   If lbKeyFamilies.ListCount = 0 Then Exit Sub
+   If lbKeyFamilies.ListCount = 0 Then
+      UpdateStructureAvailability
+      Exit Sub
+   End If
    lbKeyFamilies.ListIndex = 0
    cmdDelete.Visible = doManage
    cmdRemoveData.Visible = doManage
@@ -127,6 +156,7 @@ Dim Keyname As clsKeyName
    cmdPrint.Visible = doManage
    txtValueToRemove.Visible = False
    lblRemoveWhere.Visible = False
+   UpdateStructureAvailability
 
 End Sub
 
@@ -147,6 +177,10 @@ Dim s As String
 Dim valuetype As Integer
 Dim keyf As clsKeyName
 Dim Keyname As String
+    If lbKeyFamilies.ListIndex < 0 Then
+       UpdateStructureAvailability
+       Exit Sub
+    End If
     Keyname = lbKeyFamilies.Column(0, lbKeyFamilies.ListIndex)
     KeyFamilyGetColumns Keyname, Names, varsize, valuetype
     lbDimensions.Clear
@@ -190,8 +224,23 @@ Dim Keyname As String
      Case ADOX.DataTypeEnum.adSingle:
         txtValueType.Text = "Single"
      End Select
+    UpdateStructureAvailability
 End Sub
 
+Private Sub UpdateStructureAvailability()
+Dim Allowed As Boolean
+Dim Reason As String
+    Allowed = False
+    Reason = "Select an empty key family to edit its structure."
+    If ManageMode And lbKeyFamilies.ListIndex >= 0 Then
+       Allowed = KeyFamilyEditPolicy.CanEditEmptyKeyFamily( _
+           CStr(lbKeyFamilies.Column(0, lbKeyFamilies.ListIndex)), Reason)
+    End If
+    If Allowed Then Reason = "This key family is empty. Its structure can be edited."
+    Me.Controls("cmdEditStructure").Enabled = Allowed
+    Me.Controls("cmdEditStructure").ControlTipText = Reason
+    Me.Controls("lblStructureStatus").Caption = Reason
+End Sub
 
 Private Sub KeyFamilyGetColumns(Keyname As String, Names As Collection, varlen As Collection, valuetype As Integer)
 '
@@ -267,5 +316,44 @@ End Sub
 '***************************************************************************************
 
 Private Sub UserForm_Initialize()
-    Translateform Me    ' translate all labels etc.
+    ' Retain the original Key families designer and add only Karna's entry point.
+    Set SchemaChangeButtons = New Collection
+    AddSchemaChangeButton "cmdEditStructure", "Edit structure...", _
+                          "EDIT", cmdPrint.Left + cmdPrint.Width + 18, _
+                          cmdPrint.Top, 108
+    Me.Controls("cmdEditStructure").Height = cmdPrint.Height
+    Me.Controls("cmdEditStructure").Enabled = False
+    Dim StatusLabel As MSForms.Label
+    Set StatusLabel = Me.Controls.Add("Forms.Label.1", "lblStructureStatus", True)
+    With StatusLabel
+       .Caption = "Select an empty key family to edit its structure."
+       .Left = cmdPrint.Left
+       .Top = cmdPrint.Top + cmdPrint.Height + 8
+       .Width = Me.InsideWidth - 2 * cmdPrint.Left
+       .Height = 28
+       .WordWrap = True
+    End With
+    Me.Height = Me.Height + 40
+    Translateform Me
+End Sub
+
+Private Sub AddSchemaChangeButton(ControlName As String, Caption As String, _
+                                  ChangeType As String, Left As Single, _
+                                  Top As Single, Width As Single)
+Dim Button As MSForms.CommandButton
+Dim ButtonHandler As clsKeyFamilyMigrationButton
+
+    Set Button = Me.Controls.Add( _
+       "Forms.CommandButton.1", ControlName, True)
+    With Button
+       .Caption = Caption
+       .Left = Left
+       .Top = Top
+       .Width = Width
+       .Height = 18
+    End With
+
+    Set ButtonHandler = New clsKeyFamilyMigrationButton
+    ButtonHandler.Initialize Button, Me, ChangeType
+    SchemaChangeButtons.Add ButtonHandler
 End Sub

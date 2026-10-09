@@ -23,16 +23,20 @@ collections:
 | `Ribbon` | Ribbon control identifier | `GetRibbon` and `CommonGetLabel` return ribbon labels. |
 
 The selected language is a worksheet column number stored in the registry.
-Column 3 is the default and fallback. `dlgSelectLanguage` can currently store
-column 3, 4, or 5. `SelectLanguage` reloads all collections and invalidates the
-ribbon.
+Column 3 is the default and fallback. The reviewed release resources map the
+columns as follows:
 
-The retained draft identifies column 3 as English and column 4 as French and
-describes future Spanish and Portuguese support. The text export does not
-contain the language worksheet values or enough form-resource content to verify
-which languages columns 4 and 5 contain. Those language names are therefore
-**legacy-draft** claims until the workbook resources are exported or inspected
-without publishing confidential content.
+| Column | Language | BCP 47 tag |
+|---:|---|---|
+| 3 | English | `en` |
+| 4 | French | `fr` |
+| 5 | Portuguese | `pt` |
+| 6 | Indonesian | `id` |
+
+`dlgSelectLanguage` stores one of these column numbers. `SelectLanguage`
+reloads all collections and invalidates the ribbon. Release 6.02.004 adds the
+Indonesian selector and reviewed column-6 resources for ribbon controls,
+forms, messages, and error messages. Missing text still falls back to English.
 
 ### Adding or updating a language safely
 
