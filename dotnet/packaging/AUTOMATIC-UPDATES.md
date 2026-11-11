@@ -118,7 +118,9 @@ copied for IT support. Restart failures display the same diagnostic view.
 All four supported languages provide the surrounding instructions.
 
 Reports contain a random reference, UTC time, operation stage, updater assembly
-version and up to eight nested exception types/HRESULTs. They intentionally omit
+version and up to eight nested exception types/HRESULTs. HTTP failures also
+include the numeric response status when available; network failures do not
+invent a status code. They intentionally omit
 exception messages, stack traces, URLs, file paths and exception Data. Error
 codes identify a failure category; they do not by themselves establish its cause.
 The checker returns this structured failure to Excel instead of losing it on
@@ -136,3 +138,17 @@ installation, use Details with keyboard navigation in each language and at large
 display scales, then retry with a valid package. Confirm the normal restart offer
 and installed-version checks still work. Automated report tests are not Excel UI
 acceptance.
+
+## Read-only channel preflight
+
+Run `dotnet run --project dotnet/tools/Nadabas.FeedSigning -c Release -- check-channel`
+from the repository root. This uses the bundled feed URL, trusted keys and
+redirect/size rules to fetch and verify the feed. It downloads no installer and
+changes no installation. `verified-feed` establishes feed verification only;
+package download, publisher verification and Excel restart still need acceptance.
+Failures return a sanitized diagnostic and exit code 1.
+
+On 2026-11-11 GitHub's latest release was v6.02.005 with only the legacy ZIP
+asset. There was no appcast.xml or appcast.xml.signature. The installed 0.9.4
+report recorded an HttpRequestException but no HTTP status; this cannot establish
+the exact response received by that earlier Excel process.

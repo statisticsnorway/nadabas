@@ -6,6 +6,31 @@ using System.Xml.Linq;
 
 // Release workstation tool only. Never included in the installation payload.
 if (!OperatingSystem.IsWindows()) throw new IOException("Windows user protection is required.");
+if (args.Length == 1 && args[0] == "check-channel")
+{
+    // Read-only release preflight, using the same pinned trust and HTTP rules as Excel.
+    using var handler = new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false };
+    using var http = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
+    using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(3));
+    try
+    {
+        var feed = new SignedFeed(http, UpdateChannel.Bundled());
+        var release = await feed.Discover("0.0.0", null, deadline.Token);
+        Console.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = release is null ? "no-supported-release" : "verified-feed",
+            version = release?.Version,
+            packageDownloaded = false,
+            installationChanged = false
+        }));
+    }
+    catch (Exception error)
+    {
+        Console.WriteLine(UpdateDiagnostic.Create(UpdateStage.Download, error).ToJson());
+        Environment.ExitCode = 1;
+    }
+    return;
+}
 if ((args.Length == 3 && args[0] == "backup-key") || (args.Length == 4 && args[0] == "restore-key"))
 {
     Nadabas.FeedSigning.KeyRecovery.Run(args[0], args[1], args[2], args.ElementAtOrDefault(3));
@@ -98,5 +123,5 @@ if (args.Length == 5 && args[0] == "prepare-feed")
     }
     return;
 }
-Console.Error.WriteLine("new-key | verify-feed <directory> | backup-key <feed-key.dpapi> <new-backup-file> | restore-key <backup-file> <new-feed-key.dpapi> <expected-public-key> | prepare-feed <feed-key.dpapi> <SSB-signed-installer> <release-tag> <new-output-directory>");
+Console.Error.WriteLine("check-channel | new-key | verify-feed <directory> | backup-key <feed-key.dpapi> <new-backup-file> | restore-key <backup-file> <new-feed-key.dpapi> <expected-public-key> | prepare-feed <feed-key.dpapi> <SSB-signed-installer> <release-tag> <new-output-directory>");
 Environment.ExitCode = 2;

@@ -1,4 +1,4 @@
-NADABAS 0.9.4 INTERNAL INSTALLATION TEST
+NADABAS INTERNAL INSTALLATION TEST
 
 Requires 64-bit Excel and .NET 10 Windows Desktop Runtime x64.
 This package contains VBA test version 6.02.009, dated 2026-11-11, in
@@ -10,7 +10,8 @@ This is not a published production VBA release.
    Setup registers the loader automatically. Choose your language; silent
    upgrades preserve it. First silent install requires /NADABASLANG=3,4,5,6.
 2. Start Excel normally. About must show 6.02.009 and 2026-11-11. Check the
-   latest sessions JSON: slot-fix602009, loaderVersion 0.9.4 and no error.
+   latest sessions JSON: slot-fix602009 and no error. Compare loaderVersion
+   with the component version recorded for the tested package.
 3. In a TEST database, Create Key Family must reject 256, fractions and blank
    dimension lengths before creation. Correct the input and reuse the name.
    Do not remove or repair existing incomplete families without review.
@@ -22,8 +23,8 @@ This is not a published production VBA release.
    keyboard navigation and readable update Details with larger display scaling.
 6. With Excel CLOSED, test explicit rollback and restoration in PowerShell:
    $testRoot = Join-Path $env:LOCALAPPDATA 'NADABAS-Loader-Test'
-   & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-demo602006
-   Start Excel and check 6.02.006. Close Excel and restore:
+   & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-a
+   Start Excel and check baseline 6.02.005. Close Excel and restore:
    & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-fix602009
 
 The signed-feed discovery and restart workflow are included. The production

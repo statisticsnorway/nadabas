@@ -56,3 +56,45 @@ Authenticode signing is available; it does not replace the feed-signing design.
 IT settings need an enforceable machine policy source, not a user-writable file.
 The supported OS/Office matrix and installer licensing must be settled before
 external distribution. Track evidence in PRODUCTION-READINESS.md.
+
+## Candidate preparation, 2026-11-11
+
+The maintainer selected the tested, signed VBA 6.02.009 payload, including
+Exchange and issue 47, for the first delivery-platform release candidate.
+Package 0.9.5 is the next internal candidate; 1.0 is not yet published.
+
+`build_loader_test_installer.ps1 -CompactPayload` stages only baseline slots
+slot-a/slot-b and slot-fix602009. Historical fixtures remain accepted for
+upgrading existing installations but are not distributed in a fresh compact
+package. Existing user files and previously installed slots are preserved.
+The historical source arguments remain required for their verified hashes,
+which the installer needs to recognize an older installation safely.
+
+The compact option retains the current installation identity so the signed
+0.9.4 updater can recognize the next package. Product renaming requires a
+compatible bridge; changing the ProductName alone would break that check.
+Compact packaging is not permission to publish a test-identity package as stable.
+
+Next acceptance: build/sign the compact candidate, exercise fresh installation
+and upgrade from the full test package, then prepare a reviewed feed. Final
+publication still requires source approval, key custody and explicit approval
+of the actual assets. The existing stable endpoint has no appcast asset.
+
+The maintainer accepted responsibility for the feed-signing key on 2026-11-11.
+The existing embedded public key remains unchanged. A recovery backup and drill
+are still required; nominating a custodian does not establish those checks.
+The current source HEAD was unsigned and no local allowed_signers path was
+configured when checked. Production feed preparation must use the reviewed
+source wrapper after these inputs are established.
+
+Candidate evidence: 137 .NET tests and 129 Python tests passed; VBA security
+scan reported no errors and 14 existing warnings. All pre-commit hooks passed
+(the file-end hook required a successful retry after transient file access
+failure), and .NET formatting checks passed. The compact signed installer is
+6,674,424 bytes, compared with 14,886,264 bytes for 0.9.4. Fresh installation
+passed 30 checks; full-to-compact 0.9.4 upgrade passed 40 checks, preserving
+all nine historical payload files. The final guide-only rebuild has separate
+installation evidence in artifacts/release-candidate-0.9.5/final-smoke-report.json.
+Local feed/package/publisher verification passed for the final bytes. This is
+not a successful GitHub download: the live channel preflight returned HTTP 404.
+See artifacts/release-candidate-0.9.5/acceptance-summary.json for local records.

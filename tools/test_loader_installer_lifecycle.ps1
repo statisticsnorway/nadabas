@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$SmokeInstaller, [string]$PreviousSmokeInstaller, [string]$PreviousExpectedSlot = "slot-test602008")
+param([Parameter(Mandatory)][string]$SmokeInstaller, [string]$PreviousSmokeInstaller, [string]$PreviousExpectedSlot = "slot-test602008", [switch]$ExpectedCompactPayload)
 $ErrorActionPreference = 'Stop'
 # Use ONLY the /DSmokeTest compiler variant: separate AppId, shortcuts and registry.
 $repo = Split-Path $PSScriptRoot
@@ -57,12 +57,21 @@ try {
         $oldSelection = (& $oldTool inspect $root | ConvertFrom-Json)
         Check 'previous-real-package-installed' ($oldSelection.Slot -eq $PreviousExpectedSlot)
         $previousLoaderHash = (Get-FileHash -LiteralPath (Join-Path $root 'Nadabas.Loader.Test.xll')).Hash
+        $previousPayloads = @(Get-ChildItem -LiteralPath (Join-Path $root 'versions') -Recurse -File -Filter '*.xlam' | ForEach-Object {
+            [pscustomobject]@{ Path = $_.FullName; Hash = (Get-FileHash -LiteralPath $_.FullName).Hash }
+        })
     }
     Install
     if ($previousLoaderHash) {
         Check 'new-package-replaces-loader-and-retains-old-payload' (
-            (Get-FileHash -LiteralPath (Join-Path $root 'Nadabas.Loader.Test.xll')).Hash -ne $previousLoaderHash -and
-            (Get-FileHash -LiteralPath (Join-Path $root 'versions/slot-test602008/NADABAS.TEST.slot-test602008.xlam')).Hash -eq 'C2F70BBA9F93CBE78FA695C6E48057C9092B1FC976C7F788718590B26D92D126')
+            (Get-FileHash -LiteralPath (Join-Path $root 'Nadabas.Loader.Test.xll')).Hash -ne $previousLoaderHash)
+        foreach ($previous in $previousPayloads) {
+            Check ('previous-payload-preserved-' + [IO.Path]::GetFileName($previous.Path)) ((Get-FileHash -LiteralPath $previous.Path).Hash -eq $previous.Hash)
+        }
+    }
+    if ($ExpectedCompactPayload -and -not $PreviousSmokeInstaller) {
+        $slots = @(Get-ChildItem -LiteralPath (Join-Path $root 'versions') -Directory | Select-Object -ExpandProperty Name)
+        Check 'compact-fresh-install-excludes-historical-fixtures' (-not (Compare-Object @('slot-a', 'slot-b', 'slot-fix602009') $slots))
     }
     Check 'fresh-install-registered' ((Get-ItemPropertyValue $options OPEN1) -eq ('/R "' + (Join-Path $root 'Nadabas.Loader.Test.xll') + '"'))
     Check 'other-startup-entry-preserved' ((Get-ItemPropertyValue $options OPEN) -eq 'unrelated-addin.xll')

@@ -122,7 +122,7 @@ public sealed class Bootstrap : IExcelAddIn
         File.WriteAllText(pending, JsonSerializer.Serialize(new
         {
             schemaVersion = 1,
-            loaderVersion = "0.9.4",
+            loaderVersion = typeof(Bootstrap).Assembly.GetName().Version?.ToString(3) ?? "unknown",
             loadingMode = "session-workbook-no-payload-registration",
             kind = "version-loader-session",
             status,

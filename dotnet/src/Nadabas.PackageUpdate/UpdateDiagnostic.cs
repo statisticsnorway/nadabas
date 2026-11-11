@@ -4,7 +4,7 @@ namespace Nadabas.PackageUpdate;
 
 public enum UpdateStage { Download, Verification, Restart }
 
-public sealed record UpdateFailure(string Type, string HResult);
+public sealed record UpdateFailure(string Type, string HResult, int? HttpStatusCode = null);
 
 // Deliberately exclude exception messages, file paths, URLs, Data and stack traces:
 // those may contain user content or credentials from an external component.
@@ -15,7 +15,8 @@ public sealed record UpdateDiagnostic(string Reference, DateTimeOffset TimeUtc, 
     {
         var failures = new List<UpdateFailure>();
         for (Exception? current = error; current is not null && failures.Count < 8; current = current.InnerException)
-            failures.Add(new(current.GetType().Name, $"0x{current.HResult:X8}"));
+            failures.Add(new(current.GetType().Name, $"0x{current.HResult:X8}",
+                current is HttpRequestException { StatusCode: { } status } ? (int)status : null));
         return new(Guid.NewGuid().ToString("N"), DateTimeOffset.UtcNow, stage.ToString(),
             typeof(UpdateDiagnostic).Assembly.GetName().Version?.ToString() ?? "unknown", failures);
     }

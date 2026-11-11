@@ -45,3 +45,34 @@ visibility. Check all four languages and keyboard operation.
 These source changes are not present in previously signed packages. VBA changes
 require a newly built and signed payload; updating the .NET loader alone does
 not include this fix.
+
+## Signed package acceptance, 2026-11-11
+
+Internal package 0.9.4 includes signed VBA 6.02.009 in slot-fix602009.
+The signed payload audit confirms the validation code, both exact ribbon XML
+parts, four message translations, fixed build date and Excel VBASigned status.
+The isolated installer passed 29 checks. The ordinary Windows installation
+upgraded from 0.9.3 to 0.9.4 with expected component hashes and selected slot.
+Normal Excel startup loaded 6.02.009 with loader 0.9.4, managedVbaChecks true
+and no session error. About displayed 6.02.009 and 2026-11-11.
+
+The initial startup polling report captured the selected state before loading
+completed. The final loaded session is recorded separately; retain both records.
+Excel displayed an active-content warning listing Add-ins and COM add-ins.
+The specific affected component was not identified. No content was enabled and
+no Office security setting was changed. Resolving that warning and the full
+functional database/Exchange checks above remain pending.
+
+Local evidence: artifacts/issue47-0.9.4/acceptance-summary.json,
+desktop-install-report.json, loaded-excel-session.json and signed-payload-audit.json.
+The signed installer is in artifacts/issue47-0.9.4/package/.
+Nothing was published to GitHub or the stable update feed.
+
+## Maintainer acceptance, 2026-11-11
+
+The maintainer reports that both manual tests passed: dimension-length validation
+and the Exchange toggle placement. This is user-reported Excel acceptance, not
+evidence of the complete Access/SQL Server, language or accessibility matrix.
+The maintainer selected signed VBA 6.02.009 as the basis for the delivery 1.0
+release candidate, including Exchange functionality and issue 47. Publication
+remains a separate step.

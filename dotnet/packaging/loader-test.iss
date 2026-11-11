@@ -68,12 +68,14 @@ Source: "{#PayloadDir}\active.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\store.lock"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-a\NADABAS.TEST.slot-a.xlam"; DestDir: "{app}\versions\slot-a"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-b\NADABAS.TEST.slot-b.xlam"; DestDir: "{app}\versions\slot-b"; Attribs: readonly; Flags: onlyifdoesntexist
+#ifndef CompactPayload
 Source: "{#PayloadDir}\versions\slot-test602006\NADABAS.TEST.slot-test602006.xlam"; DestDir: "{app}\versions\slot-test602006"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-test602007\NADABAS.TEST.slot-test602007.xlam"; DestDir: "{app}\versions\slot-test602007"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-test602008\NADABAS.TEST.slot-test602008.xlam"; DestDir: "{app}\versions\slot-test602008"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-beta602006\NADABAS.TEST.slot-beta602006.xlam"; DestDir: "{app}\versions\slot-beta602006"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-beta602006b\NADABAS.TEST.slot-beta602006b.xlam"; DestDir: "{app}\versions\slot-beta602006b"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xlam"; DestDir: "{app}\versions\slot-demo602006"; Attribs: readonly; Flags: onlyifdoesntexist
+#endif
 Source: "{#PayloadDir}\versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam"; DestDir: "{app}\versions\slot-fix602009"; Attribs: readonly; Flags: onlyifdoesntexist
 [Icons]
 Name: "{userprograms}\{#PackageName}\Test guide"; Filename: "{app}\TESTGUIDE.txt"

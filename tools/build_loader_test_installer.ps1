@@ -13,7 +13,8 @@ param(
     [Parameter(Mandatory)][ValidatePattern('^[A-Fa-f0-9]{40}$')][string]$CertificateThumbprint,
     [string]$ReleaseAddin = 'C:\NADABAS\NADABAS.XLAM',
     [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+$')][string]$PackageVersion = '0.9.0',
-    [string]$BuildParent
+    [string]$BuildParent,
+    [switch]$CompactPayload
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot
@@ -60,20 +61,26 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Version tool publish failed' }
     & (Join-Path $tool 'Nadabas.VersionStore.exe') prepare $payload $ReleaseAddin
     if ($LASTEXITCODE -ne 0) { throw 'Store preparation failed' }
-    & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-test602006 ([IO.Path]::GetFullPath($UpgradeAddin))
-    if ($LASTEXITCODE -ne 0) { throw 'Upgrade fixture does not match the compiled approved release catalog' }
-    & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-test602007 ([IO.Path]::GetFullPath($ManagedUpgradeAddin))
-    if ($LASTEXITCODE -ne 0) { throw 'Managed fixture does not match the compiled catalog' }
-    & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-test602008 ([IO.Path]::GetFullPath($DatedUpgradeAddin))
-    if ($LASTEXITCODE -ne 0) { throw 'Dated fixture does not match the compiled catalog' }
-    & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-beta602006 ([IO.Path]::GetFullPath($BetaAddin))
-    if ($LASTEXITCODE -ne 0) { throw 'Beta fixture does not match the compiled catalog' }
-    & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-beta602006b ([IO.Path]::GetFullPath($ContextBetaAddin))
-    if ($LASTEXITCODE -ne 0) { throw 'Context beta does not match the compiled catalog' }
-    & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-demo602006 ([IO.Path]::GetFullPath($DemoAddin))
-    if ($LASTEXITCODE -ne 0) { throw 'Demo fixture does not match the compiled catalog' }
+    if (-not $CompactPayload) {
+        & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-test602006 ([IO.Path]::GetFullPath($UpgradeAddin))
+        if ($LASTEXITCODE -ne 0) { throw 'Upgrade fixture does not match the compiled approved release catalog' }
+        & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-test602007 ([IO.Path]::GetFullPath($ManagedUpgradeAddin))
+        if ($LASTEXITCODE -ne 0) { throw 'Managed fixture does not match the compiled catalog' }
+        & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-test602008 ([IO.Path]::GetFullPath($DatedUpgradeAddin))
+        if ($LASTEXITCODE -ne 0) { throw 'Dated fixture does not match the compiled catalog' }
+        & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-beta602006 ([IO.Path]::GetFullPath($BetaAddin))
+        if ($LASTEXITCODE -ne 0) { throw 'Beta fixture does not match the compiled catalog' }
+        & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-beta602006b ([IO.Path]::GetFullPath($ContextBetaAddin))
+        if ($LASTEXITCODE -ne 0) { throw 'Context beta does not match the compiled catalog' }
+        & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-demo602006 ([IO.Path]::GetFullPath($DemoAddin))
+        if ($LASTEXITCODE -ne 0) { throw 'Demo fixture does not match the compiled catalog' }
+    }
     & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-fix602009 ([IO.Path]::GetFullPath($FixAddin))
     if ($LASTEXITCODE -ne 0) { throw 'Issue 47 fixture does not match the compiled catalog' }
+    $expectedSlots = @('slot-a', 'slot-b', 'slot-fix602009')
+    if (-not $CompactPayload) { $expectedSlots += @('slot-test602006', 'slot-test602007', 'slot-test602008', 'slot-beta602006', 'slot-beta602006b', 'slot-demo602006') }
+    $actualSlots = @(Get-ChildItem -LiteralPath (Join-Path $payload 'versions') -Directory | Select-Object -ExpandProperty Name)
+    if (Compare-Object ($expectedSlots | Sort-Object) ($actualSlots | Sort-Object)) { throw 'Unexpected packaged VBA slots' }
     Copy-Item -LiteralPath $tool -Destination (Join-Path $payload 'tools') -Recurse
     New-Item -ItemType Directory -Path (Join-Path $payload 'updater') | Out-Null
     Copy-Item -LiteralPath $SignedPackageUpdater -Destination (Join-Path $payload 'updater/Nadabas.PackageUpdate.exe')
@@ -85,13 +92,16 @@ try {
         if ((Get-FileHash -LiteralPath (Join-Path $payload "versions/$slot/NADABAS.TEST.$slot.xlam")).Hash -ne $expected) { throw 'Packaged slot hash mismatch' }
     }
     $signCommand = '$q' + $SignTool + '$q sign /sha1 ' + $CertificateThumbprint + ' /s My /fd SHA256 /tr http://timestamp.globalsign.com/tsa/r45standard /td SHA256 $f'
-    & $Compiler "/DPackageVersion=$PackageVersion" "/Snadabas_test=$signCommand" "/DUpgradeHash=$upgradeHash" "/DManagedUpgradeHash=$managedHash" "/DDatedUpgradeHash=$datedHash" "/DBetaHash=$betaHash" "/DContextBetaHash=$contextHash" "/DDemoHash=$demoHash" "/DFixHash=$fixHash" "/DPayloadDir=$payload" "/DPackageOutput=$output" (Join-Path $repo 'dotnet/packaging/loader-test.iss')
+    $payloadOptions = @()
+    if ($CompactPayload) { $payloadOptions += '/DCompactPayload' }
+    & $Compiler @payloadOptions "/DPackageVersion=$PackageVersion" "/Snadabas_test=$signCommand" "/DUpgradeHash=$upgradeHash" "/DManagedUpgradeHash=$managedHash" "/DDatedUpgradeHash=$datedHash" "/DBetaHash=$betaHash" "/DContextBetaHash=$contextHash" "/DDemoHash=$demoHash" "/DFixHash=$fixHash" "/DPayloadDir=$payload" "/DPackageOutput=$output" (Join-Path $repo 'dotnet/packaging/loader-test.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Signed installer build failed; do not distribute intermediate output' }
     $installer = Join-Path $output "NadabasLoaderTest-$PackageVersion-Setup.exe"
     $installerSignature = Get-AuthenticodeSignature -LiteralPath $installer
     if ($installerSignature.Status -ne 'Valid' -or $installerSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Installer signature verification failed' }
     [ordered]@{
         packageVersion = $PackageVersion; testOnly = $true; installer = $installer
+        compactPayload = [bool]$CompactPayload; packagedSlots = $actualSlots
         installerSha256 = (Get-FileHash -LiteralPath $installer).Hash
         signedPackageUpdaterSha256 = (Get-FileHash -LiteralPath $SignedPackageUpdater).Hash
         signedLoaderSha256 = (Get-FileHash -LiteralPath $SignedLoader).Hash

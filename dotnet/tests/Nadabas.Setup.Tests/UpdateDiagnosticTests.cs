@@ -5,6 +5,30 @@ namespace Nadabas.Setup.Tests;
 
 public sealed class UpdateDiagnosticTests
 {
+    [Theory]
+    [InlineData(404)]
+    [InlineData(403)]
+    [InlineData(503)]
+    public void HttpFailureKeepsStatusWithoutRequestOrResponseContent(int status)
+    {
+        var error = new HttpRequestException("https://private/?token=secret", null,
+            (System.Net.HttpStatusCode)status);
+        var report = UpdateDiagnostic.Create(UpdateStage.Download, new IOException("private", error));
+        Assert.Null(report.Failures[0].HttpStatusCode);
+        Assert.Equal(status, report.Failures[1].HttpStatusCode);
+        Assert.DoesNotContain("private", report.ToJson());
+        Assert.DoesNotContain("secret", report.ToJson());
+    }
+
+    [Fact]
+    public void NetworkFailureAndOlderReportsHaveNoInventedHttpStatus()
+    {
+        var report = UpdateDiagnostic.Create(UpdateStage.Download, new HttpRequestException("private"));
+        Assert.Null(report.Failures[0].HttpStatusCode);
+        var legacy = JsonSerializer.Deserialize<UpdateFailure>("{\"Type\":\"HttpRequestException\",\"HResult\":\"0x80131500\"}");
+        Assert.Null(legacy!.HttpStatusCode);
+    }
+
     [Fact]
     public void ReportKeepsNestedErrorCodesWithoutSensitiveExceptionContent()
     {
