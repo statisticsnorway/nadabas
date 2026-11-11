@@ -390,6 +390,14 @@
                      onAction="NADABAS.RibbonUI.btnCreateExchLink "
              />
 
+              <toggleButton id="tglShowExchangeTools"
+                      getLabel="NADABAS.RibbonUI.CommonGetLabel"
+                      getScreentip="NADABAS.RibbonUI.ExchangeToolsTip"
+                      getSupertip="NADABAS.RibbonUI.ExchangeToolsHelp"
+                      getVisible="NADABAS.RibbonUI.ExchangeToolsVisible"
+                      getPressed="NADABAS.RibbonUI.ExchangeToolsPressed"
+                      onAction="NADABAS.RibbonUI.ExchangeToolsClick" />
+
              <menuSeparator id="mySeparator4" />
 
              <button id="btnSetPasswords"
@@ -435,14 +443,6 @@
                       image="info"
                      onAction="NADABAS.RibbonUI.AboutClick"
               />
-
-              <toggleButton id="tglShowExchangeTools"
-                      getLabel="NADABAS.RibbonUI.CommonGetLabel"
-                      getScreentip="NADABAS.RibbonUI.ExchangeToolsTip"
-                      getSupertip="NADABAS.RibbonUI.ExchangeToolsHelp"
-                      getVisible="NADABAS.RibbonUI.ExchangeToolsVisible"
-                      getPressed="NADABAS.RibbonUI.ExchangeToolsPressed"
-                      onAction="NADABAS.RibbonUI.ExchangeToolsClick" />
 </group>
 
 

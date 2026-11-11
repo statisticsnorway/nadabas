@@ -1,3 +1,8 @@
+> Source update, 2026-11-11: the next build places **Show Exchange tools**
+> immediately after **Create Exchange links** in Administration / Other admin.
+> The administrator group and existing workbook-link visibility conditions apply.
+> Historical signed packages described below retain their original ribbon.
+
 # Compact test package 0.8.1
 
 VersionStore and the signed single-file updater use the installed x64 .NET 10

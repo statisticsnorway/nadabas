@@ -19,8 +19,13 @@ class ExchangeVisibilityTests(unittest.TestCase):
             parents = {child: parent for parent in tree.iter() for child in parent}
             controls = {e.attrib.get("id"): e for e in tree.iter()}
             toggle = controls["tglShowExchangeTools"]
-            self.assertEqual(parents[toggle].attrib["id"], "grpAbout")
-            self.assertNotIn("getVisible", parents[toggle].attrib)
+            self.assertEqual(parents[toggle].attrib["id"], "mnuAdministration")
+            self.assertIs(parents[toggle], parents[controls["btnCreateExchLink"]])
+            siblings = list(parents[toggle])
+            self.assertEqual(
+                siblings.index(toggle),
+                siblings.index(controls["btnCreateExchLink"]) + 1,
+            )
             self.assertEqual(
                 toggle.attrib["getVisible"], "NADABAS.RibbonUI.ExchangeToolsVisible"
             )
@@ -72,7 +77,9 @@ class ExchangeVisibilityTests(unittest.TestCase):
             patch_code("unknown")
         with self.assertRaises(ValueError):
             patch_xml('<group id="other"/>')
-        xml = patch_xml('<group id="grpAbout"><button id="btnAbout"/></group>')
+        xml = patch_xml(
+            '<menu id="mnuAdministration"><button id="btnCreateExchLink"/></menu>'
+        )
         self.assertEqual(xml.count('id="tglShowExchangeTools"'), 1)
         with self.assertRaises(ValueError):
             patch_xml(xml)

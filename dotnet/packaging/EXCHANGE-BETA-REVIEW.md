@@ -1,3 +1,8 @@
+> Source update, 2026-11-11: the next build places **Show Exchange tools**
+> immediately after **Create Exchange links** in Administration / Other admin.
+> The administrator group and existing workbook-link visibility conditions apply.
+> Historical signed packages described below retain their original ribbon.
+
 # Exchange beta review and package test, 2026-11-03
 
 Input: user-supplied NADABAS_BETA.zip, SHA-256

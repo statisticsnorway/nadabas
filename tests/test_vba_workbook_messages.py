@@ -79,6 +79,7 @@ class VbaWorkbookMessageTests(unittest.TestCase):
                 "M216",
                 "ExchangePreferenceError",
                 "ManagedUpdateUnavailable",
+                "DimensionLengthInvalid",
             },
         )
         self.assertIn("moved or renamed", messages["M117B"]["english"])

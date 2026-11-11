@@ -77,10 +77,8 @@ def patch_code(source):
 def patch_xml(source):
     if "tglShowExchangeTools" in source:
         raise ValueError("Exchange toggle already present")
-    pattern = r'(<group\s+id="grpAbout"[^>]*>.*?)(</group>)'
-    source, count = re.subn(
-        pattern, lambda m: m[1] + TOGGLE + m[2], source, flags=re.DOTALL
-    )
+    pattern = r'(<button\s+id="btnCreateExchLink"[^>]*?/>)'
+    source, count = re.subn(pattern, lambda m: m[1] + TOGGLE, source, flags=re.DOTALL)
     if count != 1:
-        raise ValueError("Expected one always-visible About group")
+        raise ValueError("Expected one Create Exchange links button")
     return source

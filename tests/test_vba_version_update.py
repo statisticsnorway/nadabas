@@ -199,6 +199,7 @@ class VbaVersionUpdateTests(unittest.TestCase):
                 ("Ribbon", "helpExchangeTools", ""),
                 ("Messages", "ExchangePreferenceError", ""),
                 ("Messages", "ManagedUpdateUnavailable", ""),
+                ("Messages", "DimensionLengthInvalid", ""),
                 ("Ribbon", "tglVersionCheck", ""),
                 ("Forms", "dlgPutLog", "cmdYesAll"),
                 ("Forms", "dlgPutLog", "cmdNoAll"),
