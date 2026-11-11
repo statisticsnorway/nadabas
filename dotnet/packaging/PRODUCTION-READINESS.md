@@ -1,88 +1,57 @@
 # Release acceptance gates
 
-0.8 engine candidate: signed out-of-process package application is implemented
-and undergoing isolated integration tests. Whole-package Excel UI handoff and
-transactional/interruption recovery remain incomplete. Contextual Exchange
-visibility is retained. See PACKAGE-UPDATER-0.8.md for exact scope.
+Reviewed against source and recorded acceptance on 2026-11-11.
+The target scope is [V1-RELEASE-PLAN.md](V1-RELEASE-PLAN.md). This checklist
+is not production approval. Historical prototype numbers do not establish
+acceptance of the current build.
 
+## Implemented and evidenced
 
-Current 1.0 scope is recorded in [V1-RELEASE-PLAN.md](V1-RELEASE-PLAN.md).
-It includes unattended updating of the updater and loader, not only XLAM.
-The signed 0.6.0 test package adds Excel notification and VBA handoff;
-the maintainer reported its tests successful on 2026-11-03. The historical limitations below
-are not the intended final 1.0 behavior.
+- Per-user installation, loader registration, prerequisite checks, language
+  selection and immutable XLAM slots with verified activation and rollback.
+- Signed-feed discovery and package download, NetSparkle strict signature
+  verification, publisher checks, bounded HTTPS transport and IT update policy.
+- Excel ready notification and external whole-package restart/install helper.
+  The ordinary desktop test installed package 0.9.3 and reopened Excel with VBA
+  6.02.006. Its previous Windows registration was 0.8.2, while the loaded
+  component was 0.9.2. This was a locally staged package, not GitHub delivery.
+- SSH source verification, Ed25519 key overlap/revocation and encrypted recovery
+  tooling. Automated recovery uses temporary keys; organizational custody and
+  a real replacement-workstation recovery drill remain open.
+- Local TLS coverage exercises signed feed discovery and the GitHub asset
+  redirect shape. It does not establish access to published GitHub assets or
+  successful installation of those assets.
+- Update diagnostics and translated Details UI are implemented. The 2026-11-11
+  run passed 133 .NET tests and 127 Python tests and built the Excel bootstrap.
+  This UI change is unsigned and still needs visual Excel acceptance.
 
-
-The maintainer reported that installation 0.3.2 worked on 2026-11-02. That is
-user-profile evidence, not approval for organization-wide deployment.
-
-The maintainer subsequently reported the 0.4.0 test guide completed. Record this
-as user-reported upgrade/rollback acceptance; it does not imply clean-machine,
-database or production-download validation. GitHub Releases with a signed feed
-was selected for distribution, with automatic checks/download preparation and
-an in-product restart notification. Users should not visit GitHub manually.
-
-The 0.5.0 milestone implements the pending-activation backend. Queueing does not
-change active.json; the next loader startup verifies and atomically applies the
-queued approved slot. Failed validation retains the old selected release and
-reports rejection. Cancellation and explicit activation clear pending requests.
-An interrupted pointer switch can resume idempotently. This only handles releases
-already admitted by the compiled allowlist and staged locally; it does not yet
-implement an unattended downloader, release admission, UI notification or policy.
-
-Next integration: use the signed GitHub feed to discover a newer approved package,
-verify before staging, obey IT disable/pinning policy, expose readiness in English,
-and apply without killing Excel. Changes to the loader itself still require the
-installer/repair path and Excel closure. Never represent a failed download or
-an unverified package as ready to restart. Do not publish the simulated VBA release.
-
-The next internal package, 0.4.0, tests a deliberately simulated VBA 6.02.006.
-Only the runtime version constant and an About test label change relative to
-the signed 6.02.005 baseline. It must not be published as a normal NADABAS release.
-No local business-logic changes are implicitly included.
-
-## Implemented for the next acceptance round
-
-- English installation guide, messages and Start Menu shortcut names.
-- Prerequisite checks for installed 64-bit Excel and registered .NET 10 Desktop
-  Runtime x64. Missing prerequisites are explained before installation changes.
-- Compiled release allowlist binding each slot to an expected version and hash.
-  The signed loader verifies file content and the VBA-reported runtime version.
-  A mutable adjacent JSON manifest cannot authorize an arbitrary new payload.
-- Separate immutable slots with atomic activation and retention for rollback.
-- Automatic loader registration, exact cleanup, known-directory repair and
-  preservation of unrelated startup entries and reports.
-- Authenticode verification of the supplied loader and VBA test fixture during
-  packaging, with signed Setup and Uninstall.
-
-## 0.7.0 acceptance pending
-
-Restart and update now uses a separate helper and normal Excel shutdown. Automated
-wait/cancellation tests are not evidence that Excel Quit/reopen succeeds under
-all add-ins and save prompts. The user must test the included guide before this
-is accepted. Workbooks are not restored automatically; a helper timeout retains
-normal manual restart as a fallback. The version 008 date is stamped before signing.
+The current packages retain test identities and simulated/beta payloads. Keep
+these out of the stable channel. Existing signed artifacts do not include later
+source changes. See [AUTOMATIC-UPDATES.md](AUTOMATIC-UPDATES.md) for runtime
+evidence and [RELEASE-SIGNING.md](RELEASE-SIGNING.md) for the release procedure.
 
 ## Required before external production distribution
 
-| Gate | Evidence required |
+| Gate | Remaining evidence or decision |
 | --- | --- |
-| Actual upgrade and rollback | About and session reports show 6.02.005 and simulated 6.02.006 correctly across normal and concurrent Excel processes. |
-| Clean machine | Supported Windows/Office matrix, first install without SDK, missing runtime handling, standard user and IT-managed deployment. |
-| Download and publisher trust | Install a genuinely browser-downloaded signed package under the organization's Office policy; verify XLL and VBA signatures and prompts. |
-| Failure recovery | Interrupted extraction, full disk, access denied, registry failure, process-start race and recovery to a usable previous release. Current package is not a transactional updater. |
-| Data regression | Load, save, batch, workbook registration and representative test databases; code rollback is not database rollback. |
-| Update channel | Production HTTPS feed, pinned signing trust, key rotation, opt-out/pinning and ownership when IT manages updates. The NetSparkle probe is not yet integrated. |
-| Release governance | Reviewed source commit, approved artifact hashes, genuine version number, VBA signing verification and reproducible release record. |
-| Support and licensing | Installer-tool licensing, diagnostics policy, user documentation, uninstall/repair instructions and retention policy. |
+| Production package | Select the approved VBA payload, genuine versions and final installation identity; exclude simulated fixtures. Define migration from both legacy XLAM and test installations. |
+| Actual distribution | Exercise the installed updater against an approved published GitHub feed: discover, download, verify, notify, restart, install and relaunch. Publication requires explicit approval. |
+| Clean machine | Agree the Windows/Office support matrix. Test standard-user installation without the SDK, prerequisite failures and IT-managed deployment. |
+| Browser and publisher trust | Test a browser-downloaded final signed installer under the intended Office policy, including XLL/VBA trust and prompts. |
+| Restart and recovery | Check unsaved work, concurrent Excel processes, Later/cancel, interrupted extraction, full disk, denied access, registry failure and process-start races. Prove explicit recovery to a usable previous package. Whole-package application is not transactional. |
+| Legacy migration | Rehearse a legacy-only ordinary Windows profile, backup, registration handoff and exact restoration. Keep user workbooks and databases outside replacement. |
+| Data regression | Load, save, batch and workbook registration on representative test databases. Code rollback does not roll back data. |
+| Languages and accessibility | Inspect all four languages in Excel, first-use selection, keyboard operation and larger display scales, including the new Details window. |
+| Release governance | Approved SSH signer list, reviewed source, final signed artifact hashes, production feed-key custody, replacement-workstation recovery and a rehearsed rotation route. |
+| Support and licensing | Resolve installer-tool licensing, support ownership, repair/downgrade semantics and user instructions. |
 
-The test installer may select its packaged release again on repair. Production
-repair, rollback and downgrade semantics must be specified separately before
-unattended updates are enabled. Do not silently switch between these behaviors.
+For desktop acceptance, verify both physical cache paths and ordinary Windows
+registration. Packaged Codex processes have previously observed different views.
+Preserve package verification while diagnosing that discrepancy.
 
-Prerequisite detection currently covers the registered machine-wide .NET runtime.
-Custom or portable runtime layouts are not claimed as supported. The package
-does not automatically download prerequisites or weaken Office security policy.
+Prerequisite detection covers the registered machine-wide .NET Desktop Runtime.
+Custom or portable runtime layouts are not claimed as supported. Setup does not
+automatically download prerequisites or change Office security policy.
 
 ## Migration from the VBA installer
 

@@ -55,6 +55,12 @@ try
 }
 catch (Exception ex)
 {
-    Console.Error.WriteLine(JsonSerializer.Serialize(new { status = "failed", error = ex.Message }));
+    if (args.Length is 2 or 3 && args[0] == "check-download")
+    {
+        var diagnostic = UpdateDiagnostic.Create(UpdateStage.Download, ex);
+        diagnostic.TrySave(args[1]);
+        Console.WriteLine(JsonSerializer.Serialize(new DownloadStatus("failed", Diagnostic: diagnostic)));
+    }
+    else Console.Error.WriteLine(JsonSerializer.Serialize(new { status = "failed", error = ex.Message }));
     return 1;
 }

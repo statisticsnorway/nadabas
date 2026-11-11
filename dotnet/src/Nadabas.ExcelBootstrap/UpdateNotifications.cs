@@ -31,6 +31,7 @@ internal sealed class UpdateNotifications(string root) : IDisposable
     private bool downloadManualRequested;
     private readonly CancellationTokenSource lifetime = new();
     private string downloadStatus = "not-configured";
+    private UpdateDiagnostic? downloadDiagnostic;
 
     internal void Start()
     {
@@ -83,7 +84,7 @@ internal sealed class UpdateNotifications(string root) : IDisposable
                 }
                 shownSlot = null;
                 if (readyNotice) notice?.Close();
-                if (manual || (notice is not null && shownLanguage != language)) Show(language, T("status"), T(DownloadMessageKey(downloadStatus)), false);
+                if (manual || (notice is not null && shownLanguage != language)) Show(language, T("status"), T(DownloadMessageKey(downloadStatus)), false, diagnostic: downloadDiagnostic);
                 return;
             }
             if (!manual && shownSlot == ready.Slot && (notice is null || shownLanguage == language)) return;
@@ -94,7 +95,8 @@ internal sealed class UpdateNotifications(string root) : IDisposable
         {
             if (readyNotice) notice?.Close();
             shownSlot = null;
-            if (manual) Show(language, T("verifyFailed"), T("unchanged"), false);
+            var diagnostic = Record(UpdateStage.Verification, ex);
+            if (manual) Show(language, T("verifyFailed"), T("platformReview"), false, diagnostic: diagnostic);
         }
     }
 
@@ -113,14 +115,17 @@ internal sealed class UpdateNotifications(string root) : IDisposable
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
         deadline.CancelAfter(TimeSpan.FromMinutes(4));
         string status;
+        UpdateDiagnostic? diagnostic = null;
         try
         {
             var result = await Task.Run(() => AutomaticUpdates.CheckFromExcel(root, manual, deadline.Token)).ConfigureAwait(false);
             status = result.Status;
+            diagnostic = result.Diagnostic;
+            diagnostic?.TrySave(root);
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Trace.WriteLine(ex);
+            diagnostic = Record(UpdateStage.Download, ex);
             status = "failed";
         }
         if (disposed) return;
@@ -133,6 +138,7 @@ internal sealed class UpdateNotifications(string root) : IDisposable
                 manual |= downloadManualRequested;
                 downloadManualRequested = false;
                 downloadStatus = status;
+                downloadDiagnostic = diagnostic;
                 nextDownloadCheck = DateTime.UtcNow.Add(status == "checking" ? TimeSpan.FromSeconds(30) : TimeSpan.FromHours(6));
                 Poll(manual, skipDownload: true);
             });
@@ -167,15 +173,15 @@ internal sealed class UpdateNotifications(string root) : IDisposable
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Trace.WriteLine(ex);
+                var diagnostic = Record(UpdateStage.Verification, ex);
                 shownSlot = null;
                 if (readyNotice) notice?.Close();
-                if (manual) Show(language, T("verifyFailed"), T("platformReview"), false);
+                if (manual) Show(language, T("verifyFailed"), T("platformReview"), false, diagnostic: diagnostic);
             }
         });
     }
 
-    private void Show(string language, string heading, string message, bool canCancel, string? platformId = null)
+    private void Show(string language, string heading, string message, bool canCancel, string? platformId = null, UpdateDiagnostic? diagnostic = null)
     {
         string T(string key) => UpdateLanguage.Text(language, key);
         shownLanguage = language;
@@ -204,6 +210,12 @@ internal sealed class UpdateNotifications(string root) : IDisposable
         later.Click += (_, _) => form.Close();
         actions.Controls.Add(later);
         form.CancelButton = later;
+        if (diagnostic is not null)
+        {
+            var details = new Button { Text = T("details"), AutoSize = true };
+            details.Click += (_, _) => ShowDetails(form, language, diagnostic);
+            actions.Controls.Add(details);
+        }
         if (canCancel)
         {
             var restart = new Button { Text = T("restart"), AutoSize = true };
@@ -216,15 +228,9 @@ internal sealed class UpdateNotifications(string root) : IDisposable
                     catch (RestartBlockedException ex) { MessageBox.Show(ex.Message, T("title")); }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Trace.WriteLine(ex);
-                        var log = Path.Combine(root, "sessions", $"restart-{Environment.ProcessId}.log");
-                        try { File.WriteAllText(log, ex.ToString()); }
-                        catch (Exception logError) when (logError is IOException or UnauthorizedAccessException)
-                        {
-                            System.Diagnostics.Trace.WriteLine(logError);
-                            log = string.Empty;
-                        }
-                        MessageBox.Show(T("restartFailed") + (log.Length == 0 ? "" : "\n\n" + log), T("title"));
+                        var diagnostic = Record(UpdateStage.Restart, ex);
+                        MessageBox.Show(form, T("restartFailed"), T("title"));
+                        ShowDetails(form, language, diagnostic);
                     }
                     finally { if (!restart.IsDisposed) restart.Enabled = true; }
                 });
@@ -248,6 +254,49 @@ internal sealed class UpdateNotifications(string root) : IDisposable
         form.FormClosed += (_, _) => { if (ReferenceEquals(notice, form)) notice = null; form.Dispose(); };
         notice = form;
         form.Show(new ExcelOwner());
+    }
+
+    private UpdateDiagnostic Record(UpdateStage stage, Exception error)
+    {
+        var diagnostic = UpdateDiagnostic.Create(stage, error);
+        diagnostic.TrySave(root);
+        return diagnostic;
+    }
+
+    private static void ShowDetails(IWin32Window owner, string language, UpdateDiagnostic diagnostic)
+    {
+        string T(string key) => UpdateLanguage.Text(language, key);
+        using var form = new Form
+        {
+            Text = T("details"),
+            Size = new System.Drawing.Size(620, 420),
+            StartPosition = FormStartPosition.CenterParent,
+            MinimizeBox = false,
+            ShowInTaskbar = false,
+            AutoScaleMode = AutoScaleMode.Dpi,
+            Padding = new Padding(12)
+        };
+        var layout = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        layout.Controls.Add(new Label { Text = T("supportHint"), AutoSize = true, MaximumSize = new System.Drawing.Size(560, 0) });
+        layout.Controls.Add(new TextBox
+        {
+            Text = diagnostic.ToJson(),
+            ReadOnly = true,
+            Multiline = true,
+            ScrollBars = ScrollBars.Both,
+            WordWrap = false,
+            Dock = DockStyle.Fill,
+            AccessibleName = T("details")
+        });
+        var close = new Button { Text = T("close"), AutoSize = true };
+        close.Click += (_, _) => form.Close();
+        layout.Controls.Add(close);
+        form.Controls.Add(layout);
+        form.CancelButton = close;
+        form.ShowDialog(owner);
     }
 
     public void Dispose()

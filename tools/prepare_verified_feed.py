@@ -1,4 +1,5 @@
 """Prepare an update feed only from a clean checkout with an approved SSH commit."""
+
 import argparse
 import json
 import subprocess
@@ -17,20 +18,37 @@ def main():
     args = parser.parse_args()
     repository = Path(__file__).resolve().parents[1]
     status = subprocess.check_output(
-        ["git", "-C", str(repository), "status", "--porcelain"], text=True,
+        ["git", "-C", str(repository), "status", "--porcelain"],
+        text=True,
     )
     if status.strip():
-        raise ValueError("Commit and review the release changes before preparing a feed.")
+        raise ValueError(
+            "Commit and review the release changes before preparing a feed."
+        )
     evidence = verify(repository, "HEAD", args.allowed_signers)
     output = args.output.resolve()
     if output.exists():
         raise ValueError("Choose a new output directory.")
-    subprocess.run([
-        "dotnet", "run", "--project", str(repository / "dotnet/tools/Nadabas.FeedSigning"),
-        "-c", "Release", "--", "prepare-feed", str(args.feed_key.resolve(strict=True)),
-        str(args.installer.resolve(strict=True)), args.tag, str(output),
-    ], check=True)
-    (output / "source-verification.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+    subprocess.run(
+        [
+            "dotnet",
+            "run",
+            "--project",
+            str(repository / "dotnet/tools/Nadabas.FeedSigning"),
+            "-c",
+            "Release",
+            "--",
+            "prepare-feed",
+            str(args.feed_key.resolve(strict=True)),
+            str(args.installer.resolve(strict=True)),
+            args.tag,
+            str(output),
+        ],
+        check=True,
+    )
+    (output / "source-verification.json").write_text(
+        json.dumps(evidence, indent=2), encoding="utf-8"
+    )
 
 
 if __name__ == "__main__":

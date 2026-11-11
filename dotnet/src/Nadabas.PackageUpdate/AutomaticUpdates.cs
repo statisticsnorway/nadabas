@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Nadabas.PackageUpdate;
 
-public sealed record DownloadStatus(string Status, string? Version = null);
+public sealed record DownloadStatus(string Status, string? Version = null, UpdateDiagnostic? Diagnostic = null);
 
 [SupportedOSPlatform("windows")]
 public static class AutomaticUpdates
@@ -26,8 +26,10 @@ public static class AutomaticUpdates
             await process.WaitForExitAsync(cancellation).ConfigureAwait(false);
             var result = await output.ConfigureAwait(false);
             _ = await error.ConfigureAwait(false);
-            if (process.ExitCode != 0) throw new IOException("Update check failed. The installed version remains unchanged.");
-            return JsonSerializer.Deserialize<DownloadStatus>(result) ?? throw new IOException("Missing update result.");
+            var status = JsonSerializer.Deserialize<DownloadStatus>(result) ?? throw new IOException("Missing update result.");
+            if (process.ExitCode != 0 && !(process.ExitCode == 1 && status.Status == "failed" && status.Diagnostic is not null))
+                throw new IOException("Update check failed. The installed version remains unchanged.");
+            return status;
         }
         catch
         {

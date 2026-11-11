@@ -69,7 +69,17 @@ class VbaWorkbookMessageTests(unittest.TestCase):
         }
 
         self.assertEqual(
-            set(messages), {"M117", "M117B", "M215A", "M215B", "M215C", "M216"}
+            set(messages),
+            {
+                "M117",
+                "M117B",
+                "M215A",
+                "M215B",
+                "M215C",
+                "M216",
+                "ExchangePreferenceError",
+                "ManagedUpdateUnavailable",
+            },
         )
         self.assertIn("moved or renamed", messages["M117B"]["english"])
         self.assertIn("déplacé ou renommé", messages["M117B"]["french"])

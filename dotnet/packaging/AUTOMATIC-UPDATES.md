@@ -109,3 +109,30 @@ Check the job's physical file location and its recorded previous version before
 retrying. Leave package and publisher verification enabled.
 
 Reference: [NetSparkle appcast and strict signature requirements](https://github.com/NetSparkleUpdater/NetSparkle#app-cast).
+
+## Update failure details
+
+The Excel notification offers **Details** after a failed manual verification or
+update check. Background failures remain quiet. The report can be selected and
+copied for IT support. Restart failures display the same diagnostic view.
+All four supported languages provide the surrounding instructions.
+
+Reports contain a random reference, UTC time, operation stage, updater assembly
+version and up to eight nested exception types/HRESULTs. They intentionally omit
+exception messages, stack traces, URLs, file paths and exception Data. Error
+codes identify a failure category; they do not by themselves establish its cause.
+The checker returns this structured failure to Excel instead of losing it on
+standard error. Existing publisher and signature checks remain in force.
+
+The installation's `diagnostics` directory retains `last-download.json`,
+`last-verification.json` and `last-restart.json`, replacing the previous report
+for each stage. Concurrent sessions may replace a report; the displayed report
+retains its own reference. If writing fails, Details still works from memory.
+Reports are not uploaded automatically. This change does not sanitize older
+installer/session logs; review those separately before sharing them.
+
+Visual validation pending: trigger a verification failure in an isolated signed
+installation, use Details with keyboard navigation in each language and at larger
+display scales, then retry with a valid package. Confirm the normal restart offer
+and installed-version checks still work. Automated report tests are not Excel UI
+acceptance.

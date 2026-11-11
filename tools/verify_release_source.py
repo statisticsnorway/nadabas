@@ -1,4 +1,5 @@
 """Verify a release commit against an independently approved SSH signer file."""
+
 import argparse
 import json
 import subprocess
@@ -16,7 +17,9 @@ def verify(repository: Path, revision: str, allowed_signers: Path) -> dict:
     def git(*arguments):
         result = subprocess.run(
             ["git", "-C", str(repository), *arguments],
-            check=True, capture_output=True, text=True,
+            check=True,
+            capture_output=True,
+            text=True,
         )
         return result.stdout.strip()
 
@@ -24,10 +27,16 @@ def verify(repository: Path, revision: str, allowed_signers: Path) -> dict:
     signature = git("cat-file", "commit", commit).split("\n\n", 1)[0]
     if "gpgsig -----BEGIN SSH SIGNATURE-----" not in signature:
         raise ValueError("The release commit must carry an SSH signature.")
-    git("-c", "gpg.format=ssh",
-        "-c", "gpg.ssh.program=ssh-keygen",
-        "-c", "gpg.ssh.allowedSignersFile=" + str(allowed_signers),
-        "verify-commit", commit)
+    git(
+        "-c",
+        "gpg.format=ssh",
+        "-c",
+        "gpg.ssh.program=ssh-keygen",
+        "-c",
+        "gpg.ssh.allowedSignersFile=" + str(allowed_signers),
+        "verify-commit",
+        commit,
+    )
     return {"schemaVersion": 1, "commit": commit, "sshSignature": "verified"}
 
 
