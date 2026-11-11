@@ -27,6 +27,7 @@ book:
     - part: "Getting started"
       chapters:
         - developer-guide/getting-started.md
+        - developer-guide/dotnet-local-setup.md
     - part: "VBA source workflow"
       chapters:
         - developer-guide/export-vba.md
@@ -66,6 +67,7 @@ book:
       chapters:
         - decisions/index.qmd
         - decisions/0001-documentation-platform.qmd
+        - decisions/0002-incremental-dotnet.qmd
     - part: "Appendices"
       chapters:
         - appendices/glossary.qmd

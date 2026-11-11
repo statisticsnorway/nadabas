@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AppHostDotNetSearch>Global</AppHostDotNetSearch>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+  <ItemGroup><InternalsVisibleTo Include="Nadabas.Setup.Tests" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Nadabas.FeedSigning" /></ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NetSparkleUpdater.SparkleUpdater" Version="3.1.0" />
+    <EmbeddedResource Include="update-channel.json" LogicalName="Nadabas.UpdateChannel.json" />
+  </ItemGroup>
+</Project>

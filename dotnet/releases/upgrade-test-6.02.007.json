@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "6.02.007",
+  "testOnly": true,
+  "publishedRelease": false,
+  "recordedOn": "2026-11-03",
+  "baselineVersion": "6.02.005",
+  "baselineSha256": "2F7432B9B04C414337EB1AFEB07E2B93F05E4A5A6D151073FA967A2F7EA89A85",
+  "changes": [
+    "CURRENT_VERSION constant",
+    "About test title",
+    "Session-only managed update bridge and three legacy-check guards"
+  ],
+  "slot": "slot-test602007",
+  "sha256": "F13C5319DF56FA7F7A02B912F98B3B062EA2A4586FB83A86F533A6FEEF01887E",
+  "signerThumbprint": "A70F7882B2F9F5C6D23A22C8AEC70211854B9EAF",
+  "verification": "Authenticode Valid; read-only Excel with macros disabled confirmed VBASigned, version constant, bridge and three guards. Interactive UI acceptance pending."
+}

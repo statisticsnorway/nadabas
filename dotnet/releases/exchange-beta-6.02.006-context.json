@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "testOnly": true,
+  "publishedRelease": false,
+  "releaseVersion": "6.02.006",
+  "channel": "internal-exchange-beta",
+  "slot": "slot-beta602006b",
+  "sourceArchiveSha256": "855DB9C8DE23953340F7EB867A01187BF29877FE339DDBABAD8BCD018C7F6C41",
+  "sourceAddinSha256": "749DDB3F496C6796747A8EDA15BF55C7B57F053A1E50E822029F2AF845824604",
+  "sha256": "BDF847E456764A7D335708471927547B780E33706BEB2A5635337F1FCF3135ED",
+  "buildDate": "2026-11-03",
+  "signerThumbprint": "A70F7882B2F9F5C6D23A22C8AEC70211854B9EAF",
+  "changes": [
+    "Exchange visibility preference default off in both ribbon XMLs and RibbonUI",
+    "Managed update bridge in InterfaceVersionUpdate",
+    "Fixed About build date",
+    "Show Exchange tools is visible only when active workbook has a valid ExchLinks range"
+  ],
+  "verification": "Valid Authenticode and VBASigned; macro-disabled comparison confirmed only RibbonUI, InterfaceVersionUpdate and dlgAbout code changed. Interactive ribbon and Exchange data operations not tested."
+}

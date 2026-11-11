@@ -161,3 +161,45 @@ efa22bdc32fd6abc4ed7d75afb323d6920f9d6f5728442c3e00aa9a58a9048c7
 
 If the uploaded ZIP is replaced, update this checksum before publication.
 Additional Sonar cleanup is deferred to [issue #46](https://github.com/statisticsnorway/nadabas/issues/46).
+
+## Incremental .NET migration reference
+
+### Reference baseline
+
+On 2026-10-27 the maintainer identified `NADABAS.6.02.005.xlsm` and
+`NADABAS.XLAM`, supplied from `C:\NADABAS`, as the currently published release.
+Use this pair as the baseline for the incremental .NET installation work.
+There is also unreleased local development; do not replace the reviewed VBA
+source with an export from these release files or include local changes in
+the release baseline implicitly.
+
+The following sizes and SHA-256 hashes were measured from the supplied files:
+
+| File | Bytes | SHA-256 |
+|---|---:|---|
+| `NADABAS.6.02.005.xlsm` | 2109875 | `AF9995B7C485141A526DD5F330AF6708AEC7DBDF45030B1EDE4812C264609C51` |
+| `NADABAS.XLAM` | 2109734 | `2F7432B9B04C414337EB1AFEB07E2B93F05E4A5A6D151073FA967A2F7EA89A85` |
+
+The machine-readable record is `dotnet/releases/6.02.005.json` in the repository.
+It records reference artifacts only; the current planner does not yet load or
+enforce this manifest. Publication status comes from the maintainer, not an
+independent download comparison. Office signatures and the relationship to a
+source commit have not been verified in this step. Hashes establish byte identity,
+not publisher trust or functional correctness. The binaries are not committed.
+
+### Manual review follow-up
+
+The maintainer subsequently reported that the step 2 signature review succeeded
+and authorized proceeding to step 3 file-transaction testing. The local review
+notes identify SSB as issuer/subject. This records the maintainer's observation;
+it does not claim an automated certificate-chain or revocation check. The original
+artifact hashes remain unchanged. The rehearsal command now checks the add-in
+against the embedded manifest before using it in disposable test directories.
+
+### Future releases
+
+Keep this reference immutable. For a later published release, add a new versioned
+manifest after identifying its artifacts and measuring their hashes, then update
+the documented migration baseline explicitly. A changed file under the same
+local name must not silently replace this reference. Unreleased development
+continues separately until a release is deliberately selected for installation.

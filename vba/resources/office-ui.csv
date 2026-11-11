@@ -21,3 +21,8 @@ Messages,M216,,The workbook has been replaced. Load the data from the new workbo
 Forms,dlgPutLog,cmdYesAll,Yes to all,Oui pour tout,Sim para todos,Ya untuk semua
 Forms,dlgPutLog,cmdNoAll,No to all,Non pour tout,Não para todos,Tidak untuk semua
 Forms,frmKeyFamily,cmdEditStructure,Edit structure...,Modifier la structure...,Editar estrutura...,Edit struktur...
+Ribbon,tglShowExchangeTools,,Show Exchange tools,Afficher les outils Exchange,Mostrar ferramentas do Exchange,Tampilkan alat Exchange
+Ribbon,tipExchangeTools,,Show or hide Exchange tools,Afficher ou masquer les outils Exchange,Mostrar ou ocultar as ferramentas do Exchange,Tampilkan atau sembunyikan alat Exchange
+Ribbon,helpExchangeTools,,This setting only changes the ribbon display.,Ce réglage modifie uniquement l’affichage du ruban.,Esta opção altera apenas a apresentação do friso.,Pengaturan ini hanya mengubah tampilan pita.
+Messages,ExchangePreferenceError,,The Exchange display preference could not be saved.,Impossible d’enregistrer le réglage d’affichage des outils Exchange.,Não foi possível guardar a preferência de visualização das ferramentas do Exchange.,Pengaturan tampilan alat Exchange tidak dapat disimpan.
+Messages,ManagedUpdateUnavailable,,The update service is unavailable. Restart Excel and try again.,Le service de mise à jour est indisponible. Redémarrez Excel et réessayez.,O serviço de atualização está indisponível. Reinicie o Excel e tente novamente.,Layanan pembaruan tidak tersedia. Mulai ulang Excel dan coba lagi.
