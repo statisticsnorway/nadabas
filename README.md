@@ -104,6 +104,7 @@ vba/                     Exported VBA source
   customUI/              Ribbon XML, relationships, and image resources
   resources/             Reviewed additions to hidden language worksheets
 tools/                   VBA export, import, and security-scanning tools
+dotnet/                  .NET setup diagnostics prototype and tests
 tests/                   Automated tests and test fixtures
 docs/                    Quarto technical documentation and contributor guides
 .github/workflows/       Tests, security checks, and documentation deployment
@@ -149,6 +150,11 @@ not automatically a vulnerability, and a documented approval is not a general
 exception for future code.
 
 ## VBA source workflow
+
+The incremental .NET migration starts with a read-only diagnostic tool. See
+[`dotnet/README.md`](dotnet/README.md) and the
+[local setup and verification guide](docs/developer-guide/dotnet-local-setup.md).
+
 
 1. Export a complete VBA project to a staging directory with
    [`tools/export_vba.py`](tools/export_vba.py).
