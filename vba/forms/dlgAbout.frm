@@ -43,4 +43,5 @@ Private Sub UserForm_Initialize()
 '
    Translateform Me    ' translate all labels etc.
    Me.VersionNumber.Caption = InterfaceVersionUpdate.InstalledVersion
+   Me.Label2.Caption = InterfaceVersionUpdate.AboutBuildDate
 End Sub

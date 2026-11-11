@@ -147,6 +147,13 @@ End Sub
 
 Public Sub CreateSnapshot(ssql As String)
 
+    Dim errorNumber As Long
+    Dim errorDescription As String
+    Dim errorSource As String
+    Dim providerDetails As String
+    Dim providerError As ADODB.Error
+    Dim message As String
+
     On Error GoTo badsql
 
     AddToSQLLog "Snapshot = "
@@ -162,16 +169,37 @@ Public Sub CreateSnapshot(ssql As String)
     Exit Sub
 
 badsql:
+    errorNumber = err.Number
+    errorDescription = err.Description
+    errorSource = err.Source
+
+    On Error Resume Next
+    For Each providerError In CurrentDB.DBCnn.Errors
+        providerDetails = providerDetails & vbCrLf & _
+                          providerError.Number & ": " & providerError.Description
+    Next providerError
+    CurrentDB.DBCnn.Errors.Clear
+
+    If Not rs Is Nothing Then
+        If rs.state = adStateOpen Then rs.Close
+    End If
+    Set rs = Nothing
     On Error GoTo 0
-    Dim s As String
 
-    s = "Error in Createsnapshop " & vbCrLf
-    s = s & "SQL = " & ssql
-    s = s & err.Description
+    message = "Unable to create a database snapshot." & vbCrLf & _
+              "Original error " & errorNumber & ": " & errorDescription
+    If errorSource <> vbNullString Then
+        message = message & vbCrLf & "Source: " & errorSource
+    End If
+    If providerDetails <> vbNullString Then
+        message = message & vbCrLf & "Provider details:" & providerDetails
+    End If
+    message = message & vbCrLf & vbCrLf & "SQL:" & vbCrLf & ssql
 
-    MsgBox ssql
+    AddToSQLLog message
 
-    err.Raise 1, "Cretesnapshot", s
+    If errorNumber = 0 Then errorNumber = vbObjectError + 6001
+    err.Raise errorNumber, "DBInterface.CreateSnapshot", message
 
 
 End Sub

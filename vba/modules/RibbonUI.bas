@@ -1479,6 +1479,7 @@ End Sub
 Sub VisibleExchange(control As IRibbonControl, ByRef returnedVal)
     On Error GoTo err:
     returnedVal = False
+    If Not ExchangeToolsShown Then Exit Sub
     If CurrentWBData Is Nothing Then Exit Sub
     returnedVal = CurrentWBData.wbHasExchLinks
     Exit Sub
@@ -1619,6 +1620,7 @@ End Sub
 Sub VisibleExchDesign(control As IRibbonControl, ByRef returnedVal)
     On Error GoTo err:
     returnedVal = False
+    If Not ExchangeToolsShown Then Exit Sub
     If CurrentWBData Is Nothing Then Exit Sub
     returnedVal = CurrentWBData.wbHasExchLinks And isAdministrator
     Exit Sub
@@ -1693,6 +1695,7 @@ End Sub
 Sub grpExchAdministrationVisible(control As IRibbonControl, ByRef returnedVal)
     On Error GoTo err:
     returnedVal = False
+    If Not ExchangeToolsShown Then Exit Sub
     If CurrentWBData Is Nothing Then Exit Sub
     returnedVal = CurrentWBData.wbHasExchLinks And isAdministrator
     Exit Sub
@@ -1957,3 +1960,45 @@ End Sub
 Sub AutoUpdateOnClick(control As IRibbonControl)
 
 End Sub
+
+' BEGIN EXCHANGE VISIBILITY PREFERENCE
+Private Function ExchangeToolsShown() As Boolean
+    On Error GoTo Hidden
+    ExchangeToolsShown = (GetSetting("NADABAS", "Ribbon", "ShowExchangeTools", "0") = "1")
+    Exit Function
+Hidden:
+    ExchangeToolsShown = False
+End Function
+
+Public Sub ExchangeToolsVisible(control As IRibbonControl, ByRef returnedVal)
+    On Error GoTo Hidden
+    returnedVal = False
+    If ActiveWorkbook Is Nothing Then Exit Sub
+    returnedVal = TestExchLinksRange(ActiveWorkbook)
+    Exit Sub
+Hidden:
+    returnedVal = False
+End Sub
+
+Public Sub ExchangeToolsTip(control As IRibbonControl, ByRef returnedVal)
+    returnedVal = MultiLang.GetRibbon("tipExchangeTools")
+End Sub
+
+Public Sub ExchangeToolsHelp(control As IRibbonControl, ByRef returnedVal)
+    returnedVal = MultiLang.GetRibbon("helpExchangeTools")
+End Sub
+
+Public Sub ExchangeToolsPressed(control As IRibbonControl, ByRef returnedVal)
+    returnedVal = ExchangeToolsShown
+End Sub
+
+Public Sub ExchangeToolsClick(control As IRibbonControl, pressed As Boolean)
+    On Error GoTo SettingFailed
+    SaveSetting "NADABAS", "Ribbon", "ShowExchangeTools", IIf(pressed, "1", "0")
+    DoInvalidateIf
+    Exit Sub
+SettingFailed:
+    MsgBox MultiLang.GetMsg("ExchangePreferenceError"), vbExclamation, "NADABAS"
+    DoInvalidateIf
+End Sub
+' END EXCHANGE VISIBILITY PREFERENCE

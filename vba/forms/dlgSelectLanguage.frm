@@ -34,8 +34,19 @@ End Sub
 Private Sub UserForm_Initialize()
     DropClose Me               ' get rid of Close button on frame
 '    Translateform Me    ' translate all labels etc.
-    OptionButton1.value = True
-   OptionButton1_Click ' click it to set lancode
+    OptionButton1.Caption = "English"
+    OptionButton2.Caption = "Français"
+    OptionButton3.Caption = "Português"
+    OptionButton4.Caption = "Bahasa Indonesia"
+    lancode = GetLanguageSetting(3)
+    Select Case lancode
+        Case 4: OptionButton2.Value = True
+        Case 5: OptionButton3.Value = True
+        Case 6: OptionButton4.Value = True
+        Case Else
+            lancode = 3
+            OptionButton1.Value = True
+    End Select
 End Sub
 
 Private Sub cmdCancel_Click()

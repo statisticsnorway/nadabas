@@ -282,3 +282,10 @@ rsconnect/
 /outputs
 /.codex-finalizer
 /output
+
+# .NET build outputs and local diagnostic reports
+**/bin/
+**/obj/
+**/TestResults/
+/artifacts/
+/.vs/

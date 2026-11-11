@@ -1,0 +1,36 @@
+name: .NET diagnostics
+
+on:
+  push:
+    branches: [main, master, creation]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: dotnet
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Nadabas.slnx --locked-mode
+      - run: dotnet build Nadabas.slnx -c Release --no-restore
+      - run: dotnet test Nadabas.slnx -c Release --no-build
+      - run: dotnet format Nadabas.slnx --verify-no-changes --no-restore
+      - if: runner.os == 'Windows'
+        run: dotnet restore src/Nadabas.ExcelBootstrap --locked-mode
+      - if: runner.os == 'Windows'
+        run: dotnet build src/Nadabas.ExcelBootstrap -c Release --no-restore
+      - if: runner.os == 'Windows'
+        run: dotnet format src/Nadabas.ExcelBootstrap/Nadabas.ExcelBootstrap.csproj --verify-no-changes --no-restore

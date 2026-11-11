@@ -314,7 +314,7 @@ Private Sub HandleBatchError(SI As clsWorkBookInfo, stage As String, _
      BatchRunData.ConsolidationSilent = False
      BatchRunData.BatchIgnoreFormulas = False
 
-     MsgBox GetMsg("M014") & vbCrLf & SI.WorkbookName & vbCrLf & _
-            stage & vbCrLf & ErrorDescription, vbInformation
+     MsgBox GetMsg1("M014", SI.WorkbookName) & vbCrLf & _
+             stage & vbCrLf & ErrorDescription, vbInformation
 
 End Sub

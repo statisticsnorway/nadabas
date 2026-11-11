@@ -7,6 +7,7 @@ This section collects workflows for changing NADABAS safely.
 ## Current guides
 
 - [Getting started](../developer-guide/getting-started.md)
+- [.NET local setup and verification](../developer-guide/dotnet-local-setup.md)
 - [Export VBA](../developer-guide/export-vba.md)
 - [Import VBA](../developer-guide/import-vba.md)
 - [Scan VBA security](../developer-guide/scan-vba-security.md)
@@ -20,7 +21,7 @@ This section collects workflows for changing NADABAS safely.
 - release build, signing, and publication;
 - database migration testing;
 - compatibility and deprecation policy;
-- safe boundaries for gradual .NET components.
+- production VBA-to-.NET contracts beyond the initial diagnostic component.
 
 Development documentation must use commands that are exercised in CI or have a
 clearly documented Windows/Excel-only verification procedure.

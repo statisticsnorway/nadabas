@@ -435,7 +435,15 @@
                       image="info"
                      onAction="NADABAS.RibbonUI.AboutClick"
               />
-       </group>
+
+              <toggleButton id="tglShowExchangeTools"
+                      getLabel="NADABAS.RibbonUI.CommonGetLabel"
+                      getScreentip="NADABAS.RibbonUI.ExchangeToolsTip"
+                      getSupertip="NADABAS.RibbonUI.ExchangeToolsHelp"
+                      getVisible="NADABAS.RibbonUI.ExchangeToolsVisible"
+                      getPressed="NADABAS.RibbonUI.ExchangeToolsPressed"
+                      onAction="NADABAS.RibbonUI.ExchangeToolsClick" />
+</group>
 
 
 <!-- *******************************************************************-->
