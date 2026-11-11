@@ -1,63 +1,33 @@
-NADABAS 0.9.0 COMPACT ENGINE CANDIDATE - manual acceptance only
+NADABAS 0.9.4 INTERNAL INSTALLATION TEST
 
-Requires the installed .NET 10 Windows Desktop Runtime (x64). Both tools use this runtime.
-Includes the separate signed whole-package updater under updater/.
-The Excel ready dialog includes automatic signed-feed discovery and package
-download with a whole-package restart handoff. Checks run at Excel startup and
-at most every six hours. Manual checks bypass that delay. The approved GitHub
-feed is not published yet; a missing feed leaves the installed version unchanged.
-Do not treat this as production 1.0.
+Requires 64-bit Excel and .NET 10 Windows Desktop Runtime x64.
+This package contains VBA test version 6.02.009, dated 2026-11-11, in
+slot-fix602009. It is based on the signed multilingual beta with the reviewed
+issue 47 fix and Exchange display control moved into Administration.
+This is not a published production VBA release.
 
-NADABAS Exchange Beta Package Test 0.9.0 - INTERNAL TEST ONLY
-
-This is the real supplied Exchange beta, version 6.02.006, with a display toggle,
-managed-update integration and fixed build date. It is different from the earlier
-SIMULATED 6.02.006 test. It has its own immutable slot: slot-demo602006.
-The incoming original beta ZIP was unsigned; only this separate test copy was
-modified and signed. The legacy XLSM installer is not used.
-
-1. Save work and close all Excel windows. Run this installer over the existing
-   test installation. No manual add-in activation should be necessary.
-   Choose English, Français, Português or Bahasa Indonesia during Setup.
-   It installs the updated loader/tools and selects the separate beta slot.
-   Silent updates retain the language. Fresh silent installs require
-   /NADABASLANG=3 (English), 4 (French), 5 (Portuguese) or 6 (Bahasa Indonesia).
-
-2. Start Excel. About must show 6.02.006 and 2026-11-04.
-   This numeric version is LOWER than simulated 6.02.008, by design: the real
-   beta's version was preserved. Package version is 0.9.0, loaderVersion 0.9.0.
-   The latest sessions JSON must show slot-demo602006 and managedVbaChecks true.
-
-3. With a blank workbook or a workbook WITHOUT ExchLinks, Show Exchange tools
-   must not appear. Normal NADABAS groups and About remain available.
-   The saved display preference still defaults OFF for a user with no setting.
-
-4. Open a TEST workbook containing valid ExchLinks. Show Exchange tools should
-   now appear beside About even when the saved preference is OFF. Turn it ON.
-   Applicable Exchange groups should appear (design/admin still need their
-   existing permissions). Turn it OFF: those groups must disappear immediately.
-   This is a DISPLAY preference, not a disconnect/disable-server command.
-   It must not remove ExchLinks or alter your database/connection.
-
-5. Close/reopen Excel. The preference should remain as last selected. Test both
-   ON and OFF across restarts, and switching between workbooks with/without links.
-   Switching back to a workbook without ExchLinks must hide the toggle itself.
-   Returning to the Exchange workbook must restore the toggle and saved state. No claim is made that Exchange server operations are fixed.
-
-6. Test package rollback with Excel CLOSED, in PowerShell:
+1. Save your work and close all Excel windows before running Setup.
+   Setup registers the loader automatically. Choose your language; silent
+   upgrades preserve it. First silent install requires /NADABASLANG=3,4,5,6.
+2. Start Excel normally. About must show 6.02.009 and 2026-11-11. Check the
+   latest sessions JSON: slot-fix602009, loaderVersion 0.9.4 and no error.
+3. In a TEST database, Create Key Family must reject 256, fractions and blank
+   dimension lengths before creation. Correct the input and reuse the name.
+   Do not remove or repair existing incomplete families without review.
+4. With administrator access and a TEST workbook containing Exchange links,
+   open Administration / Other admin. Show Exchange tools must be immediately
+   below Create Exchange links. Toggle it and check the existing Exchange groups.
+   Without Exchange links the toggle remains hidden. It only controls display.
+5. Check English, French, Portuguese and Bahasa Indonesia. Verify accents,
+   keyboard navigation and readable update Details with larger display scaling.
+6. With Excel CLOSED, test explicit rollback and restoration in PowerShell:
    $testRoot = Join-Path $env:LOCALAPPDATA 'NADABAS-Loader-Test'
-   & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-test602008
-   Start Excel: About shows the previous simulated 6.02.008.
-   Close Excel and return to the beta:
    & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-demo602006
+   Start Excel and check 6.02.006. Close Excel and restore:
+   & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-fix602009
 
-This is a real-content INSTALLER upgrade and explicit rollback test. It is NOT
-an automatic GitHub update test. Do not queue 6.02.006 from 6.02.008: automatic
-version downgrade protection intentionally refuses that numeric transition.
-Previous immutable slots and session reports remain available. Database data
-is not rolled back. Reinstalling this package selects the beta again.
-
-Keep this beta internal. The next complete-platform update milestone still
-needs signed feed/download integration and acceptance of the installer handoff.
-
-To return to the previous 0.7.1 beta payload, close Excel and activate slot-beta602006.
+The signed-feed discovery and restart workflow are included. The production
+GitHub feed is not published. Missing feed or failed verification leaves the
+installed version unchanged. Manual checks show Details on failure.
+Never bypass Office security prompts. PIN belongs only in SafeNet.
+Code rollback does not roll back database data. Keep this test package internal.

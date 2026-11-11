@@ -7,6 +7,7 @@ param(
     [Parameter(Mandatory)][string]$BetaAddin,
     [Parameter(Mandatory)][string]$ContextBetaAddin,
     [Parameter(Mandatory)][string]$DemoAddin,
+    [Parameter(Mandatory)][string]$FixAddin,
     [Parameter(Mandatory)][string]$Compiler,
     [Parameter(Mandatory)][string]$SignTool,
     [Parameter(Mandatory)][ValidatePattern('^[A-Fa-f0-9]{40}$')][string]$CertificateThumbprint,
@@ -34,6 +35,9 @@ $contextSignature = Get-AuthenticodeSignature -LiteralPath $ContextBetaAddin
 if ($contextSignature.Status -ne 'Valid' -or $contextSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Context beta must be signed by the selected publisher' }
 $demoSignature = Get-AuthenticodeSignature -LiteralPath $DemoAddin
 if ($demoSignature.Status -ne 'Valid' -or $demoSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Demo must have a valid publisher signature' }
+$fixSignature = Get-AuthenticodeSignature -LiteralPath $FixAddin
+if ($fixSignature.Status -ne 'Valid' -or $fixSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Issue 47 fixture must be signed by the selected publisher' }
+$fixHash = (Get-FileHash -LiteralPath $FixAddin).Hash
 $demoHash = (Get-FileHash -LiteralPath $DemoAddin).Hash
 $contextHash = (Get-FileHash -LiteralPath $ContextBetaAddin).Hash
 $betaHash = (Get-FileHash -LiteralPath $BetaAddin).Hash
@@ -68,6 +72,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Context beta does not match the compiled catalog' }
     & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-demo602006 ([IO.Path]::GetFullPath($DemoAddin))
     if ($LASTEXITCODE -ne 0) { throw 'Demo fixture does not match the compiled catalog' }
+    & (Join-Path $tool 'Nadabas.VersionStore.exe') stage $payload slot-fix602009 ([IO.Path]::GetFullPath($FixAddin))
+    if ($LASTEXITCODE -ne 0) { throw 'Issue 47 fixture does not match the compiled catalog' }
     Copy-Item -LiteralPath $tool -Destination (Join-Path $payload 'tools') -Recurse
     New-Item -ItemType Directory -Path (Join-Path $payload 'updater') | Out-Null
     Copy-Item -LiteralPath $SignedPackageUpdater -Destination (Join-Path $payload 'updater/Nadabas.PackageUpdate.exe')
@@ -79,7 +85,7 @@ try {
         if ((Get-FileHash -LiteralPath (Join-Path $payload "versions/$slot/NADABAS.TEST.$slot.xlam")).Hash -ne $expected) { throw 'Packaged slot hash mismatch' }
     }
     $signCommand = '$q' + $SignTool + '$q sign /sha1 ' + $CertificateThumbprint + ' /s My /fd SHA256 /tr http://timestamp.globalsign.com/tsa/r45standard /td SHA256 $f'
-    & $Compiler "/DPackageVersion=$PackageVersion" "/Snadabas_test=$signCommand" "/DUpgradeHash=$upgradeHash" "/DManagedUpgradeHash=$managedHash" "/DDatedUpgradeHash=$datedHash" "/DBetaHash=$betaHash" "/DContextBetaHash=$contextHash" "/DDemoHash=$demoHash" "/DPayloadDir=$payload" "/DPackageOutput=$output" (Join-Path $repo 'dotnet/packaging/loader-test.iss')
+    & $Compiler "/DPackageVersion=$PackageVersion" "/Snadabas_test=$signCommand" "/DUpgradeHash=$upgradeHash" "/DManagedUpgradeHash=$managedHash" "/DDatedUpgradeHash=$datedHash" "/DBetaHash=$betaHash" "/DContextBetaHash=$contextHash" "/DDemoHash=$demoHash" "/DFixHash=$fixHash" "/DPayloadDir=$payload" "/DPackageOutput=$output" (Join-Path $repo 'dotnet/packaging/loader-test.iss')
     if ($LASTEXITCODE -ne 0) { throw 'Signed installer build failed; do not distribute intermediate output' }
     $installer = Join-Path $output "NadabasLoaderTest-$PackageVersion-Setup.exe"
     $installerSignature = Get-AuthenticodeSignature -LiteralPath $installer
@@ -90,7 +96,7 @@ try {
         signedPackageUpdaterSha256 = (Get-FileHash -LiteralPath $SignedPackageUpdater).Hash
         signedLoaderSha256 = (Get-FileHash -LiteralPath $SignedLoader).Hash
         certificateThumbprint = $CertificateThumbprint; baselineSha256 = $expected
-        upgradeTestVersion = '6.02.006'; upgradeTestSha256 = $demoHash; contextBetaSha256 = $contextHash; previousBetaSha256 = $betaHash; releaseChannel = 'internal-exchange-beta'; datedTestSha256 = $datedHash; managedBridgeSha256 = $managedHash; previousTestSha256 = $upgradeHash; publishedVbaRelease = $false
+        upgradeTestVersion = '6.02.009'; upgradeTestSha256 = $fixHash; previousDemoSha256 = $demoHash; contextBetaSha256 = $contextHash; previousBetaSha256 = $betaHash; releaseChannel = 'internal-exchange-beta'; datedTestSha256 = $datedHash; managedBridgeSha256 = $managedHash; previousTestSha256 = $upgradeHash; publishedVbaRelease = $false
         acceptance = 'pending-user-session'; excelRegistration = 'automatic-current-user-loader-only'
     } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'build-record.json') -Encoding utf8
     Write-Output "SIGNED TEST INSTALLER: $installer"

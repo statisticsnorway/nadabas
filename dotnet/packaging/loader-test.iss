@@ -20,6 +20,9 @@
 #ifndef DemoHash
   #error DemoHash is required
 #endif
+#ifndef FixHash
+  #error FixHash is required
+#endif
 #ifdef SmokeTest
   #define PackageId "NadabasLoaderInstallerSmoke"
   #define PackageName "NADABAS Installer Smoke"
@@ -71,6 +74,7 @@ Source: "{#PayloadDir}\versions\slot-test602008\NADABAS.TEST.slot-test602008.xla
 Source: "{#PayloadDir}\versions\slot-beta602006\NADABAS.TEST.slot-beta602006.xlam"; DestDir: "{app}\versions\slot-beta602006"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-beta602006b\NADABAS.TEST.slot-beta602006b.xlam"; DestDir: "{app}\versions\slot-beta602006b"; Attribs: readonly; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xlam"; DestDir: "{app}\versions\slot-demo602006"; Attribs: readonly; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam"; DestDir: "{app}\versions\slot-fix602009"; Attribs: readonly; Flags: onlyifdoesntexist
 [Icons]
 Name: "{userprograms}\{#PackageName}\Test guide"; Filename: "{app}\TESTGUIDE.txt"
 Name: "{userprograms}\{#PackageName}\Open installation folder"; Filename: "{app}"

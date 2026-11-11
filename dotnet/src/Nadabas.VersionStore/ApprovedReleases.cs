@@ -18,6 +18,8 @@ internal static class ApprovedReleases
             ["slot-beta602006"] = new("6.02.006", "82F22D19D66A6D682E5A5FBE7C15D7013929D36BF37820FAF915617687D3872D"),
             ["slot-beta602006b"] = new("6.02.006", "BDF847E456764A7D335708471927547B780E33706BEB2A5635337F1FCF3135ED"),
             // Signed multilingual demo; not a published VBA release.
-            ["slot-demo602006"] = new("6.02.006", "8D87B0295547DB6F250F99EEC60781ACB1F54F8FF596559253DF55F1628799E0")
+            ["slot-demo602006"] = new("6.02.006", "8D87B0295547DB6F250F99EEC60781ACB1F54F8FF596559253DF55F1628799E0"),
+            // Signed issue 47 and Exchange-placement test; not a published release.
+            ["slot-fix602009"] = new("6.02.009", "D53D492724997C08596DBEACAE4695B30786B3695310D13035CD61541A829750")
         };
 }

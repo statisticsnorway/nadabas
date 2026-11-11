@@ -75,10 +75,10 @@ try {
         Install
         Check "silent-upgrade-preserves-language-$code" ((Get-ItemPropertyValue ($registryRoot + "\Language") Code) -eq $code)
     }
-    Check 'multilingual-demo-selected' ($installed.Slot -eq 'slot-demo602006' -and $installed.ReleaseVersion -eq '6.02.006')
+    Check 'issue47-fixture-selected' ($installed.Slot -eq 'slot-fix602009' -and $installed.ReleaseVersion -eq '6.02.009')
     & $tool activate $root slot-a
     if ($LASTEXITCODE -ne 0) { throw 'Baseline selection failed' }
-    & $tool queue $root slot-demo602006
+    & $tool queue $root slot-fix602009
     if ($LASTEXITCODE -ne 0) { throw 'Queue failed' }
     $queued = & $tool inspect $root | ConvertFrom-Json
     Check 'installed-queue-keeps-current-release' ($queued.ReleaseVersion -eq '6.02.005' -and (Test-Path (Join-Path $root 'pending-update.json')))
@@ -98,7 +98,7 @@ try {
     Set-ItemProperty $manager -Name $slot -Value ''
     Install
     $installed = & $tool inspect $root | ConvertFrom-Json
-    Check 'reinstall-selects-packaged-release' ($installed.Slot -eq 'slot-demo602006' -and $installed.ReleaseVersion -eq '6.02.006')
+    Check 'reinstall-selects-packaged-release' ($installed.Slot -eq 'slot-fix602009' -and $installed.ReleaseVersion -eq '6.02.009')
     Check 'session-report-preserved' ((Get-FileHash $report).Hash -eq $reportHash)
     Check 'old-payload-registration-removed' (-not (Get-Item $options).GetValueNames().Contains('OPEN2') -and -not (Get-Item $manager).GetValueNames().Contains($slot))
     Check 'no-duplicate-loader-registration' (@((Get-Item $options).GetValueNames()).Count -eq 2)

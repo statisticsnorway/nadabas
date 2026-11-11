@@ -74,7 +74,7 @@ function OurPayload(const Value: String): Boolean;
 var Slots: TArrayOfString; I: Integer; Path: String;
 begin
   Result := False;
-  SetArrayLength(Slots, 8);
+  SetArrayLength(Slots, 9);
   Slots[0] := 'slot-a';
   Slots[1] := 'slot-b';
   Slots[2] := 'slot-test602006';
@@ -83,6 +83,7 @@ begin
   Slots[5] := 'slot-beta602006';
   Slots[6] := 'slot-beta602006b';
   Slots[7] := 'slot-demo602006';
+  Slots[8] := 'slot-fix602009';
   for I := 0 to GetArrayLength(Slots) - 1 do begin
     Path := ExpandConstant('{app}') + '\versions\' + Slots[I] + '\NADABAS.TEST.' + Slots[I] + '.xlam';
     if RefersTo(Value, Path) then begin Result := True; Exit; end;

@@ -9,6 +9,7 @@ const
   BetaHash = '{#BetaHash}';
   ContextBetaHash = '{#ContextBetaHash}';
   DemoHash = '{#DemoHash}';
+  FixHash = '{#FixHash}';
 
 function FileAttributes(Name: String): Cardinal;
   external 'GetFileAttributesW@kernel32.dll stdcall';
@@ -87,7 +88,7 @@ begin
           if (Item.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0 then begin
             if (Rel <> 'sessions') and (Rel <> 'tools') and (Rel <> 'updater') and (Rel <> 'versions') and
               (Rel <> 'versions\slot-a') and (Rel <> 'versions\slot-b') and
-              (Rel <> 'versions\slot-test602006') and (Rel <> 'versions\slot-test602007') and (Rel <> 'versions\slot-test602008') and (Rel <> 'versions\slot-beta602006') and (Rel <> 'versions\slot-beta602006b') and (Rel <> 'versions\slot-demo602006') then begin Result := False; Exit; end;
+              (Rel <> 'versions\slot-test602006') and (Rel <> 'versions\slot-test602007') and (Rel <> 'versions\slot-test602008') and (Rel <> 'versions\slot-beta602006') and (Rel <> 'versions\slot-beta602006b') and (Rel <> 'versions\slot-demo602006') and (Rel <> 'versions\slot-fix602009') then begin Result := False; Exit; end;
             if not SafeResidual(Child, Rel + '\') then begin Result := False; Exit; end;
           end else if (Relative = 'sessions\') and (CompareText(ExtractFileExt(Item.Name), '.json') = 0) then begin
             // Preserve historical reports.
@@ -108,6 +109,8 @@ begin
             if CompareText(GetSHA256OfFile(Child), ContextBetaHash) <> 0 then begin Result := False; Exit; end;
           end else if Rel = 'versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xlam' then begin
             if CompareText(GetSHA256OfFile(Child), DemoHash) <> 0 then begin Result := False; Exit; end;
+          end else if Rel = 'versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam' then begin
+            if CompareText(GetSHA256OfFile(Child), FixHash) <> 0 then begin Result := False; Exit; end;
           end else begin Result := False; Exit; end;
         end;
       until not FindNext(Item);
@@ -158,7 +161,7 @@ begin
     if not LoadStringsFromFile(AddBackslash(Root) + '.nadabas-version-store', Lines) then begin Result := 'Cannot read the installation marker.'; Exit; end;
     if GetArrayLength(Lines) <> 1 then begin Result := 'Unrecognized installation directory.'; Exit; end;
     if Lines[0] <> 'NADABAS version-store prototype v1' then begin Result := 'Unrecognized installation directory.'; Exit; end;
-    for I := 0 to 7 do begin
+    for I := 0 to 8 do begin
       ExpectedHash := BaselineHash;
       if I = 0 then Slot := 'slot-a'
       else if I = 1 then Slot := 'slot-b'
@@ -167,7 +170,8 @@ begin
       else if I = 4 then begin Slot := 'slot-test602008'; ExpectedHash := DatedUpgradeHash; end
       else if I = 5 then begin Slot := 'slot-beta602006'; ExpectedHash := BetaHash; end
       else if I = 6 then begin Slot := 'slot-beta602006b'; ExpectedHash := ContextBetaHash; end
-      else begin Slot := 'slot-demo602006'; ExpectedHash := DemoHash; end;
+      else if I = 7 then begin Slot := 'slot-demo602006'; ExpectedHash := DemoHash; end
+      else begin Slot := 'slot-fix602009'; ExpectedHash := FixHash; end;
       Path := AddBackslash(Root) + 'versions\' + Slot + '\NADABAS.TEST.' + Slot + '.xlam';
       if FileExists(Path) then
         if CompareText(GetSHA256OfFile(Path), ExpectedHash) <> 0 then begin Result := 'An existing test version has changed. Installation stopped and preserved it.'; Exit; end;
@@ -202,6 +206,7 @@ begin
   RemoveExactRegistration(ExpandConstant('{app}\versions\slot-beta602006\NADABAS.TEST.slot-beta602006.xlam'));
   RemoveExactRegistration(ExpandConstant('{app}\versions\slot-beta602006b\NADABAS.TEST.slot-beta602006b.xlam'));
   RemoveExactRegistration(ExpandConstant('{app}\versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xlam'));
+  RemoveExactRegistration(ExpandConstant('{app}\versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam'));
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -214,7 +219,7 @@ begin
   // Explicit test-release upgrade: validate bytes through the compiled catalog
   // and atomically select the new slot only after payload installation succeeds.
   if not Exec(ExpandConstant('{app}\tools\Nadabas.VersionStore.exe'),
-    'activate "' + ExpandConstant('{app}') + '" slot-demo602006', '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
+    'activate "' + ExpandConstant('{app}') + '" slot-fix602009', '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
     RaiseException('Unable to start release activation. Previous selection has not been intentionally changed.');
   if ExitCode <> 0 then RaiseException('Release verification or activation failed. See the installation log.');
   Path := ExpandConstant('{app}\Nadabas.Loader.Test.xll');
