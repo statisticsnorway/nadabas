@@ -62,6 +62,26 @@ class VbaVersionUpdateTests(unittest.TestCase):
             "InterfaceVersionUpdate.CancelScheduledVersionCheck", self.startup_source
         )
 
+    def test_managed_session_hands_off_checks_without_changing_saved_preferences(self):
+        bridge = self.update_source.split("' BEGIN MANAGED UPDATE BRIDGE")[1].split(
+            "' END MANAGED UPDATE BRIDGE"
+        )[0]
+        self.assertIn("managedUpdates = True", bridge)
+        self.assertIn("CancelScheduledVersionCheck", bridge)
+        self.assertIn('Application.Run "NADABAS.CheckUpdates"', bridge)
+        self.assertNotIn("SaveSetting", bridge)
+        for name in (
+            "ScheduleLatestVersionCheck",
+            "CheckLatestVersion",
+            "CheckLatestVersionManually",
+        ):
+            procedure = self.update_source.split("Public Sub " + name + "(")[1].split(
+                "End Sub"
+            )[0]
+            self.assertIn("If managedUpdates Then", procedure)
+            if name == "CheckLatestVersionManually":
+                self.assertIn("ShowManagedUpdateStatus", procedure)
+
     def test_database_setting_is_applied_after_loading(self):
         settings_position = self.open_database_source.index(
             "Usersettings.LoadUserSettings"
@@ -174,6 +194,11 @@ class VbaVersionUpdateTests(unittest.TestCase):
             {(row["sheet"], row["key"], row["control"]) for row in rows},
             {
                 ("Ribbon", "btnCheckNadabasVersion", ""),
+                ("Ribbon", "tglShowExchangeTools", ""),
+                ("Ribbon", "tipExchangeTools", ""),
+                ("Ribbon", "helpExchangeTools", ""),
+                ("Messages", "ExchangePreferenceError", ""),
+                ("Messages", "ManagedUpdateUnavailable", ""),
                 ("Ribbon", "tglVersionCheck", ""),
                 ("Forms", "dlgPutLog", "cmdYesAll"),
                 ("Forms", "dlgPutLog", "cmdNoAll"),

@@ -19,6 +19,9 @@ class VbaDatabaseErrorHandlingTests(unittest.TestCase):
         cls.open_database = (
             REPOSITORY_ROOT / "vba" / "modules" / "cmdOpen_Close_Database.bas"
         ).read_text(encoding="ascii")
+        cls.batch_run = (
+            REPOSITORY_ROOT / "vba" / "modules" / "BatchRun.bas"
+        ).read_text(encoding="ascii")
 
     def test_create_cursor_retains_the_original_ado_error(self):
         procedure = vba_procedure(
@@ -37,6 +40,30 @@ class VbaDatabaseErrorHandlingTests(unittest.TestCase):
 
         guard = 'If Not CursorIsOpen Then RaiseCursorNotOpen "CursorAddNew"'
         self.assertLess(procedure.index(guard), procedure.index("rs.AddNew"))
+
+    def test_create_snapshot_preserves_database_and_provider_errors(self):
+        procedure = vba_procedure(
+            self.db_interface, "Public Sub CreateSnapshot", "End Sub"
+        )
+
+        self.assertIn("errorNumber = err.Number", procedure)
+        self.assertIn("errorDescription = err.Description", procedure)
+        self.assertIn("For Each providerError In CurrentDB.DBCnn.Errors", procedure)
+        self.assertIn("providerError.Description", procedure)
+        self.assertIn("Set rs = Nothing", procedure)
+        self.assertIn("AddToSQLLog message", procedure)
+        self.assertIn(
+            'err.Raise errorNumber, "DBInterface.CreateSnapshot", message', procedure
+        )
+        self.assertNotIn("MsgBox ssql", procedure)
+
+    def test_batch_error_replaces_workbook_placeholder(self):
+        procedure = vba_procedure(
+            self.batch_run, "Private Sub HandleBatchError", "End Sub"
+        )
+
+        self.assertIn('GetMsg1("M014", SI.WorkbookName)', procedure)
+        self.assertNotIn('GetMsg("M014")', procedure)
 
     def test_open_database_handles_and_cleans_up_unexpected_errors(self):
         procedure = vba_procedure(
