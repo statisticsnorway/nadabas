@@ -1,14 +1,24 @@
 # SSH source signing: maintainer walkthrough
 
-This is the next setup session, not a record that setup is complete. It changes
+This walkthrough concerns source signing. It changes
 source approval only; it does not replace Windows/Office publisher signing or
 the separate Ed25519 key that signs the update feed and package bytes.
+
+Local acceptance, 2026-11-12: the maintainer created and registered a signing
+key, enabled the Windows SSH agent and added the key under the ordinary user.
+Repository-local signing and an external allowed_signers file are configured.
+An empty commit in an isolated repository passed both git verify-commit and
+tools/verify_release_source.py. The actual NADABAS preparation commit
+7f100dfe1452cdbf123738ba2b18b042347d9cac also passed the approved-signer check.
+This verifies local source signing only; GitHub verification and the release
+environment still need acceptance. No existing history was rewritten and
+nothing was pushed by these checks.
 
 ## 1. Inspect the existing setup
 
 Check Git's version and repository-local signing settings. Git supports SSH
 signature verification from 2.34; the current machine reported 2.53.0.windows.3.
-No signing key, format or allowed_signers path was configured in the checks.
+No signing key, format or allowed_signers path was configured in the initial checks.
 That does not mean no SSH key exists elsewhere.
 
 List public `.pub` files in the user's SSH directory and inspect public-key
