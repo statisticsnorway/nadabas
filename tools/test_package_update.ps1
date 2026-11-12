@@ -2,7 +2,9 @@ param(
     [Parameter(Mandatory)][string]$Updater,
     [Parameter(Mandatory)][string]$PreviousSmokeInstaller,
     [Parameter(Mandatory)][string]$NextSmokeInstaller,
-    [string]$ExpectedLoaderSha256
+    [string]$ExpectedLoaderSha256,
+    [string]$ExpectedSlot = 'slot-demo602006',
+    [string]$ExpectedVbaVersion = '6.02.006'
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot
@@ -33,6 +35,9 @@ try {
     $stageHelper = Join-Path $root 'updater/Nadabas.PackageUpdate.exe'
     if (-not (Test-Path -LiteralPath $stageHelper)) { $stageHelper = $Updater }
     $before = (Get-FileHash -LiteralPath (Join-Path $root 'Nadabas.Loader.Test.xll')).Hash
+    $previousPayloads = @(Get-ChildItem -LiteralPath (Join-Path $root 'versions') -Recurse -File -Filter '*.xlam' | ForEach-Object {
+        [pscustomobject]@{ Path = $_.FullName; Hash = (Get-FileHash -LiteralPath $_.FullName).Hash }
+    })
 
     & $stageHelper stage $root $NextSmokeInstaller (Join-Path $root 'bad-cache') --smoke
     Check 'cache-inside-installation-rejected' ($LASTEXITCODE -ne 0 -and -not (Test-Path (Join-Path $root 'bad-cache')))
@@ -47,9 +52,9 @@ try {
     & (Join-Path $badCache 'Nadabas.PackageUpdate.exe') apply $badCache
     Check 'modified-cached-package-not-executed' ($LASTEXITCODE -ne 0 -and -not (Test-Path (Join-Path $badCache 'apply-started.json')) -and (Get-FileHash -LiteralPath (Join-Path $root 'Nadabas.Loader.Test.xll')).Hash -eq $before)
 
-    $failureCache = Join-Path $directory 'installer-rejection-cache'
-    & $stageHelper stage $root $NextSmokeInstaller $failureCache --smoke
+    $failureOffer = & $stageHelper stage-for-excel $root $NextSmokeInstaller --smoke | ConvertFrom-Json
     Check 'installer-failure-test-staged' ($LASTEXITCODE -eq 0)
+    $failureCache = Join-Path ($root + '-package-cache') $failureOffer.Id
     $ownedSlot = Join-Path $root 'versions/slot-a/NADABAS.TEST.slot-a.xlam'
     $originalBytes = [IO.File]::ReadAllBytes($ownedSlot)
     try {
@@ -59,10 +64,18 @@ try {
         $failureStatus = Get-Content -LiteralPath (Join-Path $failureCache 'status.json') -Raw | ConvertFrom-Json
         Check 'installer-rejection-records-repair-state' ($LASTEXITCODE -ne 0 -and $failureStatus.status -eq 'repair-required')
         Check 'rejected-install-keeps-old-loader' ((Get-FileHash -LiteralPath (Join-Path $root 'Nadabas.Loader.Test.xll')).Hash -eq $before)
+        & (Join-Path $failureCache 'Nadabas.PackageUpdate.exe') apply $failureCache
+        Check 'failed-job-replay-rejected' ($LASTEXITCODE -ne 0)
     } finally {
         [IO.File]::WriteAllBytes($ownedSlot, $originalBytes)
         [IO.File]::SetAttributes($ownedSlot, [IO.FileAttributes]::ReadOnly)
     }
+    $recoveryHelper = Join-Path $failureCache 'Nadabas.PackageUpdate.exe'
+    & $recoveryHelper recover-for-excel $root $failureOffer.Id $NextSmokeInstaller
+    Check 'recovery-rejects-wrong-platform-version' ($LASTEXITCODE -ne 0)
+    & $recoveryHelper recover-for-excel $root $failureOffer.Id $PreviousSmokeInstaller
+    Check 'explicit-recovery-restores-original-package' ($LASTEXITCODE -eq 0 -and (Get-FileHash -LiteralPath (Join-Path $root 'Nadabas.Loader.Test.xll')).Hash -eq $before)
+    Check 'recovery-clears-pending-pointer' (-not (Test-Path -LiteralPath (Join-Path $root 'pending-platform-update')))
 
     & $stageHelper stage $root $NextSmokeInstaller $cache --smoke
     Check 'signed-next-package-staged' ($LASTEXITCODE -eq 0)
@@ -76,8 +89,10 @@ try {
     else { Check 'loader-was-replaced' ($after -ne $before) }
     Check 'updater-installed-without-locking-target' ((Get-FileHash -LiteralPath (Join-Path $root 'updater/Nadabas.PackageUpdate.exe')).Hash -eq (Get-FileHash -LiteralPath $Updater).Hash)
     $selection = (& (Join-Path $root 'tools/Nadabas.VersionStore.exe') inspect $root | ConvertFrom-Json)
-    Check 'new-multilingual-demo-selected' ($selection.Slot -eq 'slot-demo602006')
-    Check 'old-beta-retained-for-rollback' ((Get-FileHash -LiteralPath (Join-Path $root 'versions/slot-beta602006/NADABAS.TEST.slot-beta602006.xlam')).Hash -eq '82F22D19D66A6D682E5A5FBE7C15D7013929D36BF37820FAF915617687D3872D')
+    Check 'expected-vba-release-selected' ($selection.Slot -eq $ExpectedSlot -and $selection.ReleaseVersion -eq $ExpectedVbaVersion)
+    foreach ($previous in $previousPayloads) {
+        Check ('previous-payload-preserved-' + [IO.Path]::GetFileName($previous.Path)) ((Get-FileHash -LiteralPath $previous.Path).Hash -eq $previous.Hash)
+    }
     & (Join-Path $cache 'Nadabas.PackageUpdate.exe') apply $cache
     Check 'completed-job-replay-rejected' ($LASTEXITCODE -ne 0)
     [ordered]@{ passed = $true; scope = 'isolated-signed-package-handoff-not-live-excel'; checks = $checks; root = $root; cache = $cache } |

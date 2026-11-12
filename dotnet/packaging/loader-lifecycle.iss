@@ -141,6 +141,12 @@ end;
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var Root, Ancestor, Slot, Path, ExpectedHash: String; Lines: TArrayOfString; I: Integer;
 begin
+#ifdef UnsignedBuild
+  #ifndef SmokeTest
+  Result := 'This unsigned engineering build cannot be installed. Use the signed release package.';
+  Exit;
+  #endif
+#endif
   Result := LanguagePreflight;
   if Result <> '' then Exit;
   Result := PrerequisiteError;

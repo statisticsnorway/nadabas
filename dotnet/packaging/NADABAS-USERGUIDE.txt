@@ -1,0 +1,51 @@
+NADABAS - INSTALLATION AND UPDATES
+
+Before installation
+Save your work and close all Excel windows. NADABAS requires 64-bit Excel
+and the Microsoft .NET 10 Windows Desktop Runtime (x64). The SDK is not needed.
+If your organization manages software or Office trust, contact IT support.
+
+Install
+Run the signed NADABAS Setup package and choose your language: English,
+French, Portuguese or Bahasa Indonesia. Setup activates the Excel add-in
+for your Windows account. Start Excel normally and open the NADABAS tab.
+An upgrade preserves your language unless you choose another language.
+You can change the language later in NADABAS.
+
+Existing installations
+Setup updates an existing managed installation in place. For a recognized
+legacy installation, follow the migration prompt. If Setup cannot identify
+the old installation safely, contact IT support rather than deleting files.
+Your workbooks and databases are not installed, replaced or removed by Setup.
+
+Updates
+When Excel starts, NADABAS checks for approved updates in the background,
+subject to your organization's update policy. An available update is downloaded
+and verified before you are notified. No update is installed while you work.
+
+Choose Restart and update when you are ready. Save work in every workbook and
+close other Excel windows first. NADABAS waits for Excel to close, installs the
+verified package and opens a blank Excel window. Reopen your workbooks yourself.
+Choose Later to keep working. Cancel update skips that package for automatic
+checks; a manual Check for updates can offer it again.
+
+If an update fails
+Your current version stays selected when a download or verification fails.
+Use Details and give the diagnostic reference to IT support. Try again later
+for temporary network problems. Never disable publisher or signature checks.
+If installation itself fails, keep the installation log and contact IT support
+for repair. Do not repeatedly run an interrupted update or delete its cache.
+Repair or code rollback does not reverse database changes.
+
+Uninstall
+Save and close Excel, then uninstall NADABAS from Windows Settings / Apps.
+Uninstall removes NADABAS components and their startup registration. Your
+workbooks and databases remain in their original locations. Diagnostic or
+recovery files may remain for support. Consult IT before restoring a legacy
+installation or removing recovery files.
+
+Support
+For database permissions and statistical workflows, contact your NADABAS
+administrator. For installation, Office trust and update policy, contact IT
+support. Include the package version, the VBA version shown in About and the
+diagnostic reference. Do not send passwords, private keys or production data.

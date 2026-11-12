@@ -1,4 +1,8 @@
-; Isolated manual acceptance package. Never register production Excel add-ins.
+; Shared installer engine. SmokeTest uses isolated registration; UnsignedBuild
+; is engineering-only and cannot install into the normal Office profile.
+#ifdef ProductionCandidate
+  #define CompactPayload
+#endif
 #ifndef PayloadDir
   #error PayloadDir is required
 #endif
@@ -38,6 +42,19 @@
 #ifndef PackageVersion
   #define PackageVersion "0.9.0"
 #endif
+#define ProductIdentity PackageName
+#ifdef ProductionCandidate
+  #ifndef SmokeTest
+    #undef PackageName
+    #define PackageName "NADABAS"
+  #endif
+  #define OutputName "Nadabas-" + PackageVersion + "-Setup"
+#else
+  #define OutputName "NadabasLoaderTest-" + PackageVersion + "-Setup"
+#endif
+#ifdef UnsignedBuild
+  #define OutputName "UNSIGNED-" + OutputName
+#endif
 [Setup]
 AppId={#PackageId}
 AppName={#PackageName}
@@ -49,7 +66,7 @@ ArchitecturesAllowed=x64compatible
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 OutputDir={#PackageOutput}
-OutputBaseFilename=NadabasLoaderTest-{#PackageVersion}-Setup
+OutputBaseFilename={#OutputName}
 Compression=lzma2
 SolidCompression=yes
 CloseApplications=no
@@ -57,9 +74,15 @@ RestartApplications=no
 SetupLogging=yes
 WizardStyle=modern
 VersionInfoVersion={#PackageVersion}
-VersionInfoDescription=NADABAS manual loader acceptance test
+; Keep the product metadata accepted by already installed 0.9.x updaters.
+VersionInfoProductName={#ProductIdentity}
+VersionInfoDescription=NADABAS installation and updates
+#ifndef UnsignedBuild
 SignTool=nadabas_test
 SignedUninstaller=yes
+#else
+SignedUninstaller=no
+#endif
 InfoBeforeFile={#PayloadDir}\TESTGUIDE.txt
 [Files]
 Source: "{#PayloadDir}\*"; DestDir: "{app}"; Excludes: "*.xlam,active.json,store.lock,.nadabas-version-store"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -78,7 +101,7 @@ Source: "{#PayloadDir}\versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xla
 #endif
 Source: "{#PayloadDir}\versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam"; DestDir: "{app}\versions\slot-fix602009"; Attribs: readonly; Flags: onlyifdoesntexist
 [Icons]
-Name: "{userprograms}\{#PackageName}\Test guide"; Filename: "{app}\TESTGUIDE.txt"
+Name: "{userprograms}\{#PackageName}\User guide"; Filename: "{app}\TESTGUIDE.txt"
 Name: "{userprograms}\{#PackageName}\Open installation folder"; Filename: "{app}"
 [UninstallDelete]
 Type: files; Name: "{app}\download.lock"
@@ -89,6 +112,6 @@ Type: files; Name: "{app}\platform-update.lock"
 Type: files; Name: "{app}\legacy-migration.required"
 Type: files; Name: "{app}\pending-update.json"
 [Run]
-Filename: "{app}\TESTGUIDE.txt"; Description: "Open the manual test guide"; Flags: shellexec postinstall skipifsilent nowait
+Filename: "{app}\TESTGUIDE.txt"; Description: "Open the user guide"; Flags: shellexec postinstall skipifsilent nowait
 [Code]
 #include "loader-lifecycle.iss"

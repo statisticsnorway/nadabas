@@ -22,11 +22,14 @@ acceptance of the current build.
   redirect shape. It does not establish access to published GitHub assets or
   successful installation of those assets.
 - Update diagnostics and translated Details UI are implemented. The 2026-11-11
-  run passed 133 .NET tests and 127 Python tests and built the Excel bootstrap.
-  This UI change is unsigned and still needs visual Excel acceptance.
+  diagnostics candidate passed 137 .NET tests and 129 Python tests. The 0.9.5
+  components were signed; the subsequent 1.0 engineering build deliberately
+  remains unsigned. Full multilingual Details UI acceptance remains open.
 
-The current packages retain test identities and simulated/beta payloads. Keep
-these out of the stable channel. Existing signed artifacts do not include later
+Historical test packages contain simulated/beta payloads and must stay out of
+the stable channel. The 1.0 production profile ships the selected 6.02.009 and
+baseline slots only, with a NADABAS display name and compatible internal identity.
+Its unsigned engineering output is not distributable. Existing signed artifacts do not include later
 source changes. See [AUTOMATIC-UPDATES.md](AUTOMATIC-UPDATES.md) for runtime
 evidence and [RELEASE-SIGNING.md](RELEASE-SIGNING.md) for the release procedure.
 
@@ -34,7 +37,7 @@ evidence and [RELEASE-SIGNING.md](RELEASE-SIGNING.md) for the release procedure.
 
 | Gate | Remaining evidence or decision |
 | --- | --- |
-| Production package | Select the approved VBA payload, genuine versions and final installation identity; exclude simulated fixtures. Define migration from both legacy XLAM and test installations. |
+| Production package | VBA 6.02.009 selected. Compact production profile and compatible identity implemented; complete signed 1.0 and ordinary desktop acceptance. |
 | Actual distribution | Exercise the installed updater against an approved published GitHub feed: discover, download, verify, notify, restart, install and relaunch. Publication requires explicit approval. |
 | Clean machine | Agree the Windows/Office support matrix. Test standard-user installation without the SDK, prerequisite failures and IT-managed deployment. |
 | Browser and publisher trust | Test a browser-downloaded final signed installer under the intended Office policy, including XLL/VBA trust and prompts. |
@@ -71,14 +74,36 @@ registration if activation fails. Keep user databases and workbooks in place.
 
 Run `tools/test_legacy_migration.ps1 -SmokeInstaller <signed smoke installer>`
 to rehearse the registry handoff on Windows with Excel closed. The harness uses
-a copy of the approved 6.02.005 XLAM, the 0.8.1 smoke installer and synthetic
+a copy of the approved 6.02.005 XLAM, an explicitly selected signed smoke installer and synthetic
 current-user startup entries under Software/NADABAS/InstallerSmoke. The backup
 and registry snapshot are outside the installation directory. The rehearsal
-performs the switch and rollback around Setup. Automatic legacy handoff in the
-user-facing Setup remains a separate integration step.
+performs the switch and rollback around Setup. The shared Setup engine implements this handoff. On 2026-11-12 the signed
+0.9.5 smoke package passed 14 Setup migration checks, including preserved
+registration, refused ambiguous inputs and exact restoration. Ordinary desktop
+legacy-only acceptance remains separate.
 
 For Excel acceptance, use a disposable Windows profile or VM and a non-production
 database. Start Excel normally with the old add-in first. After migration, start
 Excel normally again and check the loaded file path and version, one NADABAS tab,
 and another enabled add-in. Restore the original registration, restart Excel and
 confirm the old file path and version. Capture the session evidence for both starts.
+
+## Token-free 1.0 preparation, 2026-11-12
+
+See [V1-PREPARATION.md](V1-PREPARATION.md) for the build/signing boundary and
+[SSH-SETUP.md](SSH-SETUP.md) for the next maintainer setup session.
+
+- Unsigned 1.0 build: 15 isolated installer checks passed, including refusal
+  to install the unsigned ordinary-profile artifact and all four language codes.
+- Existing signed 0.9.4/0.9.5 fixtures: 29 package checks passed, including
+  a real failed installation, rejection of the wrong recovery version, recovery
+  to 0.9.4, then upgrade to 0.9.5. This is not signed 1.0 acceptance.
+- Existing signed 0.9.5 fixture: 14 legacy Setup/Uninstall checks passed.
+- Repository pre-commit checks and 129 Python tests passed. No VBA or .NET
+  runtime implementation changed in this preparation; the previous 137 .NET
+  tests remain applicable, and the 1.0 components built successfully.
+- No new token signature, public release or normal-profile installation was made.
+
+Actual GitHub delivery, clean-machine/Office policy, representative data
+regression, key backup/recovery and installer licensing are still open. Do not
+reduce the remaining work to signing alone.

@@ -1,6 +1,8 @@
 param(
     [Parameter(Mandatory)][string]$SmokeInstaller,
-    [string]$ReleaseAddin = 'C:\NADABAS\NADABAS.XLAM'
+    [string]$ReleaseAddin = 'C:\NADABAS\NADABAS.XLAM',
+    [string]$ExpectedSlot = 'slot-demo602006',
+    [string]$ExpectedVbaVersion = '6.02.006'
 )
 $ErrorActionPreference = 'Stop'
 $baseline = '2F7432B9B04C414337EB1AFEB07E2B93F05E4A5A6D151073FA967A2F7EA89A85'
@@ -76,7 +78,7 @@ try {
     Check 'sole-loader-reuses-original-slot' (@(Entries $oldValue).Count -eq 0 -and @(Entries $loaderValue).Count -eq 1 -and (Get-ItemPropertyValue $options OPEN1) -ceq $loaderValue)
     Check 'legacy-file-still-in-place' ((Get-FileHash $old).Hash -eq $baseline)
     $selected = & (Join-Path $target 'tools/Nadabas.VersionStore.exe') inspect $target | ConvertFrom-Json
-    Check 'managed-payload-verified' ($LASTEXITCODE -eq 0 -and $selected.Slot -eq 'slot-demo602006')
+    Check 'managed-payload-verified' ($LASTEXITCODE -eq 0 -and $selected.Slot -eq $ExpectedSlot -and $selected.ReleaseVersion -eq $ExpectedVbaVersion)
     Run-Setup $true
     Check 'repair-preserves-single-entry-and-backup' (@(Entries $loaderValue).Count -eq 1 -and (Get-FileHash $backup).Hash -eq $baseline)
     [IO.File]::WriteAllText($backup, 'Damaged disposable backup')

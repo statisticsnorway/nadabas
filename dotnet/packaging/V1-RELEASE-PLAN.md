@@ -98,3 +98,13 @@ installation evidence in artifacts/release-candidate-0.9.5/final-smoke-report.js
 Local feed/package/publisher verification passed for the final bytes. This is
 not a successful GitHub download: the live channel preflight returned HTTP 404.
 See artifacts/release-candidate-0.9.5/acceptance-summary.json for local records.
+
+## Token-free preparation, 2026-11-12
+
+The production candidate now uses the NADABAS display name while retaining the
+AppId and ProductName required by installed 0.9.x updaters. `PrepareOnly` builds
+without calling SignTool and blocks ordinary-profile installation. The isolated
+variant passed 15 checks; signed-fixture package recovery passed 29 checks and
+legacy migration passed 14. Source approval/SSH setup is the next maintainer
+session, and token signing remains explicitly deferred. See V1-PREPARATION.md
+and SSH-SETUP.md. External acceptance gates remain in PRODUCTION-READINESS.md.

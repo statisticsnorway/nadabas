@@ -64,7 +64,8 @@ try {
     if (-not $waiter.WaitForExit(60000)) { throw 'Waiter still running. Preserve test installation for inspection.' }
     Check 'waiter-completed-successfully' ($waiter.ExitCode -eq 0)
     $status = Get-Content (Join-Path $cache 'status.json') -Raw | ConvertFrom-Json
-    Check 'new-package-installed-after-exit' ($status.status -eq 'installed' -and [version]$status.version -eq [version]'0.9.1')
+    $expectedVersion = [version]((Get-Item -LiteralPath $NextSmokeInstaller).VersionInfo.ProductVersion.Trim())
+    Check 'new-package-installed-after-exit' ($status.status -eq 'installed' -and ([version]$status.version).ToString(3) -eq $expectedVersion.ToString(3))
     Check 'ready-pointer-cleared-after-install' (-not (Test-Path (Join-Path $root 'pending-platform-update')))
     $reopened = @(Get-CimInstance Win32_Process -Filter "Name='EXCEL.EXE'" | Where-Object ParentProcessId -eq $waiter.Id)
     Check 'helper-reopened-excel' ($reopened.Count -eq 1)

@@ -9,21 +9,27 @@ param(
     [Parameter(Mandatory)][string]$DemoAddin,
     [Parameter(Mandatory)][string]$FixAddin,
     [Parameter(Mandatory)][string]$Compiler,
-    [Parameter(Mandatory)][string]$SignTool,
+    [string]$SignTool,
     [Parameter(Mandatory)][ValidatePattern('^[A-Fa-f0-9]{40}$')][string]$CertificateThumbprint,
     [string]$ReleaseAddin = 'C:\NADABAS\NADABAS.XLAM',
     [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+$')][string]$PackageVersion = '0.9.0',
     [string]$BuildParent,
-    [switch]$CompactPayload
+    [switch]$CompactPayload,
+    [switch]$ProductionCandidate,
+    [switch]$PrepareOnly
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot
+if ($ProductionCandidate) { $CompactPayload = $true }
+if (-not $PrepareOnly -and -not $SignTool) { throw 'SignTool is required for final signed builds' }
 $expected = '2F7432B9B04C414337EB1AFEB07E2B93F05E4A5A6D151073FA967A2F7EA89A85'
 if ((Get-FileHash -LiteralPath $ReleaseAddin).Hash -ne $expected) { throw 'Approved XLAM baseline mismatch' }
-$signature = Get-AuthenticodeSignature -LiteralPath $SignedLoader
-if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Loader must have a valid signature from the selected publisher' }
-$updaterSignature = Get-AuthenticodeSignature -LiteralPath $SignedPackageUpdater
-if ($updaterSignature.Status -ne 'Valid' -or $updaterSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Package updater must have a valid publisher signature' }
+if (-not $PrepareOnly) {
+    $signature = Get-AuthenticodeSignature -LiteralPath $SignedLoader
+    if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Loader must have a valid signature from the selected publisher' }
+    $updaterSignature = Get-AuthenticodeSignature -LiteralPath $SignedPackageUpdater
+    if ($updaterSignature.Status -ne 'Valid' -or $updaterSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Package updater must have a valid publisher signature' }
+}
 $upgradeSignature = Get-AuthenticodeSignature -LiteralPath $UpgradeAddin
 if ($upgradeSignature.Status -ne 'Valid' -or $upgradeSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Upgrade VBA fixture must be signed by the selected publisher' }
 $managedSignature = Get-AuthenticodeSignature -LiteralPath $ManagedUpgradeAddin
@@ -85,7 +91,8 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $payload 'updater') | Out-Null
     Copy-Item -LiteralPath $SignedPackageUpdater -Destination (Join-Path $payload 'updater/Nadabas.PackageUpdate.exe')
     Copy-Item -LiteralPath $SignedLoader -Destination (Join-Path $payload 'Nadabas.Loader.Test.xll')
-    Copy-Item -LiteralPath (Join-Path $repo 'dotnet/packaging/LOADER-TESTGUIDE.txt') -Destination (Join-Path $payload 'TESTGUIDE.txt')
+    $guide = if ($ProductionCandidate) { 'NADABAS-USERGUIDE.txt' } else { 'LOADER-TESTGUIDE.txt' }
+    Copy-Item -LiteralPath (Join-Path $repo ('dotnet/packaging/' + $guide)) -Destination (Join-Path $payload 'TESTGUIDE.txt')
     # Inno embeds file data, not Zone.Identifier. This package is intentionally
     # signed; no blanket Unblock-File or Office security modification is used.
     foreach ($slot in @('slot-a', 'slot-b')) {
@@ -94,14 +101,22 @@ try {
     $signCommand = '$q' + $SignTool + '$q sign /sha1 ' + $CertificateThumbprint + ' /s My /fd SHA256 /tr http://timestamp.globalsign.com/tsa/r45standard /td SHA256 $f'
     $payloadOptions = @()
     if ($CompactPayload) { $payloadOptions += '/DCompactPayload' }
-    & $Compiler @payloadOptions "/DPackageVersion=$PackageVersion" "/Snadabas_test=$signCommand" "/DUpgradeHash=$upgradeHash" "/DManagedUpgradeHash=$managedHash" "/DDatedUpgradeHash=$datedHash" "/DBetaHash=$betaHash" "/DContextBetaHash=$contextHash" "/DDemoHash=$demoHash" "/DFixHash=$fixHash" "/DPayloadDir=$payload" "/DPackageOutput=$output" (Join-Path $repo 'dotnet/packaging/loader-test.iss')
-    if ($LASTEXITCODE -ne 0) { throw 'Signed installer build failed; do not distribute intermediate output' }
-    $installer = Join-Path $output "NadabasLoaderTest-$PackageVersion-Setup.exe"
+    if ($ProductionCandidate) { $payloadOptions += '/DProductionCandidate' }
+    if ($PrepareOnly) { $payloadOptions += '/DUnsignedBuild' }
+    else { $payloadOptions += "/Snadabas_test=$signCommand" }
+    & $Compiler @payloadOptions "/DPackageVersion=$PackageVersion" "/DUpgradeHash=$upgradeHash" "/DManagedUpgradeHash=$managedHash" "/DDatedUpgradeHash=$datedHash" "/DBetaHash=$betaHash" "/DContextBetaHash=$contextHash" "/DDemoHash=$demoHash" "/DFixHash=$fixHash" "/DPayloadDir=$payload" "/DPackageOutput=$output" (Join-Path $repo 'dotnet/packaging/loader-test.iss')
+    if ($LASTEXITCODE -ne 0) { throw 'Installer build failed; do not distribute intermediate output' }
+    $name = if ($ProductionCandidate) { "Nadabas-$PackageVersion-Setup.exe" } else { "NadabasLoaderTest-$PackageVersion-Setup.exe" }
+    if ($PrepareOnly) { $name = 'UNSIGNED-' + $name }
+    $installer = Join-Path $output $name
     $installerSignature = Get-AuthenticodeSignature -LiteralPath $installer
-    if ($installerSignature.Status -ne 'Valid' -or $installerSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Installer signature verification failed' }
+    if ($PrepareOnly) {
+        if ($installerSignature.Status -ne 'NotSigned') { throw 'Expected an unsigned engineering artifact' }
+    } elseif ($installerSignature.Status -ne 'Valid' -or $installerSignature.SignerCertificate.Thumbprint -ne $CertificateThumbprint) { throw 'Installer signature verification failed' }
     [ordered]@{
         packageVersion = $PackageVersion; testOnly = $true; installer = $installer
-        compactPayload = [bool]$CompactPayload; packagedSlots = $actualSlots
+        unsignedPreparation = [bool]$PrepareOnly; productionCandidate = [bool]$ProductionCandidate; compactPayload = [bool]$CompactPayload; packagedSlots = $actualSlots
+        sourceCommit = (& git -C $repo rev-parse HEAD); sourceHasLocalChanges = [bool](& git -C $repo status --porcelain)
         installerSha256 = (Get-FileHash -LiteralPath $installer).Hash
         signedPackageUpdaterSha256 = (Get-FileHash -LiteralPath $SignedPackageUpdater).Hash
         signedLoaderSha256 = (Get-FileHash -LiteralPath $SignedLoader).Hash
@@ -109,5 +124,12 @@ try {
         upgradeTestVersion = '6.02.009'; upgradeTestSha256 = $fixHash; previousDemoSha256 = $demoHash; contextBetaSha256 = $contextHash; previousBetaSha256 = $betaHash; releaseChannel = 'internal-exchange-beta'; datedTestSha256 = $datedHash; managedBridgeSha256 = $managedHash; previousTestSha256 = $upgradeHash; publishedVbaRelease = $false
         acceptance = 'pending-user-session'; excelRegistration = 'automatic-current-user-loader-only'
     } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'build-record.json') -Encoding utf8
-    Write-Output "SIGNED TEST INSTALLER: $installer"
+    # Local handoff only: paths and public certificate identity, no private keys.
+    $inputs = @{}
+    foreach ($entry in $PSBoundParameters.GetEnumerator()) { $inputs[$entry.Key] = $entry.Value }
+    $inputs['PrepareOnly'] = [bool]$PrepareOnly
+    $inputs['ProductionCandidate'] = [bool]$ProductionCandidate
+    $inputs['CompactPayload'] = [bool]$CompactPayload
+    $inputs | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $output 'build-inputs.json') -Encoding utf8
+    Write-Output "CANDIDATE INSTALLER (unsigned preparation: $PrepareOnly): $installer"
 } finally { Pop-Location }
