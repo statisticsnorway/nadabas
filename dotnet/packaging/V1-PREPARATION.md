@@ -5,6 +5,13 @@ tests, on 2026-11-11. This procedure creates engineering artifacts, not an
 approved release. VBA 6.02.009 is the selected payload; its existing signature
 and immutable hash are retained.
 
+## Standard-user installation gate
+
+The maintainer requires installation without administrator credentials, including
+when the shared modern .NET runtime is absent. See [the local-runtime
+investigation](LOCAL-RUNTIME.md). A manual prerequisite download does not satisfy
+this gate. Existing prepared packages are not yet accepted for this scenario.
+
 ## Build and identity
 
 Build the Excel bootstrap and publish the framework-dependent updater with

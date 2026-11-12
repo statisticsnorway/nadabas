@@ -1,3 +1,19 @@
+# First installation without .NET
+
+Interactive Setup now has a prerequisite page when the x64 .NET 10 Windows
+Desktop Runtime is missing. It opens Microsoft's download page only when the
+user clicks the button. The user installs the Microsoft runtime (IT approval
+may be required), returns to Setup, and selects Next to check again. NADABAS
+Setup stays under the original user's account. Existing runtime installations
+skip this page. Silent deployments still require IT to provision the runtime;
+no browser, downloaded executable, or elevation is started automatically.
+
+The shared runtime is not bundled, keeping NADABAS updates small. This is a
+guided prerequisite flow, not an automatic dependency downloader. Acceptance
+must include a clean machine without the runtime, cancelled/denied Microsoft
+installation, successful installation followed by Next, and an existing runtime.
+The published 0.9.5 installer does not contain this change.
+
 > Source update, 2026-11-11: the next build places **Show Exchange tools**
 > immediately after **Create Exchange links** in Administration / Other admin.
 > The administrator group and existing workbook-link visibility conditions apply.

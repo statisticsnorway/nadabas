@@ -22,8 +22,9 @@ end;
 procedure InitializeWizard;
 var Existing: String; Index: Integer;
 begin
+  InitializeRuntimePage;
   RequestedLanguage := ExpandConstant('{param:NADABASLANG|}');
-  LanguagePage := CreateInputOptionPage(wpInfoBefore, 'NADABAS language',
+  LanguagePage := CreateInputOptionPage(RuntimePage.ID, 'NADABAS language',
     'Choose the language to use in NADABAS',
     'Select your language for Excel and NADABAS update messages. You can change it later in NADABAS Settings > Language.', True, False);
   LanguagePage.Add('English');
@@ -48,7 +49,8 @@ end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
-  Result := True;
+  Result := RuntimePageCanContinue(CurPageID);
+  if not Result then Exit;
   if CurPageID = LanguagePage.ID then
     if LanguagePage.SelectedValueIndex < 0 then begin
       MsgBox('Please select your NADABAS language to continue.', mbInformation, MB_OK);

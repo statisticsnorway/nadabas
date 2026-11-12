@@ -16,16 +16,14 @@ function FileAttributes(Name: String): Cardinal;
 function BinaryType(Name: String; var Kind: Cardinal): Boolean;
   external 'GetBinaryTypeW@kernel32.dll stdcall';
 
+#include "runtime-prerequisite.iss"
+
 function PrerequisiteError: String;
-var Names: TArrayOfString; I: Integer; RuntimeFound: Boolean; ExcelPath: String; Kind: Cardinal;
+var ExcelPath: String; Kind: Cardinal;
 begin
   Result := '';
-  RuntimeFound := False;
-  if RegGetValueNames(HKLM32, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', Names) then
-    for I := 0 to GetArrayLength(Names) - 1 do
-      if (Copy(Names[I], 1, 5) = '10.0.') and (Pos('-', Names[I]) = 0) then RuntimeFound := True;
-  if not RuntimeFound then begin
-    Result := 'Microsoft .NET 10 Windows Desktop Runtime (x64) is required. Install it from https://dotnet.microsoft.com/download/dotnet/10.0 and run Setup again. The SDK is not required.';
+  if not DesktopRuntimeInstalled then begin
+    Result := 'Microsoft .NET 10 Windows Desktop Runtime (x64) is required. In interactive Setup, use the Microsoft .NET prerequisite page. For managed or silent installation, ask IT to install this prerequisite first. The SDK is not required.';
     Exit;
   end;
   if not RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\excel.exe', '', ExcelPath) then begin
