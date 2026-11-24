@@ -4,10 +4,11 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <UseWindowsForms>true</UseWindowsForms>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <ExcelDnaCreate32BitAddIn>false</ExcelDnaCreate32BitAddIn>
+    <ExcelDnaCreate32BitAddIn>true</ExcelDnaCreate32BitAddIn>
     <ExcelDnaCreate64BitAddIn>true</ExcelDnaCreate64BitAddIn>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../Shared/RuntimeChildProcess.cs" Link="RuntimeChildProcess.cs" />
     <EmbeddedResource Include="update-text.json" LogicalName="Nadabas.UpdateText.json" />
     <PackageReference Include="ExcelDna.AddIn" Version="1.9.0" />
     <ProjectReference Include="../Nadabas.PackageUpdate/Nadabas.PackageUpdate.csproj" />

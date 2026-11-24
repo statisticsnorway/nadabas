@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RuntimeIdentifiers>win-x86;win-x64</RuntimeIdentifiers>
+    <AppHostDotNetSearch>EnvironmentVariable</AppHostDotNetSearch>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/Nadabas.PackageUpdate/RuntimeCache.cs" Link="RuntimeCache.cs" />
+    <Compile Include="../../src/Nadabas.PackageUpdate/PackageRules.cs" Link="PackageRules.cs" />
+  </ItemGroup>
+</Project>

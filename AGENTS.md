@@ -16,6 +16,14 @@ user's current priorities across VBA, .NET, Python, documentation and tooling.
 [DESIGN.md](DESIGN.md) defines the user experience and role principles.
 Keep milestone plans, release versions and temporary blockers in task records.
 
+Support both 32-bit (x86) and 64-bit (x64) Excel throughout the incremental
+migration. Select in-process components by Excel architecture, not Windows
+architecture. Maintain shared business logic and equivalent user workflows;
+do not create separate feature implementations for the two architectures.
+Installation and updates must support a standard Windows user without
+administrator credentials, subject to organizational policy. Treat these as
+acceptance requirements, not claims that current artifacts already meet them.
+
 ## Maintainer and agent responsibilities
 
 The maintainer sets outcomes, priorities, business rules, accepted trade-offs,
@@ -105,6 +113,11 @@ records and reports rather than adding them to these standing instructions.
 - Use [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
 ## Excel, signing, and distribution
+
+The maintainer performs manual installation and Excel acceptance tests locally.
+Prepare the signed artifacts and a concise test checklist; do not start desktop
+acceptance or change the normal installation unless explicitly requested.
+Continue automated code checks and isolated non-interactive tests as appropriate.
 
 Check for open Excel sessions before installation or registration changes.
 Ask the user to save and close affected work when necessary. Preserve normal

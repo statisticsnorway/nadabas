@@ -38,6 +38,7 @@ internal static class PackageJob
         var verified = VerifyPackage(cachedInstaller, smoke);
         if (verified != incoming) throw new IOException("Package changed during preparation.");
         File.Copy(self, Path.Combine(cache, "Nadabas.PackageUpdate.exe"));
+        using var runtime = RuntimeCache.StageForCurrentRuntime(root, cache);
         var pending = new PendingPackage(1, root, current, incoming, Hash(cachedInstaller), smoke);
         Write(cache, JobName, pending);
         Write(cache, "status.json", new { status = "ready", pending.TargetVersion });
@@ -54,6 +55,9 @@ internal static class PackageJob
         var root = PackageRules.SafePath(pending.Root);
         PackageRules.RequireOutside(root, cache);
         PackageRules.RequireOutside(root, Environment.ProcessPath!);
+        // Reject before recording an attempted installation or acquiring a job lock.
+        PackageRules.RequireOutside(root, System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
+        using var runtimeLease = RuntimeCache.LeaseForExecution(root, cache);
         using var gate = new FileStream(Path.Combine(cache, "apply.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         if (File.Exists(PackageRules.SafePath(Path.Combine(cache, "cancelled.json")))) throw new IOException("This update was cancelled.");
         if (File.Exists(Path.Combine(cache, "apply-started.json")))
@@ -88,6 +92,8 @@ internal static class PackageJob
 
     internal static async Task<string> RunSetup(string root, bool smoke, string installer, string targetVersion, string log)
     {
+        // Also protect direct apply/recovery entry points, not only Excel's launch path.
+        PackageRules.RequireOutside(root, System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
         var command = new ProcessStartInfo(installer) { UseShellExecute = false, CreateNoWindow = true };
         foreach (var argument in new[] { "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=" + root, "/LOG=" + log })
             command.ArgumentList.Add(argument);

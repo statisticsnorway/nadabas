@@ -20,6 +20,8 @@ internal static class ApprovedReleases
             // Signed multilingual demo; not a published VBA release.
             ["slot-demo602006"] = new("6.02.006", "8D87B0295547DB6F250F99EEC60781ACB1F54F8FF596559253DF55F1628799E0"),
             // Signed issue 47 and Exchange-placement test; not a published release.
-            ["slot-fix602009"] = new("6.02.009", "D53D492724997C08596DBEACAE4695B30786B3695310D13035CD61541A829750")
+            ["slot-fix602009"] = new("6.02.009", "D53D492724997C08596DBEACAE4695B30786B3695310D13035CD61541A829750"),
+            // Signed Access migration repair candidate; not yet published.
+            ["slot-fix602010"] = new("6.02.010", "36A32EBF31DE42256B089228588F12E6A04D0481DDA3D9D8CC39E88D65C5FEF7")
         };
 }

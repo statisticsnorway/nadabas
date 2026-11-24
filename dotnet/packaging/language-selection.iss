@@ -49,6 +49,9 @@ end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
 begin
+  // Silent Setup must reach PrepareToInstall, which returns an actionable error
+  // for missing language/runtime prerequisites without an interactive dialog.
+  if WizardSilent then begin Result := True; Exit; end;
   Result := RuntimePageCanContinue(CurPageID);
   if not Result then Exit;
   if CurPageID = LanguagePage.ID then

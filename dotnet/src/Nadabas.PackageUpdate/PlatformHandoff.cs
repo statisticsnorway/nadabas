@@ -97,6 +97,8 @@ public static class PlatformHandoff
         root = PackageRules.SafePath(root);
         var cache = Cache(root, id);
         PackageRules.RequireOutside(root, Environment.ProcessPath!);
+        PackageRules.RequireOutside(root, System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
+        using var runtimeLease = RuntimeCache.LeaseForExecution(root, cache);
         using var gate = Lock(root);
         var job = ReadJob(root, id, requirePending: false);
         using var jobGate = new FileStream(PathIn(cache, "apply.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
@@ -126,6 +128,13 @@ public static class PlatformHandoff
     }
 
     public static Process LaunchWaiter(string root, string id, Process excel)
+        => Launch(root, id, excel, waitForReady: false);
+
+    // Returns only after the child has acquired its own runtime leases.
+    public static Process LaunchReadyWaiter(string root, string id, Process excel)
+        => Launch(root, id, excel, waitForReady: true);
+
+    private static Process Launch(string root, string id, Process excel, bool waitForReady)
     {
         _ = Verify(root, id);
         var path = PathIn(Cache(root, id), "Nadabas.PackageUpdate.exe");
@@ -135,9 +144,53 @@ public static class PlatformHandoff
             throw new IOException("The cached helper differs from the installed helper.");
         PublisherTrust.Verify(path);
         var start = new ProcessStartInfo(path) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
+        var helperRuntime = Nadabas.Hosting.RuntimeChildProcess.Configure(start, root);
+        using var runtimeLease = PrepareRuntime(start, root, Cache(root, id), helperRuntime, waitForReady);
         foreach (var argument in new[] { "wait-apply", root, id, excel.Id.ToString(System.Globalization.CultureInfo.InvariantCulture),
             excel.StartTime.ToUniversalTime().Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture) }) start.ArgumentList.Add(argument);
-        return Process.Start(start) ?? throw new IOException("Could not start the external update helper.");
+        var process = Process.Start(start) ?? throw new IOException("Could not start the external update helper.");
+        if (!waitForReady) return process;
+        // Drain diagnostics while waiting so a full stderr pipe cannot block readiness.
+        var diagnostics = process.StandardError.ReadToEndAsync();
+        try
+        {
+            RestartAcknowledgement.Wait(process);
+            return process;
+        }
+        catch (Exception failure)
+        {
+            try
+            {
+                if (!process.HasExited) process.Kill(); // Only the helper started above, never Excel.
+                if (!process.WaitForExit(10000)) throw new IOException("The failed restart helper has not exited.");
+            }
+            finally { process.Dispose(); }
+            var detail = diagnostics.IsCompletedSuccessfully ? diagnostics.Result.Trim() : "";
+            if (detail.Length > 4096) detail = detail[..4096];
+            throw new IOException("Restart helper did not become ready. " + detail, failure);
+        }
+    }
+
+    private static RuntimeCache? PrepareRuntime(ProcessStartInfo start, string root, string cache, string currentRuntime, bool waitForReady)
+    {
+        var normalizedRoot = PackageRules.SafePath(root);
+        if (!currentRuntime.Equals(normalizedRoot, StringComparison.OrdinalIgnoreCase) &&
+            !currentRuntime.StartsWith(normalizedRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        {
+            PackageRules.RequireOutside(root, currentRuntime);
+            return null;
+        }
+        if (!waitForReady) throw new IOException("Private runtime launch requires the acknowledged handoff.");
+        var architecture = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture;
+        var arch = architecture == System.Runtime.InteropServices.Architecture.X86 ? "x86" : "x64";
+        var runtime = RuntimeCache.Open(cache, arch);
+        try
+        {
+            var selected = Nadabas.Hosting.RuntimeChildProcess.Configure(start, root, runtime.CoreDirectory, architecture);
+            PackageRules.RequireOutside(root, selected);
+            return runtime;
+        }
+        catch { runtime.Dispose(); throw; }
     }
 
     internal static async Task WaitAndApply(string root, string id, int pid, long ticks)
@@ -154,6 +207,7 @@ public static class PlatformHandoff
         // The launcher already verified the job. Check its identity again before
         // acknowledging. Apply performs full signature verification after exit.
         _ = ReadJob(root, id);
+        using var runtimeLease = RuntimeCache.LeaseForExecution(root, cache);
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         Console.WriteLine("restart-helper-ready");
         try

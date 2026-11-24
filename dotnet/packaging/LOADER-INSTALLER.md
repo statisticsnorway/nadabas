@@ -1,3 +1,8 @@
+> The opt-in dual-architecture private-runtime installer is documented in
+> [PRIVATE-RUNTIME-BUILD.md](PRIVATE-RUNTIME-BUILD.md). It bundles modern .NET and
+> is currently an unsigned engineering preparation. The shared-runtime profile
+> and historical signed releases below retain their prerequisite behavior.
+
 # First installation without .NET
 
 Interactive Setup now has a prerequisite page when the x64 .NET 10 Windows

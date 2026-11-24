@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <PropertyGroup Condition="'$(PrivateRuntimeHelpers)' == 'true'">
+    <AppHostDotNetSearch>EnvironmentVariable</AppHostDotNetSearch>
+  </PropertyGroup>
   <ItemGroup><InternalsVisibleTo Include="Nadabas.Setup.Tests" /></ItemGroup>
 </Project>

@@ -121,6 +121,14 @@ This is informed by W3C status-message guidance.
 
 ## Installation and updates
 
+Provide equivalent functionality for 32-bit and 64-bit Excel. Users should not
+need to understand Excel/Windows architecture or choose a runtime to install.
+Prefer one installation entry point that detects Excel and selects compatible
+components. Keep technical architecture details in diagnostics and IT deployment
+options. An ambiguous installation must offer an understandable resolution
+instead of silently guessing. Support installation and updates as a standard
+user, respecting organizational software policies.
+
 Make installation, activation, language choice and recovery understandable for
 the person using the product. Apply IT policy consistently and explain relevant
 restrictions with an appropriate support route.

@@ -26,6 +26,22 @@ self-contained release will not need the SDK.
 See [local setup and verification](../docs/developer-guide/dotnet-local-setup.md)
 for prerequisites, publishing, manual checks and the remaining migration work.
 
+## Read-only Excel architecture discovery
+
+The existing `diagnose` command now adds `excel.discovery`, `excel.executable`
+and, for a unique verified candidate, `excel.architecture` findings. It reuses
+App Paths inventory from both available registry views and reads the executable
+PE headers to distinguish x86 from x64. It does not launch Excel or write files
+or registration. Duplicate paths retain their provenance; distinct registrations
+(including stale entries) require review rather than an automatic selection.
+
+Architecture evidence does not verify publisher, Office version, Windows support,
+database drivers or successful startup. `complete` still describes inventory
+completion, not installation readiness; consumers must examine discovery status.
+No architecture is selected if registry discovery was incomplete. The installer
+does not yet consume this result. See the
+[implementation plan](packaging/DUAL-ARCHITECTURE-PLAN.md).
+
 ## Published release baseline
 
 The installation migration uses the maintainer-supplied **6.02.005** artifacts:

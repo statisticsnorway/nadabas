@@ -37,16 +37,20 @@ internal static class RestartUpdate
         }
         finally { Marshal.ReleaseComObject(books); }
         using var current = Process.GetCurrentProcess();
-        using var helper = platformId is null ? StartSlotHelper(root, current) : PlatformHandoff.LaunchWaiter(root, platformId, current);
+        using var helper = platformId is null ? StartSlotHelper(root, current) : PlatformHandoff.LaunchReadyWaiter(root, platformId, current);
         try
         {
-            var acknowledgement = helper.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
-            if (acknowledgement != "restart-helper-ready")
+            // Platform launch already waits while retaining the parent's runtime leases.
+            if (platformId is null)
             {
-                var reason = helper.StartInfo.RedirectStandardError
-                    ? helper.StandardError.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult().Trim()
-                    : string.Empty;
-                throw new IOException("Restart helper did not become ready. " + reason);
+                var acknowledgement = helper.StandardOutput.ReadLineAsync().WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                if (acknowledgement != "restart-helper-ready")
+                {
+                    var reason = helper.StartInfo.RedirectStandardError
+                        ? helper.StandardError.ReadToEndAsync().WaitAsync(TimeSpan.FromSeconds(2)).GetAwaiter().GetResult().Trim()
+                        : string.Empty;
+                    throw new IOException("Restart helper did not become ready. " + reason);
+                }
             }
         }
         catch
@@ -72,6 +76,7 @@ internal static class RestartUpdate
         command.ArgumentList.Add(root);
         command.ArgumentList.Add(current.Id.ToString(System.Globalization.CultureInfo.InvariantCulture));
         command.ArgumentList.Add(current.StartTime.ToUniversalTime().Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        Nadabas.Hosting.RuntimeChildProcess.Configure(command, root);
         return Process.Start(command) ?? throw new IOException("Could not start the restart helper.");
     }
 }

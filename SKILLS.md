@@ -114,6 +114,24 @@ profile. Check Excel sessions, the current installation identity, expected
 source hashes, target directories, and any pending update before mutation.
 Preserve logs and backups needed to diagnose an incomplete operation.
 
+For architecture-dependent changes, follow
+[Excel architecture and distribution](dotnet/packaging/EXCEL-ARCHITECTURE.md).
+Build from shared source for both x86 and x64 Excel. Detect the actual Excel
+executable architecture; 64-bit Windows may run 32-bit Excel. Check both registry
+views for discovery where applicable and use the correct view for registration.
+Match every in-process XLL, native library, runtime and database provider to Excel.
+Review VBA declarations for PtrSafe, pointer-sized LongPtr and conditional
+compilation; do not replace ordinary 32-bit data fields with pointer types.
+
+Record acceptance separately for x86 and x64 Excel: fresh standard-user install
+without a preinstalled modern runtime, startup, language, load/save on test data,
+updates/restart, failed-update recovery and uninstall. Test wrong-architecture
+rejection before replacement, missing providers, and an Office architecture
+change. Build success is not desktop acceptance. Use separate test environments
+instead of replacing the maintainer's Office installation. Validate signed
+update selection for the installed architecture and preserve existing release
+identities and old-client update compatibility.
+
 For a normal-profile upgrade, verify both the physical cache path and the
 Windows registration as seen by the ordinary desktop session. If Codex
 virtualization gives a different view, establish a normal-user launch path.

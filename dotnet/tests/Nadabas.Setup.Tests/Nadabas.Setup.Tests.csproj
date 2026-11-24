@@ -17,6 +17,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Compile Include="../../tools/Nadabas.FeedSigning/PortableSeedBackup.cs" Link="PortableSeedBackup.cs" />
+    <Compile Include="../../src/Nadabas.ExcelStartup/StartupPayload.cs" Link="StartupPayload.cs" />
     <ProjectReference Include="../../src/Nadabas.Setup/Nadabas.Setup.csproj" />
     <ProjectReference Include="../../src/Nadabas.VersionStore/Nadabas.VersionStore.csproj" />
     <ProjectReference Include="../../src/Nadabas.PackageUpdate/Nadabas.PackageUpdate.csproj" />

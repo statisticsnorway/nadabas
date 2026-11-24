@@ -82,6 +82,19 @@ public static class Diagnostics
                     "ACE ProgID registration in this registry view; provider loading was not tested.");
             }
         }
+        var registrationFindings = findings.Where(f => f.Id.StartsWith("excel.app-path.", StringComparison.Ordinal)).ToArray();
+        var discovery = ExcelDiscovery.Inspect(registrationFindings
+            .Where(f => f.Status == "observed").Select(f => new ExcelRegistration(f.Id, f.Value)));
+        var incomplete = registrationFindings.Any(f => f.Status == "error");
+        findings.Add(new("excel.discovery", incomplete ? "error" : discovery.Status,
+            incomplete ? "Registry discovery is incomplete; no installation was selected." :
+                "Read-only App Paths discovery; multiple distinct registrations require review.",
+            incomplete ? null : discovery.Selected?.Path));
+        foreach (var candidate in discovery.Candidates)
+            findings.Add(new("excel.executable", candidate.Status, candidate.Evidence +
+                " Sources: " + string.Join(", ", candidate.Sources), candidate.Path));
+        if (!incomplete && discovery.Selected is { } selected)
+            findings.Add(new("excel.architecture", "verified", selected.Evidence, selected.Architecture));
     }
 
     [SupportedOSPlatform("windows")]

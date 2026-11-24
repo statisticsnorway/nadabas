@@ -6,6 +6,10 @@ function DesktopRuntimeInstalled: Boolean;
 var Names: TArrayOfString; I: Integer;
 begin
   Result := False;
+#ifdef PrivateRuntime
+  // The installer carries both runtimes. Framework availability is checked separately.
+  Result := True; Exit;
+#endif
   if RegGetValueNames(HKLM32, 'SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedfx\Microsoft.WindowsDesktop.App', Names) then
     for I := 0 to GetArrayLength(Names) - 1 do
       if (Copy(Names[I], 1, 5) = '10.0.') and (Pos('-', Names[I]) = 0) then

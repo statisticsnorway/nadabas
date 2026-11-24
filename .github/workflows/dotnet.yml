@@ -34,3 +34,19 @@ jobs:
         run: dotnet build src/Nadabas.ExcelBootstrap -c Release --no-restore
       - if: runner.os == 'Windows'
         run: dotnet format src/Nadabas.ExcelBootstrap/Nadabas.ExcelBootstrap.csproj --verify-no-changes --no-restore
+      - if: runner.os == 'Windows'
+        run: dotnet restore src/Nadabas.ExcelStartup --locked-mode
+      - if: runner.os == 'Windows'
+        run: dotnet build src/Nadabas.ExcelStartup -c Release --no-restore
+      - if: runner.os == 'Windows'
+        run: dotnet format src/Nadabas.ExcelStartup/Nadabas.ExcelStartup.csproj --verify-no-changes --no-restore
+      - if: runner.os == 'Windows'
+        run: ../tools/test_excel_architecture_build.ps1
+      - if: runner.os == 'Windows'
+        run: dotnet restore tools/Nadabas.RuntimeProbe --locked-mode
+      - if: runner.os == 'Windows'
+        run: dotnet publish tools/Nadabas.RuntimeProbe -c Release -r win-x86 --self-contained false --no-restore
+      - if: runner.os == 'Windows'
+        run: dotnet publish tools/Nadabas.RuntimeProbe -c Release -r win-x64 --self-contained false --no-restore
+      - if: runner.os == 'Windows'
+        run: dotnet format tools/Nadabas.RuntimeProbe --verify-no-changes --no-restore

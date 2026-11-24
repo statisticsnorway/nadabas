@@ -54,7 +54,11 @@ environment variable inside the managed loader is therefore too late. A test
 launcher can supply process-local DOTNET_ROOT, but normal Excel startup cannot
 depend on that launcher. Determine a supported early host-selection mechanism
 before choosing a local-runtime design. A small Framework loader with modern
-helpers outside Excel remains an alternative, not an approved migration yet.
+helpers outside Excel remains an alternative. The maintainer has now approved
+prototyping a small Framework 4.8 startup component that locates the local runtime
+before loading the existing modern XLL. Both x86 and x64 Excel are required; see
+[Excel architecture and distribution](EXCEL-ARCHITECTURE.md). This approval is for
+the prototype, not public distribution or changes to Office trust.
 
 References:
 [Excel-DNA 1.9 native host](https://github.com/Excel-DNA/ExcelDna/blob/v1.9.0/Source/ExcelDna.Host/host.cpp),

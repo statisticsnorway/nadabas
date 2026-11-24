@@ -13,7 +13,11 @@ internal static class PublisherTrust
     // https://learn.microsoft.com/windows/win32/api/wintrust/nf-wintrust-winverifytrust
     internal static void Verify(string path)
     {
+#if NETFRAMEWORK
+        if (Environment.OSVersion.Platform != PlatformID.Win32NT) throw new IOException("Windows signature verification is required.");
+#else
         if (!OperatingSystem.IsWindows()) throw new IOException("Windows signature verification is required.");
+#endif
         var name = Marshal.StringToCoTaskMemUni(path);
         var info = new FileInfoNative { Size = (uint)Marshal.SizeOf<FileInfoNative>(), Path = name };
         var pointer = Marshal.AllocHGlobal(Marshal.SizeOf<FileInfoNative>());
@@ -44,7 +48,11 @@ internal static class PublisherTrust
             if (context.Length is 0 or > 1048576 || context.Encoded == IntPtr.Zero) throw new IOException("Invalid signer certificate size.");
             var encoded = new byte[context.Length];
             Marshal.Copy(context.Encoded, encoded, 0, encoded.Length);
+#if NETFRAMEWORK
+            using var certificate = new X509Certificate2(encoded);
+#else
             using var certificate = X509CertificateLoader.LoadCertificate(encoded);
+#endif
             if (!string.Equals(certificate.GetCertHashString(), Thumbprint, StringComparison.OrdinalIgnoreCase))
                 throw new IOException("Package is not signed by the approved NADABAS publisher.");
         }

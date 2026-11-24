@@ -4,6 +4,11 @@ using System.Text.Json;
 try
 {
     if (!OperatingSystem.IsWindows()) throw new IOException("This updater requires Windows.");
+    if (args.Length == 4 && args[0] is "plan-runtime-cleanup" or "cleanup-runtime")
+    {
+        Console.WriteLine(JsonSerializer.Serialize(RuntimeCleanup.Run(args[1], args[2], args[3], args[0] == "cleanup-runtime")));
+        return 0;
+    }
     if (args.Length is 2 or 3 && args[0] == "check-download" && (args.Length == 2 || args[2] == "--manual"))
     {
         Console.WriteLine(JsonSerializer.Serialize(await AutomaticUpdates.Check(args[1], args.Length == 3)));
@@ -51,6 +56,7 @@ try
         return 0;
     }
     Console.Error.WriteLine("INTERNAL TEST: stage <installed-root> <signed-installer> <new-external-cache> [--smoke] | stage-for-excel <installed-root> <signed-installer> [--smoke] | apply <external-cache>");
+    Console.Error.WriteLine("Maintenance: plan-runtime-cleanup <installed-root> <job-id> <x86|x64> | cleanup-runtime <installed-root> <job-id> <x86|x64>");
     return 2;
 }
 catch (Exception ex)

@@ -10,11 +10,36 @@ const
   ContextBetaHash = '{#ContextBetaHash}';
   DemoHash = '{#DemoHash}';
   FixHash = '{#FixHash}';
+#ifdef AccessFixHash
+  AccessFixHash = '{#AccessFixHash}';
+#endif
 
 function FileAttributes(Name: String): Cardinal;
   external 'GetFileAttributesW@kernel32.dll stdcall';
 function BinaryType(Name: String; var Kind: Cardinal): Boolean;
   external 'GetBinaryTypeW@kernel32.dll stdcall';
+
+#ifdef PrivateRuntime
+#include "private-runtime.iss"
+#endif
+
+function ExcelRegistry: Integer;
+begin
+#ifdef PrivateRuntime
+  if SelectedArchitecture = 'x86' then Result := HKCU32 else Result := HKCU64;
+#else
+  Result := HKCU64;
+#endif
+end;
+
+function LoaderPath: String;
+begin
+#ifdef PrivateRuntime
+  Result := ExpandConstant('{app}\Nadabas.Startup.xll');
+#else
+  Result := ExpandConstant('{app}\Nadabas.Loader.Test.xll');
+#endif
+end;
 
 #include "runtime-prerequisite.iss"
 
@@ -22,6 +47,9 @@ function PrerequisiteError: String;
 var ExcelPath: String; Kind: Cardinal;
 begin
   Result := '';
+#ifdef PrivateRuntime
+  Result := PrivatePrerequisiteError; Exit;
+#endif
   if not DesktopRuntimeInstalled then begin
     Result := 'Microsoft .NET 10 Windows Desktop Runtime (x64) is required. In interactive Setup, use the Microsoft .NET prerequisite page. For managed or silent installation, ask IT to install this prerequisite first. The SDK is not required.';
     Exit;
@@ -86,7 +114,11 @@ begin
           if (Item.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0 then begin
             if (Rel <> 'sessions') and (Rel <> 'tools') and (Rel <> 'updater') and (Rel <> 'versions') and
               (Rel <> 'versions\slot-a') and (Rel <> 'versions\slot-b') and
-              (Rel <> 'versions\slot-test602006') and (Rel <> 'versions\slot-test602007') and (Rel <> 'versions\slot-test602008') and (Rel <> 'versions\slot-beta602006') and (Rel <> 'versions\slot-beta602006b') and (Rel <> 'versions\slot-demo602006') and (Rel <> 'versions\slot-fix602009') then begin Result := False; Exit; end;
+              (Rel <> 'versions\slot-test602006') and (Rel <> 'versions\slot-test602007') and (Rel <> 'versions\slot-test602008') and (Rel <> 'versions\slot-beta602006') and (Rel <> 'versions\slot-beta602006b') and (Rel <> 'versions\slot-demo602006') and (Rel <> 'versions\slot-fix602009')
+#ifdef AccessFixHash
+              and (Rel <> 'versions\slot-fix602010')
+#endif
+              then begin Result := False; Exit; end;
             if not SafeResidual(Child, Rel + '\') then begin Result := False; Exit; end;
           end else if (Relative = 'sessions\') and (CompareText(ExtractFileExt(Item.Name), '.json') = 0) then begin
             // Preserve historical reports.
@@ -109,6 +141,10 @@ begin
             if CompareText(GetSHA256OfFile(Child), DemoHash) <> 0 then begin Result := False; Exit; end;
           end else if Rel = 'versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam' then begin
             if CompareText(GetSHA256OfFile(Child), FixHash) <> 0 then begin Result := False; Exit; end;
+#ifdef AccessFixHash
+          end else if Rel = 'versions\slot-fix602010\NADABAS.TEST.slot-fix602010.xlam' then begin
+            if CompareText(GetSHA256OfFile(Child), AccessFixHash) <> 0 then begin Result := False; Exit; end;
+#endif
           end else begin Result := False; Exit; end;
         end;
       until not FindNext(Item);
@@ -165,7 +201,11 @@ begin
     if not LoadStringsFromFile(AddBackslash(Root) + '.nadabas-version-store', Lines) then begin Result := 'Cannot read the installation marker.'; Exit; end;
     if GetArrayLength(Lines) <> 1 then begin Result := 'Unrecognized installation directory.'; Exit; end;
     if Lines[0] <> 'NADABAS version-store prototype v1' then begin Result := 'Unrecognized installation directory.'; Exit; end;
+#ifdef AccessFixHash
+    for I := 0 to 9 do begin
+#else
     for I := 0 to 8 do begin
+#endif
       ExpectedHash := BaselineHash;
       if I = 0 then Slot := 'slot-a'
       else if I = 1 then Slot := 'slot-b'
@@ -175,7 +215,12 @@ begin
       else if I = 5 then begin Slot := 'slot-beta602006'; ExpectedHash := BetaHash; end
       else if I = 6 then begin Slot := 'slot-beta602006b'; ExpectedHash := ContextBetaHash; end
       else if I = 7 then begin Slot := 'slot-demo602006'; ExpectedHash := DemoHash; end
+#ifdef AccessFixHash
+      else if I = 8 then begin Slot := 'slot-fix602009'; ExpectedHash := FixHash; end
+      else begin Slot := 'slot-fix602010'; ExpectedHash := AccessFixHash; end;
+#else
       else begin Slot := 'slot-fix602009'; ExpectedHash := FixHash; end;
+#endif
       Path := AddBackslash(Root) + 'versions\' + Slot + '\NADABAS.TEST.' + Slot + '.xlam';
       if FileExists(Path) then
         if CompareText(GetSHA256OfFile(Path), ExpectedHash) <> 0 then begin Result := 'An existing test version has changed. Installation stopped and preserved it.'; Exit; end;
@@ -189,14 +234,14 @@ end;
 procedure RemoveExactRegistration(const Path: String);
 var Names: TArrayOfString; I: Integer; Value: String;
 begin
-  if RegGetValueNames(HKCU64, OptionsKey, Names) then
+  if RegGetValueNames(ExcelRegistry, OptionsKey, Names) then
     for I := 0 to GetArrayLength(Names) - 1 do
       if IsOpenName(Names[I]) then
-        if RegQueryStringValue(HKCU64, OptionsKey, Names[I], Value) then
+        if RegQueryStringValue(ExcelRegistry, OptionsKey, Names[I], Value) then
           if RefersTo(Value, Path) then
-            if not RegDeleteValue(HKCU64, OptionsKey, Names[I]) then RaiseException('Cannot remove test startup entry.');
-  if RegValueExists(HKCU64, ManagerKey, Path) then
-    if not RegDeleteValue(HKCU64, ManagerKey, Path) then RaiseException('Cannot remove test add-in entry.');
+            if not RegDeleteValue(ExcelRegistry, OptionsKey, Names[I]) then RaiseException('Cannot remove test startup entry.');
+  if RegValueExists(ExcelRegistry, ManagerKey, Path) then
+    if not RegDeleteValue(ExcelRegistry, ManagerKey, Path) then RaiseException('Cannot remove test add-in entry.');
 end;
 
 procedure CleanupPayloadRegistrations;
@@ -211,6 +256,9 @@ begin
   RemoveExactRegistration(ExpandConstant('{app}\versions\slot-beta602006b\NADABAS.TEST.slot-beta602006b.xlam'));
   RemoveExactRegistration(ExpandConstant('{app}\versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xlam'));
   RemoveExactRegistration(ExpandConstant('{app}\versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam'));
+#ifdef AccessFixHash
+  RemoveExactRegistration(ExpandConstant('{app}\versions\slot-fix602010\NADABAS.TEST.slot-fix602010.xlam'));
+#endif
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -222,26 +270,43 @@ begin
   if not ExcelClosed then RaiseException('Excel was opened during setup. Close Excel and run setup again to finish registration.');
   // Explicit test-release upgrade: validate bytes through the compiled catalog
   // and atomically select the new slot only after payload installation succeeds.
+#ifdef PrivateRuntime
+  if not Exec(ExpandConstant('{app}\runtime\') + SelectedArchitecture + '\dotnet.exe',
+    '"' + ExpandConstant('{app}\tools\Nadabas.VersionStore.dll') + '" activate "' + ExpandConstant('{app}') + '" {#SelectedVbaSlot}', '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
+#else
   if not Exec(ExpandConstant('{app}\tools\Nadabas.VersionStore.exe'),
-    'activate "' + ExpandConstant('{app}') + '" slot-fix602009', '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
+    'activate "' + ExpandConstant('{app}') + '" {#SelectedVbaSlot}', '', SW_HIDE, ewWaitUntilTerminated, ExitCode) then
+#endif
     RaiseException('Unable to start release activation. Previous selection has not been intentionally changed.');
   if ExitCode <> 0 then RaiseException('Release verification or activation failed. See the installation log.');
-  Path := ExpandConstant('{app}\Nadabas.Loader.Test.xll');
+  Path := LoaderPath;
+#ifdef PrivateRuntime
+  if not SaveStringToFile(ExpandConstant('{app}\excel-architecture.txt'), SelectedArchitecture, False) then
+    RaiseException('Cannot record the installed Excel architecture.');
+  // Preserve the OPEN slot used by an existing migration journal.
+  if RegGetValueNames(ExcelRegistry, OptionsKey, Names) then
+    for I := 0 to GetArrayLength(Names) - 1 do
+      if IsOpenName(Names[I]) and RegQueryStringValue(ExcelRegistry, OptionsKey, Names[I], Value) then
+        if RefersTo(Value, ExpandConstant('{app}\Nadabas.Loader.Test.xll')) then
+          if not RegWriteStringValue(ExcelRegistry, OptionsKey, Names[I], LoaderEntry) then
+            RaiseException('Cannot replace the previous loader registration.');
+  RemoveExactRegistration(ExpandConstant('{app}\Nadabas.Loader.Test.xll'));
+#endif
   CleanupPayloadRegistrations;
   if SwitchLegacy then begin SaveSelectedLanguage; Exit; end;
   Found := False;
-  if RegGetValueNames(HKCU64, OptionsKey, Names) then
+  if RegGetValueNames(ExcelRegistry, OptionsKey, Names) then
     for I := 0 to GetArrayLength(Names) - 1 do
       if IsOpenName(Names[I]) then
-        if RegQueryStringValue(HKCU64, OptionsKey, Names[I], Value) then
+        if RegQueryStringValue(ExcelRegistry, OptionsKey, Names[I], Value) then
           if RefersTo(Value, Path) then Found := True;
   if not Found then begin
     I := 0;
     repeat
       if I = 0 then Name := 'OPEN' else Name := 'OPEN' + IntToStr(I);
       I := I + 1;
-    until not RegValueExists(HKCU64, OptionsKey, Name);
-    if not RegWriteStringValue(HKCU64, OptionsKey, Name, '/R "' + Path + '"') then
+    until not RegValueExists(ExcelRegistry, OptionsKey, Name);
+    if not RegWriteStringValue(ExcelRegistry, OptionsKey, Name, '/R "' + Path + '"') then
       RaiseException('Cannot register the test loader for Excel startup.');
   end;
   Log('Test loader registered for next Excel startup.');
@@ -251,6 +316,11 @@ end;
 function InitializeUninstall: Boolean;
 var Slot, Original: String;
 begin
+#ifdef PrivateRuntime
+  if not LoadStringFromFile(ExpandConstant('{app}\excel-architecture.txt'), SelectedArchitecture) then begin Result := False; Exit; end;
+  SelectedArchitecture := Trim(SelectedArchitecture);
+  if (SelectedArchitecture <> 'x86') and (SelectedArchitecture <> 'x64') then begin Result := False; Exit; end;
+#endif
   Result := ExcelClosed;
   if Result and (DirExists(BackupDir) or FileExists(ExpandConstant('{app}\legacy-migration.required'))) then begin
     try CheckRestore(Slot, Original); except Log(GetExceptionMessage); SuppressibleMsgBox(GetExceptionMessage, mbError, MB_OK, IDOK); Result := False; Exit; end;
@@ -263,6 +333,7 @@ begin
   if CurStep <> usUninstall then Exit;
   if not ExcelClosed then RaiseException('Close Excel before uninstalling.');
   RestoreLegacy;
+  RemoveExactRegistration(LoaderPath);
   RemoveExactRegistration(ExpandConstant('{app}\Nadabas.Loader.Test.xll'));
   CleanupPayloadRegistrations;
 end;

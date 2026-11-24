@@ -27,6 +27,11 @@
 #ifndef FixHash
   #error FixHash is required
 #endif
+#ifdef AccessFixHash
+  #define SelectedVbaSlot "slot-fix602010"
+#else
+  #define SelectedVbaSlot "slot-fix602009"
+#endif
 #ifdef SmokeTest
   #define PackageId "NadabasLoaderInstallerSmoke"
   #define PackageName "NADABAS Installer Smoke"
@@ -62,7 +67,9 @@ AppVersion={#PackageVersion}
 AppPublisher=STATISTISK SENTRALBYRA
 DefaultDirName={localappdata}\NADABAS-Loader-Test
 PrivilegesRequired=lowest
+#ifndef PrivateRuntime
 ArchitecturesAllowed=x64compatible
+#endif
 DisableDirPage=yes
 DisableProgramGroupPage=yes
 OutputDir={#PackageOutput}
@@ -85,6 +92,10 @@ SignedUninstaller=no
 #endif
 InfoBeforeFile={#PayloadDir}\TESTGUIDE.txt
 [Files]
+#ifdef PrivateRuntime
+Source: "{#ComponentsDir}\x86\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: InstallX86
+Source: "{#ComponentsDir}\x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: InstallX64
+#endif
 Source: "{#PayloadDir}\*"; DestDir: "{app}"; Excludes: "*.xlam,active.json,store.lock,.nadabas-version-store"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#PayloadDir}\.nadabas-version-store"; DestDir: "{app}"; Flags: onlyifdoesntexist
 Source: "{#PayloadDir}\active.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
@@ -100,10 +111,16 @@ Source: "{#PayloadDir}\versions\slot-beta602006b\NADABAS.TEST.slot-beta602006b.x
 Source: "{#PayloadDir}\versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xlam"; DestDir: "{app}\versions\slot-demo602006"; Attribs: readonly; Flags: onlyifdoesntexist
 #endif
 Source: "{#PayloadDir}\versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam"; DestDir: "{app}\versions\slot-fix602009"; Attribs: readonly; Flags: onlyifdoesntexist
+#ifdef AccessFixHash
+Source: "{#PayloadDir}\versions\slot-fix602010\NADABAS.TEST.slot-fix602010.xlam"; DestDir: "{app}\versions\slot-fix602010"; Attribs: readonly; Flags: onlyifdoesntexist
+#endif
 [Icons]
 Name: "{userprograms}\{#PackageName}\User guide"; Filename: "{app}\TESTGUIDE.txt"
 Name: "{userprograms}\{#PackageName}\Open installation folder"; Filename: "{app}"
 [UninstallDelete]
+#ifdef PrivateRuntime
+Type: files; Name: "{app}\excel-architecture.txt"
+#endif
 Type: files; Name: "{app}\download.lock"
 Type: files; Name: "{app}\last-download-check.json"
 Type: files; Name: "{app}\skipped-package-version"

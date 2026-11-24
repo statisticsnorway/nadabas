@@ -5,10 +5,11 @@ function ReadValueInfo(Key: Cardinal; SubKey, Name: String; Flags: Cardinal;
   external 'RegGetValueW@advapi32.dll stdcall';
 
 function PlainString(const Name: String): Boolean;
-var Kind, Bytes: Cardinal;
+var Kind, Bytes, Flags: Cardinal;
 begin
   Bytes := 0;
-  Result := (ReadValueInfo($80000001, OptionsKey, Name, $10010002, Kind, 0, Bytes) = 0) and (Kind = 1);
+  if ExcelRegistry = HKCU32 then Flags := $00020002 else Flags := $00010002;
+  Result := (ReadValueInfo($80000001, OptionsKey, Name, Flags, Kind, 0, Bytes) = 0) and (Kind = 1);
 end;
 
 function LocalDriveType(Path: String): Cardinal;
@@ -30,7 +31,7 @@ end;
 
 function LoaderEntry: String;
 begin
-  Result := '/R "' + ExpandConstant('{app}\Nadabas.Loader.Test.xll') + '"';
+  Result := '/R "' + LoaderPath + '"';
 end;
 
 procedure CheckLocalPath(Path: String);
@@ -94,14 +95,14 @@ procedure FindLegacy(var Slot, Original: String);
 var Names: TArrayOfString; I, Loaders: Integer; Value: String;
 begin
   Slot := ''; Original := ''; Loaders := 0;
-  if not RegKeyExists(HKCU64, OptionsKey) then Exit;
-  if not RegGetValueNames(HKCU64, OptionsKey, Names) then RaiseException('Cannot inspect Excel startup entries.');
+  if not RegKeyExists(ExcelRegistry, OptionsKey) then Exit;
+  if not RegGetValueNames(ExcelRegistry, OptionsKey, Names) then RaiseException('Cannot inspect Excel startup entries.');
   for I := 0 to GetArrayLength(Names) - 1 do begin
-    if IsOpenName(Names[I]) and RegQueryStringValue(HKCU64, OptionsKey, Names[I], Value) then begin
+    if IsOpenName(Names[I]) and RegQueryStringValue(ExcelRegistry, OptionsKey, Names[I], Value) then begin
       if RefersTo(Value, OldAddin) then begin
         if (Slot <> '') or not PlainString(Names[I]) then RaiseException('Ambiguous legacy Excel startup registration.');
         Slot := Names[I]; Original := Value;
-      end else if RefersTo(Value, ExpandConstant('{app}\Nadabas.Loader.Test.xll')) then
+      end else if RefersTo(Value, LoaderPath) or RefersTo(Value, ExpandConstant('{app}\Nadabas.Loader.Test.xll')) then
         Loaders := Loaders + 1
       else if not OurPayload(Value) and (Pos('NADABAS', UpperCase(Value)) > 0) and
         ((Pos('.XLA', UpperCase(Value)) > 0) or (Pos('.XLL', UpperCase(Value)) > 0)) then
@@ -114,7 +115,7 @@ end;
 procedure RequireEntry(const Slot, Expected: String);
 var Value: String;
 begin
-  if not PlainString(Slot) or not RegQueryStringValue(HKCU64, OptionsKey, Slot, Value) or
+  if not PlainString(Slot) or not RegQueryStringValue(ExcelRegistry, OptionsKey, Slot, Value) or
     (Value <> Expected) then RaiseException('The Excel startup registration changed. Review it before continuing.');
 end;
 
@@ -122,8 +123,9 @@ procedure CheckRestore(var Slot, Original: String);
 var Value: String;
 begin
   ReadBackup(Slot, Original);
-  if not PlainString(Slot) or not RegQueryStringValue(HKCU64, OptionsKey, Slot, Value) or
-    ((Value <> LoaderEntry) and (Value <> Original)) then RaiseException('Legacy rollback conflicts with the current startup registration.');
+  if not PlainString(Slot) or not RegQueryStringValue(ExcelRegistry, OptionsKey, Slot, Value) or
+    ((Value <> LoaderEntry) and (Value <> Original) and
+      not RefersTo(Value, ExpandConstant('{app}\Nadabas.Loader.Test.xll'))) then RaiseException('Legacy rollback conflicts with the current startup registration.');
   CheckLocalPath(OldAddin);
   if FileExists(OldAddin) then RequireBaseline(OldAddin);
 end;
@@ -154,10 +156,13 @@ begin
     ReviewStartupFolder(ExtractFileDir(ExpandConstant('{app}')) + '\profile\XLSTART');
 #else
     ReviewStartupFolder(ExpandConstant('{userappdata}\Microsoft\Excel\XLSTART'));
-    if RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\excel.exe', '', Path) then
+    if RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\excel.exe', '', Path) then
       ReviewStartupFolder(ExtractFileDir(Path) + '\XLSTART');
+    if IsWin64 then
+      if RegQueryStringValue(HKLM64, 'SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\excel.exe', '', Path) then
+        ReviewStartupFolder(ExtractFileDir(Path) + '\XLSTART');
 #endif
-    if RegQueryStringValue(HKCU64, OptionsKey, 'AltStartup', Path) then ReviewStartupFolder(Path);
+    if RegQueryStringValue(ExcelRegistry, OptionsKey, 'AltStartup', Path) then ReviewStartupFolder(Path);
     FindLegacy(Slot, Original);
     CheckLocalPath(BackupDir);
     if DirExists(BackupDir) then begin
@@ -196,7 +201,7 @@ begin
   if not ExcelClosed then RaiseException('Close Excel and retry migration.');
   RequireBaseline(OldAddin);
   RequireEntry(Slot, Original);
-  if not RegWriteStringValue(HKCU64, OptionsKey, Slot, LoaderEntry) then RaiseException('Cannot switch Excel startup to the loader.');
+  if not RegWriteStringValue(ExcelRegistry, OptionsKey, Slot, LoaderEntry) then RaiseException('Cannot switch Excel startup to the loader.');
   Result := True;
 end;
 
@@ -210,5 +215,5 @@ begin
     RequireBaseline(OldAddin);
   end;
   CheckRestore(Slot, Original);
-  if not RegWriteStringValue(HKCU64, OptionsKey, Slot, Original) then RaiseException('Cannot restore legacy startup registration.');
+  if not RegWriteStringValue(ExcelRegistry, OptionsKey, Slot, Original) then RaiseException('Cannot restore legacy startup registration.');
 end;

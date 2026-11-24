@@ -18,6 +18,7 @@ public static class AutomaticUpdates
         command.ArgumentList.Add("check-download");
         command.ArgumentList.Add(root);
         if (manual) command.ArgumentList.Add("--manual");
+        Nadabas.Hosting.RuntimeChildProcess.Configure(command, root);
         using var process = Process.Start(command) ?? throw new IOException("Cannot start update checker.");
         try
         {
