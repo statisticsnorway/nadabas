@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "6.02.006",
+  "testOnly": true,
+  "publishedRelease": false,
+  "recordedOn": "2026-11-02",
+  "baselineVersion": "6.02.005",
+  "baselineSha256": "2F7432B9B04C414337EB1AFEB07E2B93F05E4A5A6D151073FA967A2F7EA89A85",
+  "changes": ["CURRENT_VERSION constant", "SIMULATED UPGRADE TEST About title"],
+  "slot": "slot-test602006",
+  "sha256": "852CC76872428186AC0F8B5C6AA906AE438DABEE6BEF8061E739858DCCD052B8",
+  "signerThumbprint": "A70F7882B2F9F5C6D23A22C8AEC70211854B9EAF",
+  "verification": "Authenticode Valid; read-only Excel inspection with macros disabled confirmed VBASigned, version constant and test label. Runtime and Ribbon acceptance pending."
+}

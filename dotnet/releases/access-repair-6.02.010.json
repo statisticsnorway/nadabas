@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "6.02.010",
+  "testOnly": true,
+  "publishedRelease": false,
+  "recordedOn": "2026-11-24",
+  "buildDate": "2026-11-24",
+  "channel": "internal-release-candidate",
+  "slot": "slot-fix602010",
+  "baselineVersion": "6.02.009",
+  "baselineSha256": "D53D492724997C08596DBEACAE4695B30786B3695310D13035CD61541A829750",
+  "sha256": "36A32EBF31DE42256B089228588F12E6A04D0481DDA3D9D8CC39E88D65C5FEF7",
+  "signerThumbprint": "A70F7882B2F9F5C6D23A22C8AEC70211854B9EAF",
+  "signatureVerification": "Valid publisher and timestamp; Excel confirms VBA signature present",
+  "sourceCommit": null,
+  "sourceStatus": "Reviewed working-tree repair; not yet an approved signed release commit",
+  "changes": [
+    "WorkbookIdentitySchema: Access backfill avoids the failing legacy name-index lookup",
+    "WorkbookIdentitySchema: accurate partial-migration diagnostics and history-read error handling",
+    "InterfaceVersionUpdate: version and immutable build date"
+  ],
+  "remainingAcceptance": [
+    "Final signed package installation and ordinary Excel database open/load/save",
+    "Actual x86 Excel test deferred by maintainer to a colleague",
+    "Approved release source and explicit publication authorization"
+  ]
+}

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AppHostDotNetSearch Condition="'$(PrivateRuntimeHelpers)' != 'true'">Global</AppHostDotNetSearch>
+    <AppHostDotNetSearch Condition="'$(PrivateRuntimeHelpers)' == 'true'">EnvironmentVariable</AppHostDotNetSearch>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <RuntimeManifest Condition="'$(RuntimeManifest)' == ''">runtime-manifest.txt</RuntimeManifest>
+  </PropertyGroup>
+  <ItemGroup><InternalsVisibleTo Include="Nadabas.Setup.Tests" /></ItemGroup>
+  <ItemGroup><Compile Include="../Shared/RuntimeChildProcess.cs" Link="RuntimeChildProcess.cs" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="Nadabas.FeedSigning" /></ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="NetSparkleUpdater.SparkleUpdater" Version="3.1.0" />
+    <EmbeddedResource Include="update-channel.json" LogicalName="Nadabas.UpdateChannel.json" />
+    <EmbeddedResource Include="$(RuntimeManifest)" LogicalName="Nadabas.RuntimeManifest" />
+  </ItemGroup>
+</Project>

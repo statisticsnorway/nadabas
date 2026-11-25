@@ -1,0 +1,34 @@
+NADABAS INTERNAL INSTALLATION TEST
+
+Requires 64-bit Excel and .NET 10 Windows Desktop Runtime x64.
+This package contains VBA test version 6.02.009, dated 2026-11-11, in
+slot-fix602009. It is based on the signed multilingual beta with the reviewed
+issue 47 fix and Exchange display control moved into Administration.
+This is not a published production VBA release.
+
+1. Save your work and close all Excel windows before running Setup.
+   Setup registers the loader automatically. Choose your language; silent
+   upgrades preserve it. First silent install requires /NADABASLANG=3,4,5,6.
+2. Start Excel normally. About must show 6.02.009 and 2026-11-11. Check the
+   latest sessions JSON: slot-fix602009 and no error. Compare loaderVersion
+   with the component version recorded for the tested package.
+3. In a TEST database, Create Key Family must reject 256, fractions and blank
+   dimension lengths before creation. Correct the input and reuse the name.
+   Do not remove or repair existing incomplete families without review.
+4. With administrator access and a TEST workbook containing Exchange links,
+   open Administration / Other admin. Show Exchange tools must be immediately
+   below Create Exchange links. Toggle it and check the existing Exchange groups.
+   Without Exchange links the toggle remains hidden. It only controls display.
+5. Check English, French, Portuguese and Bahasa Indonesia. Verify accents,
+   keyboard navigation and readable update Details with larger display scaling.
+6. With Excel CLOSED, test explicit rollback and restoration in PowerShell:
+   $testRoot = Join-Path $env:LOCALAPPDATA 'NADABAS-Loader-Test'
+   & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-a
+   Start Excel and check baseline 6.02.005. Close Excel and restore:
+   & "$testRoot\tools\Nadabas.VersionStore.exe" activate $testRoot slot-fix602009
+
+The signed-feed discovery and restart workflow are included. The production
+GitHub feed is not published. Missing feed or failed verification leaves the
+installed version unchanged. Manual checks show Details on failure.
+Never bypass Office security prompts. PIN belongs only in SafeNet.
+Code rollback does not roll back database data. Keep this test package internal.

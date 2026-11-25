@@ -7,6 +7,8 @@ Option Private Module
 ' Windows components, so no additional VBA reference is required.
 
 Private Const CURRENT_VERSION As String = "6.02.005"
+' Empty only in development source; packaging stamps ISO date before signing.
+Private Const RELEASE_DATE_ISO As String = ""
 Private Const RELEASE_API_URL As String = _
     "https://api.github.com/repos/statisticsnorway/nadabas/releases/latest"
 Private Const DOWNLOAD_URL As String = _
@@ -20,6 +22,34 @@ Private Const STARTUP_DELAY_SECONDS As Long = 5
 
 Private scheduledCheck As Date
 Private checkIsScheduled As Boolean
+Private managedUpdates As Boolean
+
+' BEGIN MANAGED UPDATE BRIDGE
+Public Sub EnableManagedUpdates()
+    managedUpdates = True
+    CancelScheduledVersionCheck
+End Sub
+
+Public Sub DisableManagedUpdates()
+    managedUpdates = False
+End Sub
+
+Private Sub ShowManagedUpdateStatus()
+    On Error GoTo Unavailable
+    Application.Run "NADABAS.CheckUpdates"
+    Exit Sub
+Unavailable:
+    MsgBox MultiLang.GetMsg("ManagedUpdateUnavailable"), vbExclamation, "NADABAS"
+End Sub
+' END MANAGED UPDATE BRIDGE
+
+Public Function AboutBuildDate() As String
+    If Len(RELEASE_DATE_ISO) = 0 Then
+        AboutBuildDate = Format$(Date, "yyyy-mm-dd") & " (development)"
+    Else
+        AboutBuildDate = RELEASE_DATE_ISO
+    End If
+End Function
 
 Public Function InstalledVersion() As String
     InstalledVersion = CURRENT_VERSION
@@ -57,6 +87,11 @@ End Sub
 
 Public Sub ScheduleLatestVersionCheck(Optional ByVal force As Boolean = False)
     On Error GoTo ScheduleFailed
+
+    If managedUpdates Then
+        CancelScheduledVersionCheck
+        Exit Sub
+    End If
 
     If Not VersionChecksEnabled Then
         CancelScheduledVersionCheck
@@ -100,6 +135,8 @@ Public Sub CheckLatestVersion(Optional ByVal force As Boolean = False)
 
     On Error GoTo CheckFailed
 
+    If managedUpdates Then Exit Sub
+
     If Not VersionChecksEnabled Then Exit Sub
 
     If Not force Then
@@ -131,6 +168,11 @@ Public Sub CheckLatestVersionManually()
     Dim latestVersion As String
 
     On Error GoTo CheckFailed
+
+    If managedUpdates Then
+        ShowManagedUpdateStatus
+        Exit Sub
+    End If
 
     SaveSetting "NADABAS", REGISTRY_SECTION, REGISTRY_LAST_CHECK, CStr(CLng(Date))
     latestVersion = FetchLatestPublishedVersion

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "releaseVersion": "6.02.005",
+  "recordedOn": "2026-10-27",
+  "publicationEvidence": "Maintainer identified these local artifacts as the currently published release.",
+  "signatureVerification": "not-performed",
+  "sourceCommit": null,
+  "files": [
+    {
+      "name": "NADABAS.6.02.005.xlsm",
+      "role": "legacy-installer",
+      "length": 2109875,
+      "sha256": "AF9995B7C485141A526DD5F330AF6708AEC7DBDF45030B1EDE4812C264609C51"
+    },
+    {
+      "name": "NADABAS.XLAM",
+      "role": "excel-addin",
+      "length": 2109734,
+      "sha256": "2F7432B9B04C414337EB1AFEB07E2B93F05E4A5A6D151073FA967A2F7EA89A85"
+    }
+  ]
+}

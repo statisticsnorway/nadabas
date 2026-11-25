@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="src/Nadabas.PackageUpdate/Nadabas.PackageUpdate.csproj" />
+  <Project Path="src/Nadabas.Setup/Nadabas.Setup.csproj" />
+  <Project Path="src/Nadabas.UpdateProbe/Nadabas.UpdateProbe.csproj" />
+  <Project Path="src/Nadabas.VersionStore/Nadabas.VersionStore.csproj" />
+  <Project Path="tests/Nadabas.Setup.Tests/Nadabas.Setup.Tests.csproj" />
+</Solution>

@@ -37,8 +37,15 @@
 
 # Local/generated NADABAS and Codex working artifacts
 [Nn][Bb]_[Pp][Rr][Aa][Cc][Tt][Ii][Cc][Ee]*
+/.codex/
 **/.codex_tmp/
-*[Tt][Mm][Pp]*
+/.codex-build/
+/.codex-finalizer/
+# Keep generated Markdown drafts and reports in these ignored output folders.
+# AGENTS.md, SKILLS.md, DESIGN.md and documentation under docs/ stay versioned.
+/artifacts/
+/outputs/
+/output/
 
 
 # The section below is from the GitHub .gitignore template for Python:
@@ -278,7 +285,9 @@ rsconnect/
 *.secrets.*
 *.local.*
 *.docx
-/.codex-build
-/outputs
-/.codex-finalizer
-/output
+
+# .NET build outputs and local diagnostic reports
+**/bin/
+**/obj/
+**/TestResults/
+/.vs/

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="nb"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NADABAS · Språkdemo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f3;color:#16352e;font:18px/1.5 system-ui,sans-serif}main{max-width:950px;margin:auto;padding:32px 24px}header{border-bottom:2px solid #286c56;padding-bottom:15px}small{color:#49635c;letter-spacing:.05em}h1{font-size:clamp(30px,5vw,54px);margin:4px 0}h2{font-size:23px;margin:0 0 12px}section{background:white;border:1px solid #d6dfda;border-radius:12px;padding:22px;margin:18px 0}nav,footer,.labels{display:flex;flex-wrap:wrap;gap:10px}button{font:inherit;border:1px solid #a9bdb5;padding:8px 15px;border-radius:6px;background:#fff;color:#16352e;cursor:pointer}button[aria-pressed=true]{background:#205c49;color:white}button:focus-visible{outline:3px solid #007ab5}dl{display:grid;grid-template-columns:auto 1fr;gap:6px 20px}dt{color:#486057}dd{margin:0;font-weight:600}.sample{padding:7px 12px;background:#edf3ee;border-radius:5px}p{max-width:70ch}.note{font-size:15px}</style>
+<main><header><small>NADABAS · DEMO</small><h1>Språk i Excel</h1><nav aria-label="Velg demospråk"><button data-lang="4">Français</button><button data-lang="5">Português</button><button data-lang="6">Bahasa Indonesia</button></nav></header>
+<section><h2>Signert utgave 0.8.1</h2><p class="note">Disse tekstene ble lest fra VBA i Excel med det valgte NADABAS-språket.</p><dl id="signed"></dl></section>
+<section><small>FORHÅNDSVISNING · NESTE UTGAVE</small><h2 id="title"></h2><strong id="ready"></strong><p id="body"></p><p id="laterHint"></p><div class="labels" id="actions"></div><p><span id="exchange" class="sample"></span></p><p class="note">Tekstprøve fra kildekoden. Denne siden endrer verken Excel, språkinnstillinger eller installerte filer.</p></section></main>
+<script>
+const data=/*DATA*/;
+function show(code){const entry=data[code],t=entry.ui;
+document.querySelectorAll('nav button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===code)));
+const pairs=[['Språkvalg','btnLanguage'],['About','btnAbout'],['Database','grpDatabase'],['Se etter oppdateringer','btnCheckNadabasVersion']];
+const list=document.querySelector('#signed');list.replaceChildren();for(const [a,b] of pairs){let k=document.createElement('dt'),v=document.createElement('dd');k.textContent=a;v.textContent=entry.signed[b];list.append(k,v)}
+for(const key of ['title','body','laterHint'])document.getElementById(key).textContent=t[key];
+document.getElementById('ready').textContent=t.ready.replace('{0}','6.02.008');document.getElementById('exchange').textContent=entry.exchange;
+const actions=document.getElementById('actions');actions.replaceChildren();for(const key of ['cancel','later','restart']){let a=document.createElement('span');a.className='sample';a.textContent=t[key];actions.append(a)}}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.lang));show('4');
+</script></html>

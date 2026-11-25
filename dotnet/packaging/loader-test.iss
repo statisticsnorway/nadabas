@@ -1,0 +1,134 @@
+; Shared installer engine. SmokeTest uses isolated registration; UnsignedBuild
+; is engineering-only and cannot install into the normal Office profile.
+#ifdef ProductionCandidate
+  #define CompactPayload
+#endif
+#ifndef PayloadDir
+  #error PayloadDir is required
+#endif
+#ifndef UpgradeHash
+  #error UpgradeHash is required for the simulated upgrade fixture
+#endif
+#ifndef ManagedUpgradeHash
+  #error ManagedUpgradeHash is required
+#endif
+#ifndef DatedUpgradeHash
+  #error DatedUpgradeHash is required
+#endif
+#ifndef BetaHash
+  #error BetaHash is required
+#endif
+#ifndef ContextBetaHash
+  #error ContextBetaHash is required
+#endif
+#ifndef DemoHash
+  #error DemoHash is required
+#endif
+#ifndef FixHash
+  #error FixHash is required
+#endif
+#ifdef AccessFixHash
+  #define SelectedVbaSlot "slot-fix602010"
+#else
+  #define SelectedVbaSlot "slot-fix602009"
+#endif
+#ifdef SmokeTest
+  #define PackageId "NadabasLoaderInstallerSmoke"
+  #define PackageName "NADABAS Installer Smoke"
+  #define ExcelBase "Software\NADABAS\InstallerSmoke\Excel"
+#else
+  #define PackageId "{{8C18DA56-6F3D-4B42-B114-CC449364E8F9}"
+  #define PackageName "NADABAS Loader Test"
+  #define ExcelBase "Software\Microsoft\Office\16.0\Excel"
+#endif
+#ifndef PackageOutput
+  #error PackageOutput is required
+#endif
+#ifndef PackageVersion
+  #define PackageVersion "0.9.0"
+#endif
+#define ProductIdentity PackageName
+#ifdef ProductionCandidate
+  #ifndef SmokeTest
+    #undef PackageName
+    #define PackageName "NADABAS"
+  #endif
+  #define OutputName "Nadabas-" + PackageVersion + "-Setup"
+#else
+  #define OutputName "NadabasLoaderTest-" + PackageVersion + "-Setup"
+#endif
+#ifdef UnsignedBuild
+  #define OutputName "UNSIGNED-" + OutputName
+#endif
+[Setup]
+AppId={#PackageId}
+AppName={#PackageName}
+AppVersion={#PackageVersion}
+AppPublisher=STATISTISK SENTRALBYRA
+DefaultDirName={localappdata}\NADABAS-Loader-Test
+PrivilegesRequired=lowest
+#ifndef PrivateRuntime
+ArchitecturesAllowed=x64compatible
+#endif
+DisableDirPage=yes
+DisableProgramGroupPage=yes
+OutputDir={#PackageOutput}
+OutputBaseFilename={#OutputName}
+Compression=lzma2
+SolidCompression=yes
+CloseApplications=no
+RestartApplications=no
+SetupLogging=yes
+WizardStyle=modern
+VersionInfoVersion={#PackageVersion}
+; Keep the product metadata accepted by already installed 0.9.x updaters.
+VersionInfoProductName={#ProductIdentity}
+VersionInfoDescription=NADABAS installation and updates
+#ifndef UnsignedBuild
+SignTool=nadabas_test
+SignedUninstaller=yes
+#else
+SignedUninstaller=no
+#endif
+InfoBeforeFile={#PayloadDir}\TESTGUIDE.txt
+[Files]
+#ifdef PrivateRuntime
+Source: "{#ComponentsDir}\x86\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: InstallX86
+Source: "{#ComponentsDir}\x64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Check: InstallX64
+#endif
+Source: "{#PayloadDir}\*"; DestDir: "{app}"; Excludes: "*.xlam,active.json,store.lock,.nadabas-version-store"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PayloadDir}\.nadabas-version-store"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\active.json"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\store.lock"; DestDir: "{app}"; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-a\NADABAS.TEST.slot-a.xlam"; DestDir: "{app}\versions\slot-a"; Attribs: readonly; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-b\NADABAS.TEST.slot-b.xlam"; DestDir: "{app}\versions\slot-b"; Attribs: readonly; Flags: onlyifdoesntexist
+#ifndef CompactPayload
+Source: "{#PayloadDir}\versions\slot-test602006\NADABAS.TEST.slot-test602006.xlam"; DestDir: "{app}\versions\slot-test602006"; Attribs: readonly; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-test602007\NADABAS.TEST.slot-test602007.xlam"; DestDir: "{app}\versions\slot-test602007"; Attribs: readonly; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-test602008\NADABAS.TEST.slot-test602008.xlam"; DestDir: "{app}\versions\slot-test602008"; Attribs: readonly; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-beta602006\NADABAS.TEST.slot-beta602006.xlam"; DestDir: "{app}\versions\slot-beta602006"; Attribs: readonly; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-beta602006b\NADABAS.TEST.slot-beta602006b.xlam"; DestDir: "{app}\versions\slot-beta602006b"; Attribs: readonly; Flags: onlyifdoesntexist
+Source: "{#PayloadDir}\versions\slot-demo602006\NADABAS.TEST.slot-demo602006.xlam"; DestDir: "{app}\versions\slot-demo602006"; Attribs: readonly; Flags: onlyifdoesntexist
+#endif
+Source: "{#PayloadDir}\versions\slot-fix602009\NADABAS.TEST.slot-fix602009.xlam"; DestDir: "{app}\versions\slot-fix602009"; Attribs: readonly; Flags: onlyifdoesntexist
+#ifdef AccessFixHash
+Source: "{#PayloadDir}\versions\slot-fix602010\NADABAS.TEST.slot-fix602010.xlam"; DestDir: "{app}\versions\slot-fix602010"; Attribs: readonly; Flags: onlyifdoesntexist
+#endif
+[Icons]
+Name: "{userprograms}\{#PackageName}\User guide"; Filename: "{app}\TESTGUIDE.txt"
+Name: "{userprograms}\{#PackageName}\Open installation folder"; Filename: "{app}"
+[UninstallDelete]
+#ifdef PrivateRuntime
+Type: files; Name: "{app}\excel-architecture.txt"
+#endif
+Type: files; Name: "{app}\download.lock"
+Type: files; Name: "{app}\last-download-check.json"
+Type: files; Name: "{app}\skipped-package-version"
+Type: files; Name: "{app}\pending-platform-update"
+Type: files; Name: "{app}\platform-update.lock"
+Type: files; Name: "{app}\legacy-migration.required"
+Type: files; Name: "{app}\pending-update.json"
+[Run]
+Filename: "{app}\TESTGUIDE.txt"; Description: "Open the user guide"; Flags: shellexec postinstall skipifsilent nowait
+[Code]
+#include "loader-lifecycle.iss"

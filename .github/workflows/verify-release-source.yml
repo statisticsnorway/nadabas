@@ -1,0 +1,34 @@
+name: Verify release source
+
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: Full commit SHA proposed for release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    environment: nadabas-release-review
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify approved SSH signer
+        env:
+          RELEASE_SHA: ${{ inputs.revision }}
+          APPROVED_SIGNERS: ${{ vars.NADABAS_RELEASE_ALLOWED_SIGNERS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_SHA" =~ ^[0-9a-fA-F]{40}$ ]] || { echo "Full commit SHA required"; exit 1; }
+          test -n "$APPROVED_SIGNERS" || { echo "Configure approved release signers first"; exit 1; }
+          signer_file="$RUNNER_TEMP/nadabas-allowed-signers"
+          printf '%s\n' "$APPROVED_SIGNERS" > "$signer_file"
+          python3 tools/verify_release_source.py --repository "$GITHUB_WORKSPACE" --revision "$RELEASE_SHA" --allowed-signers "$signer_file"

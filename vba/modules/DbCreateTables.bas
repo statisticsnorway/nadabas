@@ -668,14 +668,38 @@ Public Sub DeleteKeyFam(Keyname As String)
      DropTable (Keyname)
 End Sub
 
+Public Function TryDimensionLength(ByVal Value As Variant, ByRef Length As Long) As Boolean
+Dim Number As Double
+    On Error GoTo InvalidLength
+    Length = 0
+    If IsObject(Value) Or IsArray(Value) Then Exit Function
+    If IsNull(Value) Or IsEmpty(Value) Or IsError(Value) Then Exit Function
+    If VarType(Value) = vbBoolean Or VarType(Value) = vbDate Then Exit Function
+    If Not IsNumeric(Value) Then Exit Function
+    Number = CDbl(Value)
+    If Number < 1 Or Number > 255 Then Exit Function
+    If Number <> Fix(Number) Then Exit Function
+    Length = CLng(Number)
+    TryDimensionLength = True
+InvalidLength:
+End Function
+
 Public Function CreateNewKeyFam(FName As String, Dimensions As Collection, valuetype As Integer) As Boolean
 
 Dim s As String
 Dim sand As String
 Dim f As field
 Dim x As clsFieldNames
+Dim ValidatedLength As Long
 
  '    On Error GoTo someerror
+
+     ' Validate every dimension before any schema or metadata write.
+     For Each x In Dimensions
+        If Not TryDimensionLength(x.Length, ValidatedLength) Then
+           err.Raise vbObjectError + 2047, "CreateNewKeyFam", GetMsg("DimensionLengthInvalid")
+        End If
+     Next x
 
      PrepareTable FName
      For Each x In Dimensions

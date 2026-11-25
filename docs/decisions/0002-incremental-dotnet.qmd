@@ -1,0 +1,87 @@
+---
+title: "ADR 0002: Introduce .NET components in the NADABAS repository"
+---
+
+## Status and date
+
+Initial implementation decision, 2026-10-27. Production installation and
+database migration remain future decisions requiring runtime evidence.
+
+## Context
+
+NADABAS is an Excel/VBA application with shared database and workbook state.
+The migration must permit small releases while preserving current workflows.
+Installation and version checking are more bounded than data writes or batch
+execution. VBA and .NET changes will initially share maintainers, contracts,
+test fixtures and release compatibility requirements.
+
+## Decision
+
+Keep the .NET source under `dotnet/` in the existing repository, with its own
+solution, SDK policy, tests and CI workflow. Use C# and .NET 10 LTS. Start with
+a read-only executable for setup diagnostics; implement installation only
+after explicit planning, signature verification and recovery tests exist.
+
+Keep Excel events, ribbon, forms and session initialization in VBA. A later
+process adapter will exchange versioned data messages. Do not move Excel
+objects, module-level ADO cursors or shared globals across that boundary.
+Migrate complete operations, with comparative tests against the VBA baseline.
+
+## Installation and update target (2026-10-28)
+
+The maintainer clarified the intended user experience: users install NADABAS
+once, subsequent updates happen automatically, and IT can control deployment.
+This is the product target, not functionality delivered by the current prototype.
+
+The implementation must provide:
+
+- A normal first-install flow that installs the required components and registers
+  the Excel add-in without manual file copying. End users do not need a .NET SDK.
+- Automatic updates from an approved release source, with publisher and package
+  validation and explicit compatibility between the add-in and .NET components.
+- IT policy that takes precedence over user defaults: defer or disable automatic
+  updates, pin an approved version, and select an approved release source/channel.
+- Deferred activation of add-in updates until Excel is closed. Do not close a
+  user's Excel session or replace a loaded add-in to apply an update.
+- Verified backup and recovery for failed updates, preservation of user settings
+  and data, and a visible installed version and update result.
+- Repair and uninstall flows that remove application components without deleting
+  user workbooks or databases.
+
+Per-user versus machine-wide installation, packaging technology, update trigger,
+release hosting and the IT policy mechanism remain design decisions. An automatic
+update may still run an installer internally; the user should not have to repeat
+the manual installation procedure for each release. Existing Office security
+policy continues to apply.
+
+The next implementation milestone is an upgrade rehearsal between two explicitly
+identified test packages, including Excel-open deferral, failed-update recovery
+and IT-policy precedence. Production automatic download and installation follow
+package trust and upgrade acceptance checks. Database regression checks remain
+necessary before replacing the existing installer for users.
+
+## Consequences
+
+One pull request can change a contract and both consumers, with coordinated
+review and compatibility tests. Separate folders and CI keep toolchains clear.
+No Python runtime is required for the .NET executable. Runtime releases can
+later be versioned independently within the same repository, but must declare
+which VBA/add-in versions they support. JSON schema version 1 currently covers
+diagnostic output only; it is not yet a production VBA integration contract.
+
+CI success does not replace Office, driver, signing or database acceptance.
+Keep database schema unchanged during the first increments. Do not equate a
+move to .NET with removal of Excel licensing or a cross-platform Excel client.
+
+## Alternatives
+
+- **Separate repository now:** adds cross-repository coordination before the
+  boundary is stable. Reconsider when the component has independent ownership,
+  release cadence, access requirements or consumers outside NADABAS.
+- **COM DLL first:** possible, but adds registration, runtime and Office
+  bitness considerations before the deployment model is established.
+- **Complete rewrite:** delays feedback and changes too much behaviour at once.
+
+This is a context-specific decision, not a universal rule that one repository
+is always preferable. See the [local setup guide](../developer-guide/dotnet-local-setup.md)
+and [component scope](../../dotnet/README.md).

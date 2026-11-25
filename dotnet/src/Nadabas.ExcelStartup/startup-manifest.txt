@@ -1,0 +1,3 @@
+# Intentionally unconfigured. Engineering builds refuse activation.
+# Reviewed build input: architecture<TAB>relative path<TAB>SHA256, one row per file.
+# Pin the modern XLL and every file of the private runtime before signing startup.

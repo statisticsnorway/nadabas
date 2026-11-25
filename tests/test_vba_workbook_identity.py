@@ -120,6 +120,43 @@ class VbaWorkbookIdentityTests(unittest.TestCase):
             init.index("CurrentDB.LoadAdministrators"),
         )
 
+    def test_migration_failure_reports_step_without_assuming_permissions(self):
+        ensure = procedure(
+            self.migration,
+            "Public Function EnsureWorkbookIdentitySchema",
+            "End Function",
+        )
+        self.assertIn('"Step: " & CurrentMigrationStep', ensure)
+        self.assertIn("Some schema changes may already have been applied", ensure)
+        self.assertNotIn("schema-change permission", ensure)
+        self.assertIn("If databaseOpened Then CloseDB", ensure)
+
+    def test_failed_history_read_is_not_treated_as_unapplied_migration(self):
+        history = procedure(
+            self.migration,
+            "Private Function WorkbookIdentityMigrationApplied",
+            "End Function",
+        )
+        self.assertIn("On Error GoTo ReadFailed", history)
+        self.assertIn(
+            'err.Raise errorNumber, "WorkbookIdentityMigrationApplied"', history
+        )
+
+    def test_access_backfill_avoids_legacy_name_index_and_preserves_existing_ids(self):
+        backfill = procedure(
+            self.migration, "Private Sub BackfillWorkbookIDs", "End Sub"
+        )
+        self.assertIn("NameExpression = InB(NameColumn)", backfill)
+        self.assertIn(
+            "If CurrentDB.DBType = accdb Or CurrentDB.DBType = mdb Then", backfill
+        )
+        self.assertIn('NameExpression = "(" & InB(NameColumn) & " & \'\')"', backfill)
+        self.assertIn('InB(IDColumn) & " IS NULL AND "', backfill)
+        self.assertIn('NameExpression & " = " & InQ(WorkbookName)', backfill)
+        self.assertLess(
+            backfill.index("rs.Close"), backfill.index("For Each NameValue")
+        )
+
     def test_runtime_write_and_rename_paths_use_numeric_ids(self):
         save = procedure(self.workbook_info, "Public Sub SaveInDB", "End Sub")
         self.assertIn("GetOrCreateWorkbookID", save)

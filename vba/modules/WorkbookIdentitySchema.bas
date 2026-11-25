@@ -5,35 +5,43 @@ Option Private Module
 Public Const WORKBOOK_NAME_MAX_LENGTH As Long = 255
 
 Private Const WORKBOOK_ID_MIGRATION As String = "WorkbookIdentityV1"
+Private CurrentMigrationStep As String
 
 Public Function EnsureWorkbookIdentitySchema() As Boolean
 
     Dim errorNumber As Long
     Dim errorDescription As String
+    Dim databaseOpened As Boolean
 
     On Error GoTo ErrorHandler
 
     EnsureWorkbookIdentitySchema = False
+    CurrentMigrationStep = "Inspect database role"
 
     If CurrentDB.DbIsExch Then
         EnsureWorkbookIdentitySchema = True
         Exit Function
     End If
 
+    RecordMigrationStep "Inspect Workbooks table"
     If Not DBTableExists("Workbooks") Then
         EnsureWorkbookIdentitySchema = True
         Exit Function
     End If
 
     OpenDb
+    databaseOpened = True
 
+    RecordMigrationStep "Prepare migration history"
     CreateTableSchemaMigrations
 
+    RecordMigrationStep "Read migration history"
     If WorkbookIdentityMigrationApplied Then
         EnsureWorkbookIdentitySchema = True
         GoTo CleanExit
     End If
 
+    RecordMigrationStep "Prepare WorkbookIdentities table"
     CreateTableWorkbookIdentities
     EnsureWorkbookIDColumns
     BackfillWorkbookIdentityData
@@ -43,6 +51,7 @@ Public Function EnsureWorkbookIdentitySchema() As Boolean
     WidenLegacyWorkbookNameColumns
     CreateWorkbookIdentityIndexes
 
+    RecordMigrationStep "Record completed migration"
     DbExecute "INSERT INTO [NADABASSchemaMigrations] " & _
               "([MigrationName], [AppliedAt]) VALUES (" & _
               InQ(WORKBOOK_ID_MIGRATION) & ", " & NowFunction & ")"
@@ -50,20 +59,21 @@ Public Function EnsureWorkbookIdentitySchema() As Boolean
     EnsureWorkbookIdentitySchema = True
 
 CleanExit:
-    CloseDB
+    If databaseOpened Then CloseDB
     Exit Function
 
 ErrorHandler:
     errorNumber = err.Number
     errorDescription = err.Description
 
-    AddToSQLLog "Workbook identity migration failed" & vbCrLf & _
+    AddToSQLLog "Workbook identity migration failed: " & CurrentMigrationStep & vbCrLf & _
                 errorNumber & ":" & errorDescription
 
     MsgBox "NADABAS could not upgrade workbook references in the database." & _
            vbCrLf & vbCrLf & _
-           "No workbook data was deleted. Ask a database administrator to " & _
-           "open the database with schema-change permission and try again." & _
+           "The upgrade did not complete. Some schema changes may already have been applied." & _
+           vbCrLf & "Keep a database backup and ask support to review the failed step before retrying." & _
+           vbCrLf & vbCrLf & "Step: " & CurrentMigrationStep & _
            vbCrLf & vbCrLf & _
            "Error " & errorNumber & ": " & errorDescription, _
            vbCritical, "NADABAS"
@@ -71,6 +81,11 @@ ErrorHandler:
     Resume CleanExit
 
 End Function
+
+Private Sub RecordMigrationStep(ByVal StepName As String)
+    CurrentMigrationStep = StepName
+    AddToSQLLog "Workbook identity migration: " & StepName
+End Sub
 
 Public Function GetWorkbookID(WorkbookName As String) As Long
 
@@ -174,8 +189,10 @@ End Sub
 Private Function WorkbookIdentityMigrationApplied() As Boolean
 
     Dim rs As ADODB.Recordset
+    Dim errorNumber As Long
+    Dim errorDescription As String
 
-    On Error GoTo CleanExit
+    On Error GoTo ReadFailed
 
     Set rs = CurrentDB.DBCnn.Execute( _
         "SELECT [MigrationName] FROM [NADABASSchemaMigrations] " & _
@@ -185,6 +202,13 @@ Private Function WorkbookIdentityMigrationApplied() As Boolean
 
 CleanExit:
     CloseRecordsetSafely rs
+    Exit Function
+
+ReadFailed:
+    errorNumber = err.Number
+    errorDescription = err.Description
+    CloseRecordsetSafely rs
+    err.Raise errorNumber, "WorkbookIdentityMigrationApplied", errorDescription
 
 End Function
 
@@ -212,6 +236,7 @@ End Sub
 
 Private Sub EnsureLongColumn(TableName As String, ColumnName As String)
 
+    RecordMigrationStep "Add identity column: " & TableName & "." & ColumnName
     If Not DBTableExists(TableName) Then Exit Sub
     If DBColumnExists(TableName, ColumnName) Then Exit Sub
 
@@ -243,6 +268,7 @@ End Sub
 
 Private Sub RequireLongColumn(TableName As String, ColumnName As String)
 
+    RecordMigrationStep "Require identity column: " & TableName & "." & ColumnName
     If Not DBTableExists(TableName) Then Exit Sub
 
     Select Case CurrentDB.DBType
@@ -281,13 +307,16 @@ Private Sub BackfillWorkbookIDs(TableName As String, NameColumn As String, _
     Dim WorkbookName As String
     Dim WorkbookID As Long
     Dim sql As String
+    Dim NameExpression As String
 
+    RecordMigrationStep "Backfill workbook references: " & TableName & "." & IDColumn
     If Not DBTableExists(TableName) Then Exit Sub
 
     sql = "SELECT DISTINCT " & InB(NameColumn) & " FROM " & InB(TableName) & _
           " WHERE " & InB(IDColumn) & " IS NULL"
 
     Set WorkbookNames = New Collection
+    CurrentMigrationStep = "Read workbook names: " & TableName & "." & NameColumn
     Set rs = CurrentDB.DBCnn.Execute(sql)
 
     Do While Not rs.EOF
@@ -303,18 +332,30 @@ Private Sub BackfillWorkbookIDs(TableName As String, NameColumn As String, _
     rs.Close
     Set rs = Nothing
 
+    NameExpression = InB(NameColumn)
+    If CurrentDB.DBType = accdb Or CurrentDB.DBType = mdb Then
+        ' Legacy Access name-index lookups can return deleted-record bookmarks.
+        ' Scan the names during backfill; the legacy indexes are rebuilt below.
+        ' Concatenating an empty string preserves non-empty workbook names.
+        NameExpression = "(" & InB(NameColumn) & " & '')"
+    End If
+
     For Each NameValue In WorkbookNames
         WorkbookName = CStr(NameValue)
+        CurrentMigrationStep = "Resolve workbook identity: " & TableName & "." & IDColumn
         WorkbookID = GetOrCreateWorkbookID(WorkbookName)
+        CurrentMigrationStep = "Assign workbook identity: " & TableName & "." & IDColumn
         DbExecute "UPDATE " & InB(TableName) & " SET " & _
                   InB(IDColumn) & " = " & CStr(WorkbookID) & _
                   " WHERE " & InB(IDColumn) & " IS NULL AND " & _
-                  InB(NameColumn) & " = " & InQ(WorkbookName)
+                  NameExpression & " = " & InQ(WorkbookName)
     Next NameValue
 
 End Sub
 
 Private Sub RebuildWorkbookIdentityIndexes()
+
+    RecordMigrationStep "Remove legacy workbook indexes"
 
     DropIndexIfExists "Workbooks", "PrimaryIndex"
 
@@ -347,6 +388,7 @@ End Sub
 
 Private Sub EnsureWorkbookNameLength(TableName As String, ColumnName As String)
 
+    RecordMigrationStep "Widen workbook name: " & TableName & "." & ColumnName
     If Not DBTableExists(TableName) Then Exit Sub
     If Not DBColumnExists(TableName, ColumnName) Then Exit Sub
 
@@ -357,6 +399,8 @@ Private Sub EnsureWorkbookNameLength(TableName As String, ColumnName As String)
 End Sub
 
 Private Sub CreateWorkbookIdentityIndexes()
+
+    RecordMigrationStep "Create workbook identity indexes"
 
     RecreateUniqueIndex "PrimaryIndex", "WorkbookIdentities", "WorkbookID"
     RecreateUniqueIndex "WorkbookNameIndex", "WorkbookIdentities", "WorkbookName"

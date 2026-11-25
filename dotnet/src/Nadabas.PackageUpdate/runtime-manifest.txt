@@ -1,0 +1,2 @@
+# No approved runtime by default. Supply RuntimeManifest at build time.
+# Format: architecture<TAB>path relative to runtime root<TAB>SHA-256

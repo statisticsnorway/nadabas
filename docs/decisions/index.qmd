@@ -8,6 +8,7 @@ structure, security, compatibility, or maintenance of NADABAS.
 ## Records
 
 - [ADR 0001: Maintain technical documentation with Quarto](0001-documentation-platform.qmd)
+- [ADR 0002: Introduce .NET components in the NADABAS repository](0002-incremental-dotnet.qmd)
 
 ## Adding a decision
 

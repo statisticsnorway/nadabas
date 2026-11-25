@@ -1,5 +1,14 @@
 version: 2
 updates:
+  - package-ecosystem: "nuget"
+    directory: "/dotnet"
+    schedule:
+      interval: "monthly"
+    groups:
+      dotnet-test-dependencies:
+        patterns:
+          - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
