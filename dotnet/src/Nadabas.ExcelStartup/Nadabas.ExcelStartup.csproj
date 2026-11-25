@@ -5,6 +5,8 @@
     <Version>0.1.0</Version>
     <UseWindowsForms>true</UseWindowsForms>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- Use the explicit net48 package on every host, regardless of installed targeting packs. -->
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
     <ExcelDnaCreate32BitAddIn>true</ExcelDnaCreate32BitAddIn>
     <ExcelDnaCreate64BitAddIn>true</ExcelDnaCreate64BitAddIn>
     <StartupManifest Condition="'$(StartupManifest)' == ''">startup-manifest.txt</StartupManifest>
