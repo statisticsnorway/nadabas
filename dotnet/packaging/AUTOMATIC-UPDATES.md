@@ -152,3 +152,45 @@ On 2026-11-11 GitHub's latest release was v6.02.005 with only the legacy ZIP
 asset. There was no appcast.xml or appcast.xml.signature. The installed 0.9.4
 report recorded an HttpRequestException but no HTTP status; this cannot establish
 the exact response received by that earlier Excel process.
+
+## Status and maintainer test checklist — 2026-11-25
+
+Automatic checking and installer download are implemented, but public distribution
+is not yet configured end-to-end. The loader starts UpdateNotifications after
+loading the verified VBA payload and enabling the managed update bridge. Its
+three-second timer initiates a background check; subsequent automatic network
+checks are throttled to six hours. Manual Check for updates bypasses that interval.
+Machine policy can disable updates or pin a version; user preference can disable
+automatic checks. Defaults enable automatic checking.
+
+The updater verifies the Ed25519-signed appcast, package signature and Windows
+publisher before staging an installer. It offers Restart and update, Later and
+cancellation through Excel; automatic download does not authorize forced Excel
+termination. This flow currently downloads the complete installer. The agreed
+small installer/runtime-download split remains unimplemented.
+
+The GitHub latest-release API was inspected on 2026-11-25: latest is v6.02.005,
+with a ZIP asset and no appcast.xml or appcast.xml.signature. The configured
+latest/download/appcast.xml therefore has no published feed asset at that release.
+Do not interpret an unavailable-feed result as a completed update test.
+
+The maintainer performs these manual tests locally:
+
+1. Install the signed candidate with Excel closed, then start Excel normally.
+2. Leave Excel idle briefly. If no policy or existing pending job prevents the
+   check, last-download-check.json in the physical per-user NADABAS-Loader-Test
+   directory records the attempt. An existing recent attempt can defer it.
+3. Choose Check for updates. Until an approved feed is published, an unavailable
+   download/verification result is expected. Details should expose a useful
+   diagnostic, and the installed version must remain unchanged.
+4. Full automatic download and restart acceptance requires a newer approved,
+   signed package and a correctly signed feed at the configured address. Prepare
+   those as a separate authorized release step, preserving the production trust
+   policy. Do not publish a fake latest release just to make this test pass.
+5. When the approved test update exists, verify Later, normal restart with saved
+   work, unsaved-work prompts, another open Excel process and About version after
+   update. Actual x86 Excel acceptance remains a separate colleague test.
+
+This inspection neither downloads nor installs an update, edits user/IT policy,
+nor publishes GitHub assets. Local TLS and signed-feed unit tests are separate
+from actual GitHub distribution and Excel acceptance.

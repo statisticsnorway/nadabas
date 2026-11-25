@@ -33,6 +33,11 @@ public static class Diagnostics
         var findings = new List<Finding>();
         try
         {
+            // Linux enumeration reports a file path as DirectoryNotFoundException.
+            // Inspect its type first so an existing file is never reported missing.
+            var attributes = File.GetAttributes(Path.TrimEndingDirectorySeparator(directory));
+            if ((attributes & FileAttributes.Directory) == 0)
+                throw new IOException("The inspected path is not a directory.");
             // Enumerate directly: Directory.Exists would hide access-denied errors.
             var files = Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly)
                 .Where(path => IsNadabasAddin(Path.GetFileName(path)))
@@ -45,7 +50,7 @@ public static class Diagnostics
             if (files.Length > 1)
                 findings.Add(new("addin.multiple", "warning", "Multiple candidates found. Review in Excel before any future installation."));
         }
-        catch (DirectoryNotFoundException)
+        catch (Exception ex) when (ex is DirectoryNotFoundException or FileNotFoundException)
         {
             findings.Add(new("addin.directory", "not-found", "The inspected directory does not exist.", directory));
         }

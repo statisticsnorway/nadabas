@@ -55,12 +55,17 @@ public sealed class DiagnosticsTests : IDisposable
         Assert.False(Directory.Exists(missing));
     }
 
-    [Fact]
-    public void FileUsedAsDirectoryIsAnInspectionError()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FileUsedAsDirectoryIsAnInspectionError(bool trailingSeparator)
     {
         var path = Path.Combine(directory, "file");
         File.WriteAllText(path, "not a directory");
-        Assert.Contains(Diagnostics.InspectAddins(path), f => f.Status == "error");
+        var findings = Diagnostics.InspectAddins(trailingSeparator ? path + Path.DirectorySeparatorChar : path);
+        Assert.Contains(findings, f => f.Id == "addin.directory" && f.Status == "error");
+        Assert.DoesNotContain(findings, f => f.Status == "not-found");
+        Assert.Equal("not a directory", File.ReadAllText(path));
     }
 
     public static TheoryData<string[]> InvalidArguments => new()

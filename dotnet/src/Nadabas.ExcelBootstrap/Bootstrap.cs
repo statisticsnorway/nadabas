@@ -6,8 +6,8 @@ using Nadabas.Versioning;
 
 namespace Nadabas.ExcelBootstrap;
 
-// Test-only loader; sign the packed XLL before distribution. Register only this XLL in a
-// profile/test. No network, registry edits, or changes to Office trust settings.
+// Sign the packed XLL before distribution. Start the verified VBA payload and
+// policy-controlled update checks without changing Office trust settings.
 public sealed class Bootstrap : IExcelAddIn
 {
     private string? root;
