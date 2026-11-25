@@ -1,3 +1,4 @@
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -7,6 +8,7 @@ from tools.import_vba import VbaImportError
 from tools.import_vba import _is_complete_export
 from tools.import_vba import _repair_and_validate_references
 from tools.import_vba import _replace_component_code
+from tools.import_vba import _validate_paths
 from tools.import_vba import discover_sources
 from tools.import_vba import parse_source
 from tools.import_vba import plan_import
@@ -16,6 +18,17 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 
 
 class ImportVbaTests(unittest.TestCase):
+    def test_legacy_installer_import_preserves_xlsm_format(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            template = Path(folder) / "NADABAS.xlsm"
+            template.touch()
+            _, output = _validate_paths(template, None, dry_run=False, force=False)
+            self.assertEqual(output.name, "NADABAS-rebuilt.xlsm")
+            with self.assertRaisesRegex(VbaImportError, "same extension"):
+                _validate_paths(
+                    template, template.with_suffix(".xlam"), dry_run=False, force=False
+                )
+
     def test_parse_standard_module_removes_export_attributes(self) -> None:
         source = parse_source(FIXTURES / "module" / "Example.bas")
 

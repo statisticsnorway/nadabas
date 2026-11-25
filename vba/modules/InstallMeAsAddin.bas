@@ -3,6 +3,7 @@ Option Explicit
 Option Private Module
 
 Private Const NADABAS_ADDIN_NAME As String = "NADABAS.XLAM"
+Private Const MANAGED_LOADER_FOLDER As String = "NADABAS-Loader-Test\"
 
 Private Function WithTrailingBackslash(ByVal folderPath As String) As String
     If Right$(folderPath, 1) = "\" Then
@@ -18,6 +19,21 @@ Private Function IsNadabasAddInFileName(ByVal filename As String) As Boolean
     upperName = UCase$(filename)
     IsNadabasAddInFileName = upperName = NADABAS_ADDIN_NAME Or _
         (Left$(upperName, 8) = "NADABAS." And Right$(upperName, 5) = ".XLAM")
+End Function
+
+Private Function IsManagedNadabasLoader(ByVal candidatePath As String) As Boolean
+    Dim localAppData As String
+    Dim managedFolder As String
+    Dim normalisedCandidate As String
+
+    localAppData = Environ$("LOCALAPPDATA")
+    If Len(localAppData) = 0 Then Exit Function
+
+    managedFolder = WithTrailingBackslash(Replace(localAppData, "/", "\")) & MANAGED_LOADER_FOLDER
+    normalisedCandidate = Replace(candidatePath, "/", "\")
+    IsManagedNadabasLoader = _
+        StrComp(normalisedCandidate, managedFolder & "Nadabas.Startup.xll", vbTextCompare) = 0 Or _
+        StrComp(normalisedCandidate, managedFolder & "Nadabas.Loader.Test.xll", vbTextCompare) = 0
 End Function
 
 Private Function FindSourceNadabasAddIn(ByVal installationFolder As String) As String
@@ -94,6 +110,8 @@ End Sub
 
 Sub DoInstallAsAddIn()
     Dim AI As AddIn
+    Dim legacyAddIn As AddIn
+    Dim disabledLoaders As Collection
     Dim isActivated As Boolean
     Dim sFullName As String
     Dim bIsInstalled As Boolean
@@ -101,6 +119,7 @@ Sub DoInstallAsAddIn()
     Dim installedPath As String
     Dim sourceIsTarget As Boolean
     Dim upperName As String
+    Dim failureMessage As String
 
     On Error GoTo InstallFailed
 
@@ -119,6 +138,17 @@ Sub DoInstallAsAddIn()
 
     sourceIsTarget = StrComp(sSourceXlam, sFullName, vbTextCompare) = 0
     bIsInstalled = False
+    Set disabledLoaders = New Collection
+
+    ' Validate legacy destinations before changing registrations or files.
+    For Each AI In Application.AddIns
+        If IsNadabasAddInFileName(AI.name) Then
+            If Not IsSafeNadabasAddInPath(AI.fullname, Application.UserLibraryPath) Then
+                err.Raise vbObjectError + 6101, "InstallMeAsAddin", _
+                    "Refusing to replace an add-in outside the trusted Excel add-in folder: " & AI.fullname
+            End If
+        End If
+    Next AI
 
     For Each AI In Application.AddIns
         upperName = UCase$(AI.name)
@@ -129,7 +159,7 @@ Sub DoInstallAsAddIn()
                 AI.Installed = False
                 DeleteInstalledNadabasAddIn installedPath, Application.UserLibraryPath
             End If
-        ElseIf Left$(upperName, 8) = "NADABAS." Then
+        ElseIf IsNadabasAddInFileName(upperName) Then
             installedPath = AI.fullname
             AI.Installed = False
             DeleteInstalledNadabasAddIn installedPath, Application.UserLibraryPath
@@ -149,13 +179,34 @@ Sub DoInstallAsAddIn()
     For Each AI In Application.AddIns
         If UCase$(AI.name) = NADABAS_ADDIN_NAME And _
             StrComp(AI.fullname, sFullName, vbTextCompare) = 0 Then
-            AI.Installed = False
-            DoEvents
-            AI.Installed = True
-            DoEvents
-            isActivated = True
+            Set legacyAddIn = AI
+            Exit For
         End If
     Next AI
+
+    If Not legacyAddIn Is Nothing Then
+        ' Leave managed files on disk. Use Excel to disable their startup registration.
+        For Each AI In Application.AddIns
+            If IsManagedNadabasLoader(AI.fullname) Then
+                If AI.Installed Then
+                    disabledLoaders.Add AI
+                    AI.Installed = False
+                    If AI.Installed Then
+                        err.Raise vbObjectError + 6103, "InstallMeAsAddin", _
+                            "Could not disable the previous NADABAS loader: " & AI.fullname
+                    End If
+                End If
+            End If
+        Next AI
+        legacyAddIn.Installed = False
+        DoEvents
+        legacyAddIn.Installed = True
+        DoEvents
+        isActivated = legacyAddIn.Installed
+        If Not isActivated Then
+            err.Raise vbObjectError + 6104, "InstallMeAsAddin", "Could not activate NADABAS.XLAM."
+        End If
+    End If
 
     If isActivated Then
         MsgBox GetMsg("M027A") & vbCrLf & GetMsg("M027B"), vbOKCancel
@@ -168,5 +219,20 @@ Sub DoInstallAsAddIn()
     Exit Sub
 
 InstallFailed:
-    MsgBox "NADABAS add-in installation failed: " & err.Description, vbCritical
+    failureMessage = err.Description
+    If Not isActivated And Not disabledLoaders Is Nothing Then
+        On Error Resume Next
+        If Not legacyAddIn Is Nothing Then legacyAddIn.Installed = False
+        For Each AI In disabledLoaders
+            err.Clear
+            AI.Installed = True
+            If err.Number <> 0 Then
+                failureMessage = failureMessage & vbCrLf & "Could not restore the previous loader."
+            ElseIf Not AI.Installed Then
+                failureMessage = failureMessage & vbCrLf & "Could not restore the previous loader."
+            End If
+        Next AI
+        On Error GoTo 0
+    End If
+    MsgBox "NADABAS add-in installation failed: " & failureMessage, vbCritical
 End Sub

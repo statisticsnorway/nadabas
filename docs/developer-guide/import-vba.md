@@ -1,8 +1,9 @@
 # Import VBA into an XLAM
 
 `tools/import_vba.py` builds a new NADABAS add-in from an existing `.xlam`
-template and the version-controlled files below `vba/`. The template is never
-modified.
+template and the version-controlled files below `vba/`. It can also update a
+copy of a legacy `.xlsm` installer. The output keeps the template's file
+format. The template is never modified.
 
 ## Prerequisites
 

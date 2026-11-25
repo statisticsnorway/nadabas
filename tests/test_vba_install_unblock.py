@@ -62,6 +62,28 @@ class InstallSourceDiscoveryTests(unittest.TestCase):
         self.assertIn("FindSourceNadabasAddIn(ThisWorkbook.path)", install)
         self.assertNotIn('ThisWorkbook.path & "\\NADABAS.xlam"', install)
 
+    def test_managed_loader_is_disabled_after_copy_and_never_deleted(self):
+        install = procedure(self.source, "Sub DoInstallAsAddIn", "End Sub")
+        managed = procedure(
+            install, "If IsManagedNadabasLoader(AI.fullname) Then", "Next AI"
+        )
+        self.assertNotIn('ElseIf Left$(upperName, 8) = "NADABAS."', install)
+        self.assertIn("ElseIf IsNadabasAddInFileName(upperName) Then", install)
+        self.assertIn("AI.Installed = False", managed)
+        self.assertNotIn("DeleteInstalledNadabasAddIn", managed)
+        self.assertLess(install.index("FileCopy sSourceXlam"), install.index(managed))
+        self.assertIn("For Each AI In disabledLoaders", install)
+        self.assertIn("AI.Installed = True", install)
+
+    def test_managed_loader_detection_uses_the_exact_per_user_paths(self):
+        detection = procedure(
+            self.source, "Private Function IsManagedNadabasLoader", "End Function"
+        )
+        self.assertIn('Environ$("LOCALAPPDATA")', detection)
+        self.assertIn('managedFolder & "Nadabas.Startup.xll"', detection)
+        self.assertIn('managedFolder & "Nadabas.Loader.Test.xll"', detection)
+        self.assertEqual(detection.count("StrComp(normalisedCandidate,"), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,0 +1,34 @@
+---
+title: NADABAS 6.02.011
+---
+
+This Excel add-in update follows the two-file VBA installation procedure used
+in 6.02.005. Extract both files to the same folder, open
+`NADABAS.6.02.011.xlsm` and select **Install as add-in**. Restart Excel and
+confirm that **About** shows **6.02.011**. The installed file is `NADABAS.xlam`
+in Excel's per-user add-in folder.
+
+## Changes
+
+- Fix Access workbook-ID migration for older databases.
+- Preserve the selected language when opening the language dialog.
+- Add a setting to show or hide the Exchange tools in the ribbon.
+- Validate key family dimension lengths before creating database structures.
+- Improve database snapshot and batch error reporting.
+- Use Excel to deactivate known NADABAS startup loaders when installing the
+  VBA add-in. Keep the legacy file deletion restricted to Excel's add-in folder.
+
+## Release files
+
+| File | SHA-256 |
+| --- | --- |
+| `NADABAS.6.02.011.zip` | `21D8B4FA204A30A5EBD994B1C63ECE916F81E83CFA813361B5896F4C2DE3475D` |
+| `NADABAS.6.02.011.xlsm` | `E9CA6807914DBC71AB1B51BC1F8B492C0616B88275F38B46DAF4DC5113A4103E` |
+| `NADABAS.xlam` | `4EDE5EB48411FB2F7DFC452E8E0FA68591469D4C08D368139CDEB0A19C7A68A4` |
+
+Both Office files were verified with valid Statistics Norway signatures.
+Signature verification reported no timestamps. The maintainer confirmed the
+test installation of this exact package on 2026-11-25.
+
+The helper workbook uses the 6.02.005 installer template with the reviewed
+installation routine. The version reported by the installed add-in is 6.02.011.
