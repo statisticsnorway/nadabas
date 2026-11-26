@@ -56,10 +56,12 @@ Dim field As clsFieldNames
 End Sub
 
 Private Sub cmdAdd_Click()
+Dim DimensionLength As Long
 
 
-    If IsNumeric(txtLen.Text) = False Then
-       MsgBox GetMsg("M076"), vbCritical, "Nadabas"   'Length must be a number
+    If Not TryDimensionLength(txtLen.Text, DimensionLength) Then
+       MsgBox GetMsg("DimensionLengthInvalid"), vbExclamation, "NADABAS"
+       txtLen.SetFocus
        Exit Sub
     End If
 
@@ -78,7 +80,7 @@ Private Sub cmdAdd_Click()
     ListBox1.ColumnWidths = "104;72"
     ListBox1.AddItem
     ListBox1.Column(0, ListBox1.ListCount - 1) = txtName.Text
-    ListBox1.Column(1, ListBox1.ListCount - 1) = txtLen.Text
+    ListBox1.Column(1, ListBox1.ListCount - 1) = DimensionLength
     txtName.Text = ""
     txtLen.Text = ""
     cbName.value = ""
@@ -102,6 +104,7 @@ Private Sub cmdClear_Click()
 End Sub
 
 Private Sub cmdFinish_Click()
+Dim DimensionLength As Long
 Dim l As Long
 Dim x As Long
 Dim FN As clsFieldNames
@@ -133,9 +136,14 @@ Dim Keyname As String
     Set DimensionNamesForKeyFamily = New Collection
 
     For l = 0 To ListBox1.ListCount - 1
+       If Not TryDimensionLength(ListBox1.Column(1, l), DimensionLength) Then
+          ListBox1.ListIndex = l
+          MsgBox GetMsg("DimensionLengthInvalid"), vbExclamation, "NADABAS"
+          Exit Sub
+       End If
        Set FN = New clsFieldNames
        FN.name = ListBox1.Column(0, l)
-       FN.Length = ListBox1.Column(1, l)
+       FN.Length = DimensionLength
        DimensionNamesForKeyFamily.Add FN
     Next l
 

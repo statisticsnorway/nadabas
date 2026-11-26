@@ -34,9 +34,9 @@ class VbaVersionUpdateTests(unittest.TestCase):
             REPOSITORY_ROOT / "vba" / "modules" / "DbCreateTables.bas"
         ).read_text(encoding="utf-8-sig")
 
-    def test_release_source_is_version_6_02_005_without_test_override(self):
+    def test_release_source_is_version_6_02_012_without_test_override(self):
         self.assertIn(
-            'Private Const CURRENT_VERSION As String = "6.02.005"',
+            'Private Const CURRENT_VERSION As String = "6.02.012"',
             self.update_source,
         )
         self.assertIn(
@@ -175,6 +175,9 @@ class VbaVersionUpdateTests(unittest.TestCase):
             {
                 ("Ribbon", "btnCheckNadabasVersion", ""),
                 ("Ribbon", "tglVersionCheck", ""),
+                ("Ribbon", "tglShowExchangeTools", ""),
+                ("Ribbon", "tipExchangeTools", ""),
+                ("Ribbon", "helpExchangeTools", ""),
                 ("Forms", "dlgPutLog", "cmdYesAll"),
                 ("Forms", "dlgPutLog", "cmdNoAll"),
                 ("Forms", "frmKeyFamily", "cmdEditStructure"),
@@ -195,6 +198,9 @@ class VbaVersionUpdateTests(unittest.TestCase):
                 ("Messages", "M215B", ""),
                 ("Messages", "M215C", ""),
                 ("Messages", "M216", ""),
+                ("Messages", "ManagedUpdateUnavailable", ""),
+                ("Messages", "DimensionLengthInvalid", ""),
+                ("Messages", "ExchangePreferenceError", ""),
             },
         )
         for row in rows:

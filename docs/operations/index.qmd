@@ -22,6 +22,13 @@ both Office signatures before opening the installer. The complete release
 manifest, SHA-256 checksums, and installation checklist are recorded in the
 [6.02.005 release and installation record](release-6.02.005.qmd).
 
+The legacy installer uses Excel's per-user add-in folder
+(`Application.UserLibraryPath`, normally `%APPDATA%\Microsoft\AddIns`).
+When switching back from the managed Windows installer, it uses Excel to
+disable the known NADABAS startup loaders before enabling `NADABAS.xlam`.
+The loader files remain in their original folder. Close and reopen Excel
+after the transition and verify that only one NADABAS ribbon appears.
+
 ## Automatic version check
 
 `InterfaceVersionUpdate` schedules a check five seconds after NADABAS starts.

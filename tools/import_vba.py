@@ -539,21 +539,24 @@ def _validate_paths(
 ) -> tuple[Path, Path | None]:
     template = Path(template_xlam).resolve()
     if not template.is_file():
-        raise VbaImportError(f"Template XLAM does not exist: {template}")
-    if template.suffix.lower() != ".xlam":
-        raise VbaImportError(f"Template must be an .xlam file: {template}")
+        raise VbaImportError(f"Template does not exist: {template}")
+    extension = template.suffix.lower()
+    if extension not in {".xlam", ".xlsm"}:
+        raise VbaImportError(f"Template must be an .xlam or .xlsm file: {template}")
 
     if dry_run and output_xlam is None:
         return template, None
     output = (
         Path(output_xlam).resolve()
         if output_xlam is not None
-        else template.with_name(f"{template.stem}-rebuilt.xlam")
+        else template.with_name(f"{template.stem}-rebuilt{extension}")
     )
-    if output.suffix.lower() != ".xlam":
-        raise VbaImportError(f"Output must be an .xlam file: {output}")
+    if output.suffix.lower() != extension:
+        raise VbaImportError(
+            f"Output must have the same extension as the template: {output}"
+        )
     if output == template:
-        raise VbaImportError("Output must be different from the template XLAM.")
+        raise VbaImportError("Output must be different from the template.")
     if output.exists() and not force and not dry_run:
         raise VbaImportError(
             f"Output already exists (use --force to replace it): {output}"
@@ -571,7 +574,7 @@ def import_vba(
     visible: bool = False,
     replace_form_designers: bool = False,
 ) -> ImportReport:
-    """Import VBA sources into a new XLAM and return an action report.
+    """Import VBA sources into a new XLAM or XLSM and return an action report.
 
     The template is never modified.  The completed workbook replaces ``output``
     only after Excel has saved it successfully.
@@ -608,7 +611,9 @@ def import_vba(
 
         assert output is not None
         output.parent.mkdir(parents=True, exist_ok=True)
-        staging = output.with_name(f".{output.stem}.{uuid.uuid4().hex}.tmp.xlam")
+        staging = output.with_name(
+            f".{output.stem}.{uuid.uuid4().hex}.tmp{output.suffix}"
+        )
         shutil.copy2(template, staging)
         workbook = _open_excel_workbook(excel, staging, read_only=False)
         project = _get_unprotected_project(workbook)
@@ -664,10 +669,10 @@ def _print_report(report: ImportReport) -> None:
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Import version-controlled NADABAS VBA sources into a copy of an XLAM."
+        description="Import version-controlled NADABAS VBA sources into an XLAM or XLSM copy."
     )
     parser.add_argument(
-        "template", type=Path, help="Existing NADABAS .xlam used as template"
+        "template", type=Path, help="Existing NADABAS .xlam or .xlsm used as template"
     )
     parser.add_argument(
         "--source-root",
@@ -675,7 +680,9 @@ def _parser() -> argparse.ArgumentParser:
         default=Path("vba"),
         help="VBA source root (default: vba)",
     )
-    parser.add_argument("--output", type=Path, help="Output .xlam path")
+    parser.add_argument(
+        "--output", type=Path, help="Output path with the template extension"
+    )
     parser.add_argument(
         "--dry-run", action="store_true", help="Validate and show changes only"
     )

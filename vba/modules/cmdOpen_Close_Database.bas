@@ -368,9 +368,21 @@ Private Sub DoSelectExchDatabase()
     If GetAccDBName = False Then Exit Sub
     MakeAccConnectString
     If ConnectToSql = False Then Exit Sub
-    Set CurrentDB = ExchDB
-    InitNewDb
-    Set CurrentDB = BaseDb
+    If Not InitNewDb Then
+        ExchDB.DBHasBeenOpen = False
+        Set ExchDB.DBCat = Nothing
+        Set ExchDB.DBCnn = Nothing
+        Exit Sub
+    End If
+
+    ' Refresh the optional tables while CurrentDB still points to ExchDB.
+    ExchDB.TestForClassifications
+    ExchDB.TestForClassDescriptions
+    ExchDB.TestDimensionClass
+    ExchDB.ClassDescriptionsIsloaded = False
+    Set ExchDB.Classifications = Nothing
+    Set ExchDB.ClassDescriptions = Nothing
+    Set ExchDB.DimensionClasses = Nothing
     CloseDbAll
     SaveExchDBSettings
 
