@@ -6,7 +6,7 @@ Option Private Module
 ' It does not change or invalidate the Ribbon and uses only late-bound
 ' Windows components, so no additional VBA reference is required.
 
-Private Const CURRENT_VERSION As String = "6.02.011"
+Private Const CURRENT_VERSION As String = "6.02.012"
 ' Empty only in development source; packaging stamps ISO date before signing.
 Private Const RELEASE_DATE_ISO As String = ""
 Private Const RELEASE_API_URL As String = _

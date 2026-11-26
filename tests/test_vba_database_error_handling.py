@@ -60,6 +60,43 @@ class VbaDatabaseErrorHandlingTests(unittest.TestCase):
         self.assertIn("select Enable Content", user_message)
         self.assertIn("Technical details are available", user_message)
 
+    def test_exchange_open_discovers_classifications_before_restoring_base_db(self):
+        entry = vba_procedure(
+            self.open_database, "Public Sub OpenExchDatabase()", "End Sub"
+        )
+        initialize = vba_procedure(
+            self.open_database, "Private Sub DoSelectExchDatabase()", "End Sub"
+        )
+
+        self.assertLess(
+            entry.index("Set CurrentDB = ExchDB"), entry.index("DoSelectExchDatabase")
+        )
+        self.assertLess(
+            entry.index("DoSelectExchDatabase"), entry.index("Set CurrentDB = BaseDb")
+        )
+        self.assertLess(
+            initialize.index("If Not InitNewDb Then"),
+            initialize.index("ExchDB.TestForClassifications"),
+        )
+        self.assertIn("ExchDB.TestForClassDescriptions", initialize)
+        self.assertIn("ExchDB.TestDimensionClass", initialize)
+        self.assertNotIn("Set CurrentDB = BaseDb", initialize)
+
+    def test_exchange_reopen_discards_classification_data_from_previous_file(self):
+        initialize = vba_procedure(
+            self.open_database, "Private Sub DoSelectExchDatabase()", "End Sub"
+        )
+
+        for statement in (
+            "ExchDB.ClassDescriptionsIsloaded = False",
+            "Set ExchDB.Classifications = Nothing",
+            "Set ExchDB.ClassDescriptions = Nothing",
+            "Set ExchDB.DimensionClasses = Nothing",
+        ):
+            self.assertLess(
+                initialize.index(statement), initialize.index("SaveExchDBSettings")
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

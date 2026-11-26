@@ -30,7 +30,7 @@ Global isAdministrator As Boolean     ' true if user is an administrator (testad
 '
 '
 
-Global DescriptionRange As Range      'Refers to Current line of DBLinks
+Global DescriptionRange As Range      ' Descriptions for the active link definitions
 
 Global DBGlobalsRange As Range       ' If DBGlobal are used (data filled from DB into this range before any load or save operation)
 
@@ -97,10 +97,25 @@ Public Function getExchLinksRange(awb As Workbook) As Range
 End Function
 
 
-Public Function setDescriptionRange(awb) As Boolean
-    Set DescriptionRange = Nothing
+Public Function GetDescriptionName(awb As Workbook, ForExchange As Boolean) As Name
     On Error Resume Next
-    Set DescriptionRange = awb.Names("Descriptions").RefersToRange
+    If ForExchange Then
+        Set GetDescriptionName = awb.Names("ExchDescriptions")
+        If Not GetDescriptionName Is Nothing Then Exit Function
+        ' The old shared name is unambiguous in an Exchange-only workbook.
+        If testDBLinksRange(awb) Then Exit Function
+    End If
+    Set GetDescriptionName = awb.Names("Descriptions")
+End Function
+
+Public Function setDescriptionRange(awb As Workbook, Optional ForExchange As Boolean = False) As Boolean
+    Dim Definition As Name
+
+    Set DescriptionRange = Nothing
+    Set Definition = GetDescriptionName(awb, ForExchange)
+    If Definition Is Nothing Then Exit Function
+    On Error Resume Next
+    Set DescriptionRange = Definition.RefersToRange
     setDescriptionRange = Not (DescriptionRange Is Nothing)
 End Function
 

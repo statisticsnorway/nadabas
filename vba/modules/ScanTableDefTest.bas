@@ -440,14 +440,18 @@ QuitDefar:
 '   ********************************************************************************************************************
 
 
-      If Not setDescriptionRange(awb) Then GoTo Showmess
-      addAreaName "Descriptions"
+      If Not setDescriptionRange(awb, CurrentDB.DbIsExch) Then GoTo Showmess
+      If DescriptionRange.Areas.count <> 1 Then
+          AddError0 "DE052"
+          GoTo Showmess
+      End If
 
       Select Case DescriptionRange.Columns.count
         Case 1:
 ' must be adjacant to DBLInks
 
-            If DescriptionRange.Column <> DBLinksRange.Column + DBLinksRange.Columns.count Or _
+            If Not DescriptionRange.Worksheet Is DBLinksRange.Worksheet Or _
+               DescriptionRange.Column <> DBLinksRange.Column + DBLinksRange.Columns.count Or _
                DescriptionRange.row <> DBLinksRange.row Then
               AddError0 "DE050"                'DescriptionArea not next to DBLinks or not same number of rows
             End If
@@ -463,8 +467,8 @@ QuitDefar:
         Case Else:
             AddError0 "DE052"                        'Descriptions must have 1 or 2 columns
       End Select
-      If DescriptionRange.Rows.count <> DBLinksRange.Rows.count Then
-         adjustDescriptionrange awb
+      If ErrorCollection.count = 0 And DescriptionRange.Rows.count <> DBLinksRange.Rows.count Then
+         adjustDescriptionrange awb, DBLinksRange, CurrentDB.DbIsExch
       End If
 
 Showmess:

@@ -97,7 +97,7 @@ Dim DBLinksRange As Range
         SetIntColor rDBDefRange, Usersettings.ccTableDef
    Next k
 
-   If setDescriptionRange(ActiveWorkbook) Then
+   If setDescriptionRange(ActiveWorkbook, CurrentDB.DbIsExch) Then
       SetIntColor DescriptionRange, Usersettings.ccDescriptions
    End If
 End Sub
@@ -356,6 +356,8 @@ Dim awb As Workbook
 
     Areanames.Add "DBSOURCEFILES"   ' this should not be deleted
     Areanames.Add "DBGlobals"   ' this should not be deleted
+    Areanames.Add "Descriptions"
+    Areanames.Add "ExchDescriptions"
 '
 '  Areanames now hold all names need , but
 '  they migth be shorthands.
@@ -545,11 +547,11 @@ Dim awb As Workbook
 Dim DBLinksRange As Range
 
       Set awb = ActiveWorkbook
-      If Not testLinksRange(awb) Then
+      If Not testDBLinksRange(awb) Then
          MsgBox GetMsg("M107"), vbInformation  'Dblinks not defined
          Exit Sub
         End If
-      Set DBLinksRange = GetLinksRange(awb)
+      Set DBLinksRange = GetDBLinksRange(awb)
       DBLinksRange.Worksheet.Activate
       RefTo = awb.Names("DBLinks").RefersTo
       For i = Len(RefTo) To 1 Step -1
@@ -568,8 +570,7 @@ Dim DBLinksRange As Range
 '
 ' now check if description is there (and is valid)
 '
-      If Not setDescriptionRange(awb) Then Exit Sub
-      adjustDescriptionrange awb
+      adjustDescriptionrange awb, GetDBLinksRange(awb), False
 
 
 End Sub
@@ -646,51 +647,24 @@ Dim ExchLinksRange As Range
       Selection.Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
       RefTo = Mid(RefTo, 1, i) & lastrow
       awb.Names("ExchLinks").RefersTo = RefTo
-
+      adjustDescriptionrange awb, getExchLinksRange(awb), True
 End Sub
 
+Public Sub adjustDescriptionrange(awb As Workbook, LinksRange As Range, ForExchange As Boolean)
+    Dim Definition As Name
+    Dim DescriptionCells As Range
+    Dim Resized As Range
 
-Public Sub adjustDescriptionrange(awb As Workbook)
-'
-' make number of rows in description same as number of rows in dblinks
-'
+    If LinksRange Is Nothing Then Exit Sub
+    Set Definition = GetDescriptionName(awb, ForExchange)
+    If Definition Is Nothing Then Exit Sub
+    On Error Resume Next
+    Set DescriptionCells = Definition.RefersToRange
+    On Error GoTo 0
+    If DescriptionCells Is Nothing Then Exit Sub
+    If DescriptionCells.Areas.count <> 1 Then Exit Sub
+    If DescriptionCells.Rows.count = LinksRange.Rows.count Then Exit Sub
 
-Dim RefTo As String
-Dim firstrow As Integer
-Dim lastrow As Integer
-Dim i As Integer
-Dim DBLinksRange As Range
-
-      Set DBLinksRange = DBLinksRange(awb)
-      setDescriptionRange awb
-
-      RefTo = awb.Names("DBLinks").RefersTo
-      For i = Len(RefTo) To 1 Step -1
-          If Mid(RefTo, i, 1) = "$" Then
-             Exit For
-          End If
-      Next i
-      lastrow = Mid(RefTo, i + 1) + DescriptionRange.row - DBLinksRange.row
-
-      RefTo = awb.Names("Descriptions").RefersTo
-
-      If DescriptionRange.Rows.count = 1 And DescriptionRange.Columns.count = 1 Then
-' needs to expand refto
-        For i = Len(RefTo) To 1 Step -1
-            If Mid(RefTo, i, 1) = "!" Then
-               Exit For
-            End If
-      Next i
-         RefTo = RefTo & ":" & Mid(RefTo, i + 1)
-
-      End If
-
-      For i = Len(RefTo) To 1 Step -1
-            If Mid(RefTo, i, 1) = "$" Then
-               Exit For
-            End If
-      Next i
-      RefTo = Mid(RefTo, 1, i) & lastrow
-      awb.Names("Descriptions").RefersTo = RefTo
-
+    Set Resized = DescriptionCells.Resize(LinksRange.Rows.count)
+    Definition.RefersTo = "=" & Resized.Address(External:=True)
 End Sub
